@@ -58,8 +58,7 @@ estimated covariance matrix $\hat{\Psi}$ is biased (\citeauthor{brockwell_introd
 
 \section{Generalized Least Squares}
 
-The argument in this section is based on the textboock from \citeauthor{brockwell_introduction_2016}.
-
+The argument presented in this section is based on the textbook of \citeauthor{brockwell_introduction_2016}.
 If the covariance matrix of the errors $Var(\mathbf{E}) = \Sigma$ is known,
 we can use generalized least squares to obtain a unbiased, consistent and efficient coefficient estimate:
 \[\hat{\beta}_{GLS} = (X^{\top} \Sigma^{-1} X) X^{\top} \Sigma^{-1} Y\]
@@ -77,7 +76,7 @@ Both methods assume an ARMA(p,q) process for $E(t)$ and equispaced time points. 
 
 \subsection{Maximum-Likelihood estimation}
 
-If we additionally assume $W_t \sim N(0, \sigma_w^2)$, we can simultaneously etimate the regression coefficients and $\Sigma$ by
+If we additionally assume $W_t \sim N(0, \sigma_w^2)$, we can simultaneously estimate the regression coefficients and $\Sigma$ by
 maximizing the Gaussian likelihood:
 
 \begin{gather*}
@@ -105,10 +104,10 @@ In the presence of autocorrelation one usually estimates $\Phi = \frac{1}{n} X^{
 the covariance matrix of the score functions
 $V_i(\beta) = x_{t_i}(y_{t_i} - x_{t_i}^{\top}\beta)$, which can then be used to derive $\Psi$:
 
-\begin{equation*}\label{eq_sandwitch}
+\begin{equation}\label{eq:sandwich}
 \Psi = Var(\hat \beta_{OLS}) = (X^{\top} X)^{-1} X^{\top} \Sigma X (X^{\top}X)^{-1} =
 (\frac{1}{n} X^{\top} X)^{-1} \frac{1}{n} \Phi (\frac{1}{n} X^{\top} X)^{-1}
-\end{equation*}\label{eq_sandwitch}
+\end{equation}
 
 The general form of the estimators for $\Phi$ is:
 
@@ -117,17 +116,14 @@ The general form of the estimators for $\Phi$ is:
 \end{gather*}
 where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector.
 
-$\Phi$ can then be plugged into the equation \ref{eq_sandwitch} to obtain a
+$\Phi$ can then be plugged into the equation \ref{eq:sandwich} to obtain a
 heteroskedasticity and autocorrelation consistent (HAC) covariance estimate $\hat{\Psi}_{HAC}$
 
 \citeauthor{newey_automatic_1994}, \citeauthor{andrews_heteroskedasticity_1991} and others have suggested different approaches
 for calculating the weights $w$. They all yield decreasing weights with increasing lag $l=|i-j|$.
-The R sandwich package implements some of these methods to estimate $\hat{\Psi}_{HAC}$. An introduction to the sandwich package and how it can used
-for inference is desribed by \citeauthor{zeileis_econometric_2004}.
-
-
-
-
+The R sandwich package implements some of these methods to estimate $\hat{\Psi}_{HAC}$.
+An introduction to the sandwich package and how it can be used
+for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 
 
