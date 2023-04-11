@@ -74,7 +74,7 @@ Both methods assume an ARMA(p,q) process for $E(t)$ and equispaced time points. 
 \end{gather*}
 
 
-\subsection{Maximum-Likelihood estimation}
+\subsection{Maximum-Likelihood Estimation}
 
 If we additionally assume $W_t \sim N(0, \sigma_w^2)$, we can simultaneously estimate the regression coefficients and $\Sigma$ by
 maximizing the Gaussian likelihood:
@@ -97,7 +97,7 @@ Assuming an ARMA(2,3) process for $\{E_t\}$ we can implement this approach in R 
 \end{verbatim}
 
 
-\subsection{Sandwich estimation}
+\subsection{Sandwich Estimation}
 The second approach to fit an OLS regression first and correct the estimated covariance matrix $\Psi$ with a
 sandwich estimator.
 In the presence of autocorrelation one usually estimates $\Phi = \frac{1}{n} X^{\top} \Sigma X$,
@@ -126,4 +126,12 @@ An introduction to the sandwich package and how it can be used
 for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 
+\subsection{Extension to Irregularly Spaced Time Series}
+
+Although literature and "ready to use" implementations only seem to exist for the equispaced case,
+both of the approaches described above could probably be extended to the case of irregularly spaced time series.
+For the Maximum-Likelihood approach one would need to adapt the parametrization of the covariance matrix $\Sigma_n$, where
+the covariance at different time points would need to depend on their actual time difference rather than the lag.
+A similar adaption could be done for the sandwich estimator, where the weights would need to depend on the time
+difference rather than on the lag.
 
