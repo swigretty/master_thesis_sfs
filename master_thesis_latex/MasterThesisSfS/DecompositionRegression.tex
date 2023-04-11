@@ -8,6 +8,7 @@
 %tion, such as a linear time trend, and use the term seasonal component for a mean func-
 %tion that varies cyclically.
 
+\section{Introduction}
 
 As most time series, the mean function of the BP time series is not constant in time and hence it is not stationary.
 One can try to decompose the time series $Y(t)$ into a deterministic component, the mean function $\mu(t)$
@@ -40,9 +41,10 @@ $X = [x_{t_1}, \dots x_{t_n}]^{\top}$ is the design matrix with i-th row
 $x_{t_i} = [1, t_i, \cos(2 \pi f t_i), \sin(2 \pi f t_i)]^{\top}$
 and $\mathbf{E} = [E_{t_1}, \dots E_{t_n}]^{\top}$ the values of the zero-mean stationary time series.
 
-We can use ordinary least squares to find unbiased and consistent estimates $\hat{\beta}_{OLS} = (X^{\top}X) X^{\top}Y$
-for the regression coefficients $\beta$ without the requirement of regularly spaced data points or independent errors $E_{t_i}$.
-In the case of independent errors $E_{t_i}$ with constant variance $\sigma^2$ we have
+We can use ordinary least squares to find unbiased and asymptotically normal estimates $\hat{\beta}_{OLS} = (X^{\top}X) X^{\top}Y$
+for the regression coefficients $\beta$ without the requirement of regularly spaced data points or uncorrelated errors
+$E_{t_i}$ (\citeauthor{white_asymptotic_2001}).
+In the case of uncorrelated errors $E_{t_i}$ with constant variance $\sigma^2$ we have
 $Var(\mathbf{E}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\Psi = Var(\hat{\beta}_{OLS})$ is given by:
 \begin{gather*}
 \hat{\Psi} = \hat{\sigma}^2(X^{\top}X) \\
@@ -50,12 +52,13 @@ $Var(\mathbf{E}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\
 \end{gather*}
 
 However, the assumption of uncorrelated errors $E_{t_i}$ is generally violated in the case of time series data and the
-estimated covariance matrix $\hat{\Psi}$ is biased and $\hat{\beta}_{OLS}$ is no longer efficient.
+estimated covariance matrix $\hat{\Psi}$ is biased (\citeauthor{brockwell_introduction_2016}).
 
-\citeauthor{brockwell_introduction_2016}
 
 
 \section{Generalized Least Squares}
+
+The argument in this section is based on the textboock from \citeauthor{brockwell_introduction_2016}.
 
 If the covariance matrix of the errors $Var(\mathbf{E}) = \Sigma$ is known,
 we can use generalized least squares to obtain a unbiased, consistent and efficient coefficient estimate:
@@ -71,8 +74,6 @@ Both methods assume an ARMA(p,q) process for $E(t)$ and equispaced time points. 
     \Phi(B)E_t = \Theta(B)W_t, \text{where $W_t \sim WN(0, \sigma_w^2)$ and $t = 1, 2 \dots n$}
 \end{gather*}
 
-\citeauthor{brockwell_introduction_2016}
-
 
 \subsection{Maximum-Likelihood estimation}
 
@@ -86,15 +87,15 @@ maximizing the Gaussian likelihood:
 
 Where the covariance matrix $\Sigma_n(\theta, \phi, \sigma_w^2)$ is parametrized by the ARMA coefficients $\theta, \phi, \sigma_w^2$,
 based on the order of the ARMA processed assumed for $\{E_t\}$.
-\citeauthor{brockwell_introduction_2016}
 
-Assuming an ARMA(2,3) process for $\{E_t\}$ we can implement this approach in R using the nlme library:
+
+Assuming an ARMA(2,3) process for $\{E_t\}$ we can implement this approach in R using the nlme library (\citeauthor{box_time_1994})
+:
 \begin{verbatim}
     library(nlme)
     cs <- corARMA(from = ~t, p=2, q=3)
     fit.gls <- gls(y ~ t + cos(2 * pi * f * t) + sin(2 * pi * f * t), corr=cs)
 \end{verbatim}
-\citeauthor{box_time_1994}
 
 
 \subsection{Sandwich estimation}
