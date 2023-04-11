@@ -1,0 +1,27 @@
+%! Author = gianna
+%! Date = 04.04.23
+
+\section{Regression with Correlated Errors}
+The BP time series will not be stationary but we assume it to be of the general form:
+
+\[ Y_t= m_t + s_t + X_t \]
+
+Where $Y_t$ is the BP time series value at time $t$, $m_t$ is a deterministic trend component,
+$s_t$ a detrministice seasonal component and $\{X_t\}$ a zero mean stationary process.
+
+
+
+Our aim is to estimate and extract the deterministic components $m_t$ and $s_t$ in the
+hope that the residual $X_t$ will turn out to be a stationary time series.
+We can then use the theory of such stationary time series processes to find a probabilistic model
+for the process $X_t$ and to use it in conjunction with $m_t$ and $s_t$ for predcition of ${Y_t}$.
+
+
+A starting point for decomposing the time series into seasonal, trend and some remainder compoenent is to use a linear
+regression model of the following form
+
+\[ Y_t = \beta_0 + \beta_1 * t + ) \]
+
+seasonal trends can be modeled with a cosine curves
+
+\section{}

@@ -1,0 +1,72 @@
+%! Author = gianna
+%! Date = 05.04.23
+\chapter{Introduction}\label{ch:introduction}
+
+
+\section{Thesis Objective}\label{sec:thesis-objective}
+
+The thesis aims at giving an overview of time series analysis methods for irregularly sampled data.
+
+The standard time series analysis methods usually assume discrete equispaced time and introductory textbooks on
+time series analysis either completely omit the irregularly spaced case or they only dedicate
+a very small section to continuous time models or to state-space models
+with missing observations \citeauthor{brockwell_time_1991}, \citeauthor{brockwell_introduction_2016},
+\citeauthor{cryer_time_2008}, \citeauthor{chatfield_analysis_2003}.
+
+I will thereafter present the most important concepts and what I have identified to be the basic methods for
+the analysis of irregularly spaced time series.
+
+The topic is motivated by a "real world" problem from medicine.
+%
+%Motivated by a "real world" problem from medicine, I have tried to identify the most important concepts and basic
+%methods for the analysis of irregularly space time series, which I will be presented in this thesis.
+The problem at hand is the one of extracting time series characteristics from a dataset
+featuring blood pressure (BP) measurements sampled at irregularly spaced time points.
+High BP is known to be a risk factor for cardiovascular disease.
+A person’s BP level is generally summarized using the average BP value over available measurements within a given time range.
+A novel monitoring device already allows to collect BP estimates round the clock.
+The device is collecting photoplethysmography (PPG) signals and converting them into BP measurements.
+Typically, the system will yield approximately 1.5 BP measurements per hour, but depending on the quality of the PPG signal and some additional external factors,
+this sampling frequency can widely vary and the expected range lies roughly between 0 and 5 measurements per hour.
+Having good estimates of the true BP values at any, potentially not observed, time would allow for a better estimation
+of the person’s cardiovascular risk, and enable the development of novel valuable metrics.
+The thesis will focus on a set of time series characteristics, which have been considered most relevant for estimating
+the person’s cardiovascular risk.
+The characteristics of interest are.
+\begin{itemize}
+    \item the mean function of the BP time series
+    \item the one-week mean BP value
+    \item any "long-term" trends
+    \item characteristics of the circadian cycle, such as the mean day and night BP
+\end{itemize}
+Besides the point estimates also their CI are of interest.
+Importantly, the CI should be able to capture the epistemic uncertainty, i.e. the uncertainty due to the lack of data.
+This means the width of the CI intervals around the mean function will not be constant but depend on how much
+data is available in the proximity of the point of prediction.
+The described endpoints are all based on prediction at the not observed passed time points however not on forcasting at new time points in
+the future.
+Hence, the thesis will only focus on the task of reconstructing BP values between the first and last time point in the dataset.
+
+This "real world" problem will serve as a running example throughout the Thesis.
+Although the topic is motivated by a real dataset we will restrict ourselves to simulated data,
+which will mimic the most important characteristics of BP time series data.
+
+
+\section{Thesis Outline}
+
+This happens here and that happens there
+
+
+
+
+
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "MasterThesisSfS"
+%%% End: 
