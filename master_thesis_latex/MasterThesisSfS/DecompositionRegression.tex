@@ -31,7 +31,7 @@ Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) +
 \end{gather*}
 
 If we assume observations $Y_{t_i}$ at potentially unequally spaced
-time points $t_i \in T_0$ with $T_0=\{t_1, t_2 \dots t_n\}$, we can write in matrix notation:
+time points $t_i \in T_0$ with $T_0=\{t_1, t_2 \dots t_n\}$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
 \begin{gather*}
 \mathbf{Y} = X \beta + \mathbf{E}
 \end{gather*}
@@ -53,7 +53,7 @@ $Var(\mathbf{E}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\
 \end{gather*}
 
 However, the assumption of uncorrelated errors $E_{t_i}$ is generally violated if $\mathbf{E}$ is a time series and the
-estimated covariance matrix $\hat{\Psi}$ is biased (\citeauthor{brockwell_introduction_2016}).
+estimated covariance matrix $\hat{\Psi}$ is thus biased (\citeauthor{brockwell_introduction_2016}).
 
 \section{Regression with Correlated Errors}
 
@@ -65,7 +65,7 @@ with unbiased and consistent covariance matrix estimate:
 \[Var(\hat{\beta}_{GLS}) = (X^{\top} \Sigma^{-1} X)^{-1}\]
 
 If $\Sigma$ is unknown one can exploit the knowledge we have about the stationary time series process $\mathbf{E}$ to estimate it.
-Two approaches to estimate $\Sigma$, $\hat \beta $ and its covariance matrix will be presented in the following subsections.
+In the following subsections will present two approaches to estimate $\Sigma$, $\hat \beta $ and its covariance matrix.
 Both methods assume an ARMA(p,q) process for $\mathbf{E}$ and equispaced time points,
 hence $\mathbf{E} = (E_t: t \in T_0)$ with $T_0 = \{1, 2, \dots  n \}$ and:
 
@@ -84,9 +84,8 @@ maximizing the Gaussian likelihood:
     (\mathbf{Y}-X\beta)^{\top} \Sigma_n^{-1}(\mathbf{Y}-X\beta))
 \end{gather*}
 
-Where the covariance matrix $\Sigma_n(\theta, \phi, \sigma_w^2)$ is parametrized by the ARMA coefficients $\theta, \phi, \sigma_w^2$,
-based on the order of the ARMA processed assumed for $(E_t)$.
-
+Where the covariance matrix $\Sigma_n(\theta, \phi, \sigma_w^2)$ is parametrized by the coefficients $\theta, \phi, \sigma_w^2$, which
+define the ARMA process assumed for $(E_t)$.
 
 Assuming an ARMA(2,3) process for $(E_t)$ we can implement this approach in R using the nlme library (\citeauthor{box_time_1994})
 :
@@ -98,7 +97,7 @@ Assuming an ARMA(2,3) process for $(E_t)$ we can implement this approach in R us
 
 
 \subsection{Sandwich Estimation}
-The second approach to fit an OLS regression first and correct the estimated covariance matrix $\Psi$ with a
+The second approach to fit an OLS regression first and correct the estimated covariance matrix of the regression coefficients $\Psi$ with a
 sandwich estimator.
 In the presence of autocorrelation one usually estimates $\Phi = \frac{1}{n} X^{\top} \Sigma X$,
 the covariance matrix of the score functions
@@ -114,10 +113,11 @@ The general form of the estimators for $\Phi$ is:
 \begin{gather*}
 \hat{\Phi} = \frac{1}{n} \sum_{i,j=1}^{n} w_{|i-j|}\hat{V_i}\hat{V_j}^{\top}
 \end{gather*}
+
 where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector.
 
-$\Phi$ can then be plugged into the equation \ref{eq:sandwich} to obtain a
-heteroskedasticity and autocorrelation consistent (HAC) covariance estimate $\hat{\Psi}_{HAC}$
+Plugging $\hat{\Phi}$ into the equation \ref{eq:sandwich} one obtains the
+heteroskedasticity and autocorrelation consistent (HAC) covariance estimate $\hat{\Psi}_{HAC}$.
 
 \citeauthor{newey_automatic_1994}, \citeauthor{andrews_heteroskedasticity_1991} and others have suggested different approaches
 for calculating the weights $w$. They all yield decreasing weights with increasing lag $l=|i-j|$.
