@@ -30,8 +30,8 @@ Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) +
 \text{where $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$}
 \end{gather*}
 
-If we assume observations $Y_{t_i}$ at potentially unequally spaced
-time points $t_i \in T_0$ with $T_0=\{t_1, t_2 \dots t_n\}$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
+If we assume to observe the BP time series at potentially unequally spaced
+time points $t_1, t_2 \dots t_n$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
 \begin{gather*}
 \mathbf{Y} = X \beta + \mathbf{E}
 \end{gather*}
@@ -43,21 +43,22 @@ and $\mathbf{E} = [E_{t_1}, \dots E_{t_n}]^{\top}$ the zero-mean stationary time
 which we will call errors.
 
 We can use ordinary least squares to find unbiased and asymptotically normal estimates $\hat{\beta}_{OLS} = (X^{\top}X) X^{\top}Y$
-for the regression coefficients $\beta$ without the requirement of regularly spaced data points or uncorrelated errors
-$E_{t_i}$ (\citeauthor{white_asymptotic_2001}).
-In the case of uncorrelated errors $E_{t_i}$ with constant variance $\sigma^2$ we have
+for the regression coefficients $\beta$, without the requirement of regularly spaced data points or uncorrelated errors
+$E_{t_1}, \dots, E_{t_n}$ (\citeauthor{white_asymptotic_2001}).
+In the case of uncorrelated errors with constant variance $\sigma^2$ we have
 $Var(\mathbf{E}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\Psi = Var(\hat{\beta}_{OLS})$ is given by:
 \begin{gather*}
 \hat{\Psi} = \hat{\sigma}^2(X^{\top}X) \\
     \text{where $\hat{\sigma}^2=\frac{1}{n-p} \sum_{i = 1}^{n} (y_{t_i} - x_{t_i}^{\top} \hat{\beta}_{OLS})$ and $p=4$ in our example}
 \end{gather*}
 
-However, the assumption of uncorrelated errors $E_{t_i}$ is generally violated if $\mathbf{E}$ is a time series and the
-estimated covariance matrix $\hat{\Psi}$ is thus biased (\citeauthor{brockwell_introduction_2016}).
+Since $\mathbf{E}$ is a time series, the assumption of uncorrelated errors is usually violated and the
+covariance matrix $\hat{\Psi}$ is thus no longer unbiased (\citeauthor{brockwell_introduction_2016}).
 
 \section{Regression with Correlated Errors}
 
 The argument presented in this section is based on the textbook of \citeauthor{brockwell_introduction_2016}.
+
 If the covariance matrix of the errors $Var(\mathbf{E}) = \Sigma$ is known,
 we can use generalized least squares to obtain a unbiased, consistent and efficient coefficient estimate:
 \[\hat{\beta}_{GLS} = (X^{\top} \Sigma^{-1} X) X^{\top} \Sigma^{-1} Y\]
@@ -67,14 +68,14 @@ with unbiased and consistent covariance matrix estimate:
 If $\Sigma$ is unknown one can exploit the knowledge we have about the stationary time series process $\mathbf{E}$ to estimate it.
 In the following subsections will present two approaches to estimate $\Sigma$, $\hat \beta $ and its covariance matrix.
 Both methods assume an ARMA(p,q) process for $\mathbf{E}$ and equispaced time points,
-hence $\mathbf{E} = (E_t: t \in T_0)$ with $T_0 = \{1, 2, \dots  n \}$ and:
+hence $\mathbf{E} = (E_t: t \in \{1, 2, \dots  n \})$ and:
 
 \begin{gather*}
     \Phi(B)E_t = \Theta(B)W_t, \text{where $W_t \sim WN(0, \sigma_w^2)$}
 \end{gather*}
 
 
-\subsection{Maximum-Likelihood Estimation}
+\subsection{Maximum-Likelihood Estimation}\label{subsec:maximum-likelihood-estimation}
 
 If we additionally assume $W_t \sim N(0, \sigma_w^2)$, we can simultaneously estimate the regression coefficients and $\Sigma$ by
 maximizing the Gaussian likelihood:
@@ -85,9 +86,8 @@ maximizing the Gaussian likelihood:
 \end{gather*}
 
 Where the covariance matrix $\Sigma_n(\theta, \phi, \sigma_w^2)$ is parametrized by the coefficients $\theta, \phi, \sigma_w^2$, which
-define the ARMA process assumed for $(E_t)$.
-
-Assuming an ARMA(2,3) process for $(E_t)$ we can implement this approach in R using the nlme library (\citeauthor{box_time_1994})
+define the ARMA process assumed for $(E_t: t \in \{1, 2, \dots  n \})$.
+Assuming an ARMA(2,3) process we can implement this approach in R using the nlme library (\citeauthor{box_time_1994})
 :
 \begin{verbatim}
     library(nlme)
@@ -110,9 +110,9 @@ $V_i(\beta) = x_{t_i}(y_{t_i} - x_{t_i}^{\top}\beta)$, which can then be used to
 
 The general form of the estimators for $\Phi$ is:
 
-\begin{gather*}
+\begin{equation}\label{eq:weights}
 \hat{\Phi} = \frac{1}{n} \sum_{i,j=1}^{n} w_{|i-j|}\hat{V_i}\hat{V_j}^{\top}
-\end{gather*}
+\end{equation}
 
 where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector.
 
@@ -130,8 +130,8 @@ for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 Although literature and "ready to use" implementations only seem to exist for the equispaced case,
 both of the approaches described above could probably be extended to the case of irregularly spaced time series.
-For the Maximum-Likelihood approach one would need to adapt the parametrization of the covariance matrix $\Sigma_n$, where
-the covariance at different time points would need to depend on their actual time difference rather than the lag.
-A similar adaption could be done for the sandwich estimator, where the weights would need to depend on the time
-difference rather than on the lag.
+For the Maximum-Likelihood approach the parametrization of the covariance matrix $\Sigma_n$ as described in
+\ref{subsec:maximum-likelihood-estimation} would need to be adapted,
+such that the covariance of the errors at different time points depends on the actual time difference rather than the lag.
+Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the time difference rather than on the lag.
 

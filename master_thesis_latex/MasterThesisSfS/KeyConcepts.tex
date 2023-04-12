@@ -4,22 +4,23 @@
 
 \chapter{Characteristics of Time Series}
 
-A \textbf{time series} $(x_t)$ is a collection of observations $x_t$ ,
-each one being recorded at a specific time $t \in T_0$.
-$T_0$ is the set of times at which observations are made.
+A \textbf{time series} $(x_t: t \in T_0t)$ is a collection of observations $x_t$ ,
+each one being recorded at a specific time $t$. $T_0$ is the set of times at which observations are made.
 In case of discrete time series $T_0$ is a discrete set, e.g. for the equispaced case $T_0 = \{1, 2, \dots T\}$ and
 for the unequally spaced case $T_0 = \{t_1, t_2, \dots t_n\}$ with $t_1 < t_2 < \dots t_n$.
-For continuous time series $T_0$ is an interval, e.g. $T_0 = [1, T]$.
+For continuous time series $T_0$ is an interval, e.g. $T_0 = (0, T]$.
 
-A \textbf{time series model} for the observed data $(x_t)$ is specified by the collection of random variables
-$(X_t)$ of which $(x_t)$ is thought to be a realization.
+A \textbf{time series model} for the observed data $(x_t: t \in T_0)$ is specified by the collection of random variables
+$(X_t: t \in T_0)$ of which $(x_t: t \in T_0)$ is thought to be a realization.
 Alternatively the time series model can also be considered a random function $f: T_0 \to \mathbb{R}$.
 
 Throughout the thesis the term time series is used both refer to the data and the process from which it is generated.
 
-%a specification of the joint
-%distributions (or possibly only the means and covariances) of a sequence of random
-%variables ${X_t}$ of which ${x_t}$ is postulated to be a realization.
+\citeauthor{brockwell_introduction_2016}
+
+
+# TODO Notation should be adapted/extended to unequally spaced case.
+
 
 \textbf{mean function}
 
