@@ -2,7 +2,7 @@
 %! Date = 06.04.23
 
 
-\chapter{Time Series Decomposition and Linear Regression}\label{ch:time-series-decomposition-and-regression}
+\chapter{Time Series Decomposition and Regression}\label{ch:time-series-decomposition-and-regression}
 
 %Many authors use the word trend only for a slowly changing mean func-
 %tion, such as a linear time trend, and use the term seasonal component for a mean func-
@@ -15,15 +15,15 @@ One can try to decompose the time series $Y(t)$ into a deterministic component, 
 and a zero mean stationary process $E(t)$:
 \[ Y(t)= \mu(t) + E(t) \]
 
-This decomposition allows to extract a stationary residual $E(t)$, for which we can find a probabilistic model
+This decomposition allows to extract a stationary component $E(t)$, for which we can find a probabilistic model
 using the theory of such stationary time series processes. The idea is to then use this model in combination
 with $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ at some time $t^{\ast}$.
 
 The task of time series decomposition is hence to estimate $\mu(t)$, which might be an arbitrary function of $t$, from the data.
 Given our knowledge of the BP time series we will start with a simple linear model that
 features a linear trend and a seasonal component with known frequency $f$.
-If the seasonal component is represented by a cosine $\alpha \cos(2 \pi f t - \phi)$ with phase shift $\phi$ we obtain the
-following liner model for the BP time series $Y(t)$
+If the seasonal component is represented by a cosine $\alpha \cos(2 \pi f t - \phi)$ with phase shift $\phi$ we get the
+following linear model for the BP time series $Y(t)$
 
 \begin{gather*}
 Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + E(t), \\
@@ -132,7 +132,7 @@ for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 \subsection{Extension to Irregularly Spaced Time Series}
 
-Although literature and "ready to use" implementations only seem to exist for the equispaced case,
+Although literature and "ready to use" implementations only exist for the equispaced case,
 both of the approaches described above could probably be extended to the case of irregularly spaced time series.
 For the Maximum-Likelihood approach the parametrization of the covariance matrix $\Sigma_n$ as described in
 \ref{subsec:maximum-likelihood-estimation} would need to be adapted,
@@ -140,7 +140,19 @@ such that the covariance of the errors at different time points depends on the a
 Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the absolute time difference rather than on the lag.
 
 
-\subsection{Prediction and Epistemic Uncertainty}
+\subsection{Confidence Intervals for the mean function}
+
+Having identified the mean function $\mu(t) = x_{t}^{\top} \beta$ with
+$x_{t} = [1, t, \cos(2 \pi f t), \sin(2 \pi f t)]^{\top}$ in our example, we also want to derive its
+confidence intervals.
+
+
+
+
+
+
+
+
 
 
 
