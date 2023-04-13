@@ -1,4 +1,4 @@
-\usepackage{amsfonts}%! Author = gianna
+%! Author = gianna
 %! Date = 06.04.23
 
 
@@ -30,7 +30,7 @@ Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) +
 \text{where based on the trigonometric angle sum identity we know: $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$}
 \end{gather*}
 
-where based on the trigonometric angle sum identity we know that $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$
+Based on the trigonometric angle sum identities we know that $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$
 
 If we assume to observe the BP time series at potentially unequally spaced
 time points $t_1, t_2 \dots t_n$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
@@ -102,7 +102,7 @@ Assuming an ARMA(2,3) process we can implement this approach in R using the nlme
 The second approach to fit an OLS regression first and correct the estimated covariance matrix of the regression coefficients $\Psi$ with a
 sandwich estimator.
 In the presence of autocorrelation one usually estimates $\Phi = \frac{1}{n} X^{\top} \Sigma X$,
-the covariance matrix of the score functions
+the covariance matrix of the estimating functions
 $V_i(\beta) = x_{t_i}(y_{t_i} - x_{t_i}^{\top}\beta)$, which can then be used to derive $\Psi$:
 
 \begin{equation}\label{eq:sandwich}
