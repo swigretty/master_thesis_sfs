@@ -1,8 +1,8 @@
-%! Author = gianna
+\usepackage{amsfonts}%! Author = gianna
 %! Date = 06.04.23
 
 
-\chapter{Time Series Decomposition and Regression}\label{ch:time-series-decomposition-and-regression}
+\chapter{Time Series Decomposition and Linear Regression}\label{ch:time-series-decomposition-and-regression}
 
 %Many authors use the word trend only for a slowly changing mean func-
 %tion, such as a linear time trend, and use the term seasonal component for a mean func-
@@ -22,13 +22,15 @@ with $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ at some time $t
 The task of time series decomposition is hence to estimate $\mu(t)$, which might be an arbitrary function of $t$, from the data.
 Given our knowledge of the BP time series we will start with a simple linear model that
 features a linear trend and a seasonal component with known frequency $f$.
-If the seasonal component is represented by a cosine $\alpha \cos(2 \pi f t - \phi)$ we obtain the
+If the seasonal component is represented by a cosine $\alpha \cos(2 \pi f t - \phi)$ with phase shift $\phi$ we obtain the
 following liner model for the BP time series $Y(t)$
 
 \begin{gather*}
 Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + E(t), \\
-\text{where $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$}
+\text{where based on the trigonometric angle sum identity we know: $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$}
 \end{gather*}
+
+where based on the trigonometric angle sum identity we know that $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$
 
 If we assume to observe the BP time series at potentially unequally spaced
 time points $t_1, t_2 \dots t_n$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
@@ -37,7 +39,7 @@ time points $t_1, t_2 \dots t_n$ and $t_1 < t_2 < \dots t_n$, we can write in ma
 \end{gather*}
 
 Where $\mathbf{Y} = [Y_{t_1}, \dots Y_{t_n}]^{\top}$ is the observed time series,
-$X = [x_{t_1}, \dots x_{t_n}]^{\top}$ is the design matrix with i-th row
+$X = [x_{t_1}, \dots x_{t_n}]^{\top} \in \mathbb{R}^{nx4}$ is the design matrix with i-th row
 $x_{t_i} = [1, t_i, \cos(2 \pi f t_i), \sin(2 \pi f t_i)]^{\top}$
 and $\mathbf{E} = [E_{t_1}, \dots E_{t_n}]^{\top}$ the zero-mean stationary time series,
 which we will call errors.
@@ -61,7 +63,7 @@ The argument presented in this section is based on the textbook of \citeauthor{b
 
 If the covariance matrix of the errors $Var(\mathbf{E}) = \Sigma$ is known,
 we can use generalized least squares to obtain a unbiased, consistent and efficient coefficient estimate:
-\[\hat{\beta}_{GLS} = (X^{\top} \Sigma^{-1} X) X^{\top} \Sigma^{-1} Y\]
+\[\hat{\beta}_{GLS} = (X^{\top} \Sigma^{-1} X)^{-1} X^{\top} \Sigma^{-1} Y\]
 with unbiased and consistent covariance matrix estimate:
 \[Var(\hat{\beta}_{GLS}) = (X^{\top} \Sigma^{-1} X)^{-1}\]
 
@@ -114,7 +116,7 @@ The general form of the estimators for $\Phi$ is:
 \hat{\Phi} = \frac{1}{n} \sum_{i,j=1}^{n} w_{|i-j|}\hat{V_i}\hat{V_j}^{\top}
 \end{equation}
 
-where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector.
+where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector and $\hat{V_i} = V_i(\hat{\beta}_{OLS})$.
 
 Plugging $\hat{\Phi}$ into the equation \ref{eq:sandwich} one obtains the
 heteroskedasticity and autocorrelation consistent (HAC) covariance estimate $\hat{\Psi}_{HAC}$.
@@ -126,12 +128,22 @@ An introduction to the sandwich package and how it can be used
 for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 
+\section{Conclusion}
+
 \subsection{Extension to Irregularly Spaced Time Series}
 
 Although literature and "ready to use" implementations only seem to exist for the equispaced case,
 both of the approaches described above could probably be extended to the case of irregularly spaced time series.
 For the Maximum-Likelihood approach the parametrization of the covariance matrix $\Sigma_n$ as described in
 \ref{subsec:maximum-likelihood-estimation} would need to be adapted,
-such that the covariance of the errors at different time points depends on the actual time difference rather than the lag.
-Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the time difference rather than on the lag.
+such that the covariance of the errors at different time points depends on the absolute time difference rather than the lag.
+Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the absolute time difference rather than on the lag.
+
+
+\subsection{Prediction and Epistemic Uncertainty}
+
+
+
+
+
 
