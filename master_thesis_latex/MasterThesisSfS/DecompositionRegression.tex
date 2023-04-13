@@ -8,7 +8,6 @@
 %tion, such as a linear time trend, and use the term seasonal component for a mean func-
 %tion that varies cyclically.
 
-\section{Introduction}
 
 As most time series, the mean function of the BP time series is not constant in time and hence it is not stationary.
 One can try to decompose the time series $Y(t)$ into a deterministic component, the mean function $\mu(t)$
@@ -17,22 +16,22 @@ and a zero mean stationary process $E(t)$:
 
 This decomposition allows to extract a stationary component $E(t)$, for which we can find a probabilistic model
 using the theory of such stationary time series processes. The idea is to then use this model in combination
-with $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ at some time $t^{\ast}$.
+with an estimate of $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ at some time $t^{\ast}$.
 
 The task of time series decomposition is hence to estimate $\mu(t)$, which might be an arbitrary function of $t$, from the data.
-Given our knowledge of the BP time series we will start with a simple linear model that
-features a linear trend and a seasonal component with known frequency $f$.
-If the seasonal component is represented by a cosine $\alpha \cos(2 \pi f t - \phi)$ with phase shift $\phi$ we get the
-following linear model for the BP time series $Y(t)$
 
+\section{Linear Regression}\label{sec:linear-regression}
+Based on the knowledge we have about the system we might restrict ourselves to a family of function for $\mu(t)$.
+An obvious choice for the BP time series is the family of functions featuring a linear trend
+with an additive seasonal component.
+If the seasonal component is represented by a cosine of the form $\alpha \cos(2 \pi f t - \phi)$ with phase shift $\phi$
+and known frequency $f$, we get the following model for the BP time series $Y(t)$:
 \begin{gather*}
 Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + E(t), \\
-\text{where based on the trigonometric angle sum identity we know: $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$}
 \end{gather*}
+where based on the trigonometric angle sum identities we know that $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$.
 
-Based on the trigonometric angle sum identities we know that $\beta_2 = \alpha \cos(\phi)$ and $\beta_3 = \alpha \sin(\phi)$
-
-If we assume to observe the BP time series at potentially unequally spaced
+If we assume BP observations at potentially unequally spaced
 time points $t_1, t_2 \dots t_n$ and $t_1 < t_2 < \dots t_n$, we can write in matrix notation:
 \begin{gather*}
 \mathbf{Y} = X \beta + \mathbf{E}
@@ -68,7 +67,7 @@ with unbiased and consistent covariance matrix estimate:
 \[Var(\hat{\beta}_{GLS}) = (X^{\top} \Sigma^{-1} X)^{-1}\]
 
 If $\Sigma$ is unknown one can exploit the knowledge we have about the stationary time series process $\mathbf{E}$ to estimate it.
-In the following subsections will present two approaches to estimate $\Sigma$, $\hat \beta $ and its covariance matrix.
+In the following subsections will present two approaches to estimate $\Sigma$, $\beta $ and its covariance matrix.
 Both methods assume an ARMA(p,q) process for $\mathbf{E}$ and equispaced time points,
 hence $\mathbf{E} = (E_t: t \in \{1, 2, \dots  n \})$ and:
 
@@ -102,7 +101,7 @@ Assuming an ARMA(2,3) process we can implement this approach in R using the nlme
 The second approach to fit an OLS regression first and correct the estimated covariance matrix of the regression coefficients $\Psi$ with a
 sandwich estimator.
 In the presence of autocorrelation one usually estimates $\Phi = \frac{1}{n} X^{\top} \Sigma X$,
-the covariance matrix of the estimating functions
+the covariance matrix of the scores or estimating functions
 $V_i(\beta) = x_{t_i}(y_{t_i} - x_{t_i}^{\top}\beta)$, which can then be used to derive $\Psi$:
 
 \begin{equation}\label{eq:sandwich}
@@ -121,6 +120,9 @@ where $w=[w_0, \dots w_{n-1}]^{\top}$ is a weight vector and $\hat{V_i} = V_i(\h
 Plugging $\hat{\Phi}$ into the equation \ref{eq:sandwich} one obtains the
 heteroskedasticity and autocorrelation consistent (HAC) covariance estimate $\hat{\Psi}_{HAC}$.
 
+%By formulating the problem as one of estimating $\Phi$ as a function of the scores $V_i$
+
+
 \citeauthor{newey_automatic_1994}, \citeauthor{andrews_heteroskedasticity_1991} and others have suggested different approaches
 for calculating the weights $w$. They all yield decreasing weights with increasing lag $l=|i-j|$.
 The R sandwich package implements some of these methods to estimate $\hat{\Psi}_{HAC}$.
@@ -128,34 +130,37 @@ An introduction to the sandwich package and how it can be used
 for inference is described by \citeauthor{zeileis_econometric_2004}.
 
 
-\section{Conclusion}
-
 \subsection{Extension to Irregularly Spaced Time Series}
 
 Although literature and "ready to use" implementations only exist for the equispaced case,
 both of the approaches described above could probably be extended to the case of irregularly spaced time series.
 For the Maximum-Likelihood approach the parametrization of the covariance matrix $\Sigma_n$ as described in
 \ref{subsec:maximum-likelihood-estimation} would need to be adapted,
-such that the covariance of the errors at different time points depends on the absolute time difference rather than the lag.
-Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the absolute time difference rather than on the lag.
+such that the covariance of the errors at different time points depends on the actual time difference rather than the lag.
+Similarly for the sandwich estimator, the weights in \ref{eq:weights} should depend on the time difference rather than on the lag.
 
 
-\subsection{Confidence Intervals for the mean function}
+\subsection{Confidence Intervals for the Mean Function}
+The objective, as described in the introduction, is not only to estimate the mean function $\mu(t)$ of the time BP
+time series but also to find confidence intervals for it.
+The model for the BP time series described in \ref{sec:linear-regression} has the following mean function:
+\begin{gather*}
+    \mu(t) = x_{t}^{\top} \beta \\
+    \text{with $x_{t} = [1, t, \cos(2 \pi f t), \sin(2 \pi f t)]^{\top}$}
+\end{gather*}
 
-Having identified the mean function $\mu(t) = x_{t}^{\top} \beta$ with
-$x_{t} = [1, t, \cos(2 \pi f t), \sin(2 \pi f t)]^{\top}$ in our example, we also want to derive its
-confidence intervals.
+Hence, we may also write $\mu(x_t)$ and its $1-\alpha$ confidence interval is:
+\begin{gather*}
+    x_{t}^{\top} \hat{\beta} \pm qt_{n-p}(1-\frac{\alpha}{2})  \sqrt{x_t^{\top} \Psi x_t}
+\end{gather*}
 
+where $\Psi = Var(\hat{\beta})$ is the covariance matrix of the estimated regression coefficients
+and $qt_{n-p}(1-\frac{\alpha}{2})$ denotes the $1-\frac{\alpha}{2}$ quantile of the student's t-distribution of
+$n-p$ degrees of freedom.
 
-
-
-
-
-
-
-
-
-
-
+As the CI for $\mu(t)$ is based on the variance of the estimated global model parameters $\Psi$,
+it cannot adapt to the local observation density.
+Even if we were able to derive realistic confidence interval for the mean function of the irregularly spaced
+time series, the uncertainty due to the lack of data in the proximity of a time point can still not be reflected.
 
 
