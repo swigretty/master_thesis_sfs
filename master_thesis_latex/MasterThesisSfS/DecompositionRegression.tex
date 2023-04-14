@@ -11,14 +11,15 @@
 
 As most time series, the mean function of the BP time series is not constant in time and hence it is not stationary.
 One can try to decompose the time series $Y(t)$ into a deterministic component, the mean function $\mu(t)$
-and a zero mean stationary process $E(t)$:
+and a zero mean stationary process $E(t)$. This can be expressed in the form of a regression problem:
+
 \[ Y(t)= \mu(t) + E(t) \]
 
-This decomposition allows to extract a stationary component $E(t)$, for which we can find a probabilistic model
+The decomposition allows to extract a stationary component $E(t)$, for which we can find a probabilistic model
 using the theory of such stationary time series processes. The idea is to then use this model in combination
 with an estimate of $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ at some time $t^{\ast}$.
-
-The task of time series decomposition is hence to estimate $\mu(t)$, which might be an arbitrary function of $t$, from the data.
+Hence time series decomposition comes for free in regression analysis and we start with estimation of
+the deterministic component $\mu(t)$ which might be an arbitrary function of $t$.
 
 \section{Linear Regression}\label{sec:linear-regression}
 Based on the knowledge we have about the system we might restrict ourselves to a family of function for $\mu(t)$.
