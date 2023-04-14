@@ -50,7 +50,7 @@ $E_{t_1}, \dots, E_{t_n}$ (\citeauthor{white_asymptotic_2001}).
 In the case of uncorrelated errors with constant variance $\sigma^2$ we have
 $Var(\mathbf{E}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\Psi = Var(\hat{\beta}_{OLS})$ is given by:
 \begin{gather*}
-\hat{\Psi} = \hat{\sigma}^2(X^{\top}X) \\
+\hat{\Psi} = \hat{\sigma}^2(X^{\top}X)^{-1} \\
     \text{where $\hat{\sigma}^2=\frac{1}{n-p} \sum_{i = 1}^{n} (y_{t_i} - x_{t_i}^{\top} \hat{\beta}_{OLS})$ and $p=4$ in our example}
 \end{gather*}
 

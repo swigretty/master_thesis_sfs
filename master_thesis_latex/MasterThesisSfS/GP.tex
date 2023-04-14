@@ -1,0 +1,36 @@
+\usepackage{amsfonts}
+\usepackage{amsmath}\chapter{Gaussian Process}
+
+Normal distribution over functions, i.e. an infinite set of random
+variables $(F_t: t \in T_0$ with $\mathbb{T_0}=[0, T]$.
+The set of random variable is completely defined by the
+mean function $\mu: \mathbb{T_0} \to \mathbb{R}$ and the covariance or kernel
+function $k: \mathbb{T_0} \times \mathbb{T_0} \to \mathbb{R}$.
+For each $t \in \mathbb{T_0}$ there is a $F_t$ such that
+$A \subset \mathbb{T_0}, A={t_0, \dots t_n}$
+it olds that
+\[F_A = [F_{t_0}, \dots F_{t_n}] \sim \mathcal{N}(\mu_A,\,K_{AA})\]
+for
+\begin{gather*}
+    K_{AA} =
+    \begin{bmatrix}
+        k(t_1, t_1) & k(t_1, t_2) & \dots & k(t_1, t_n)\\
+        \vdots  &  & \vdots  & \vdots \\
+        k(t_n, t_1)  & k(t_n, t_1) & \dots  & k(t_n, t_n)
+    \end{bmatrix} \text{and }
+    \mu_A =
+    \begin{bmatrix}
+        \mu(t_1) \\
+        \vdots \\
+        \mu(t_n)
+    \end{bmatrix}
+\end{gather*}
+where $\mu$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
+about correlation of the resoponse variable at different time points.
+
+The finite marginals $F_{t_1}, \dots, F_{t_n}$ of GP are multivariate Gaussians.
+
+Parametrized by covariance function $k(x,x') = COV(f(x), f(x'))$
+
+
+
