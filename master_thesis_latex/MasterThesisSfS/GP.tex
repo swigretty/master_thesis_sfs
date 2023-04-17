@@ -1,15 +1,15 @@
-\usepackage{amsfonts}
-\usepackage{amsmath}\chapter{Gaussian Process}
+
+\chapter{Gaussian Process}
 
 Normal distribution over functions, i.e. an infinite set of random
-variables $(F_t: t \in T_0$ with $\mathbb{T_0}=[0, T]$.
+variables $(F_t: t \in T_0$ with $T_0=[0, T]$.
 The set of random variable is completely defined by the
-mean function $\mu: \mathbb{T_0} \to \mathbb{R}$ and the covariance or kernel
-function $k: \mathbb{T_0} \times \mathbb{T_0} \to \mathbb{R}$.
-For each $t \in \mathbb{T_0}$ there is a $F_t$ such that
-$A \subset \mathbb{T_0}, A={t_0, \dots t_n}$
+mean function $m: T_0 \to \mathbb{R}$ and the covariance or kernel
+function $k: T_0 \times T_0 \to \mathbb{R}$.
+For each $t \in T_0$ there is a $F_t$ such that
+$A \subset T_0, A={t_0, \dots t_n}$
 it olds that
-\[F_A = [F_{t_0}, \dots F_{t_n}] \sim \mathcal{N}(\mu_A,\,K_{AA})\]
+\[F_A = [F_{t_0}, \dots F_{t_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
 for
 \begin{gather*}
     K_{AA} =
@@ -20,13 +20,13 @@ for
     \end{bmatrix} \text{and }
     \mu_A =
     \begin{bmatrix}
-        \mu(t_1) \\
+        m(t_1) \\
         \vdots \\
         \mu(t_n)
     \end{bmatrix}
 \end{gather*}
-where $\mu$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
-about correlation of the resoponse variable at different time points.
+where $m$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
+about correlation of the response variable at different time points.
 
 The finite marginals $F_{t_1}, \dots, F_{t_n}$ of GP are multivariate Gaussians.
 
