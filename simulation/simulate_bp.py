@@ -90,23 +90,29 @@ def linear_trend(t, slope=0, offset=0):
     return offset + (t * slope)
 
 
-def sinus_seasonal(t, period, seas_apl=10):
-    phase_shift = - 0.25 * 2 * np.pi
-    return np.sin((2*np.pi * t * (1/period)) + phase_shift) * seas_apl
+def cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
+    t_rad = 2*np.pi*t * (1/period)
+    bcos = seas_ampl * np.cos(phase)
+    bsin = seas_ampl * np.sin(phase)
+    return bcos * np.cos(t_rad) + bsin * np.sin(t_rad)
 
 
-def evolving_sinus_seasonal(t, period, seas_apl=10):
-
-    n_cycles = t/period
+def evolving_sinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
+    n_cycles = int(len(t)/period)
+    cycles = []
     for c in range(n_cycles):
+        t_mod = t[c * period: (c+1) * period]
+        apl_mod = np.random.normal(seas_ampl, scale=seas_ampl/5)
+        phase_mod = np.random.normal(phase, scale=phase/5)
+        t_rad = 2 * np.pi * t_mod * (1 / period)
+        bcos = apl_mod * np.cos(phase_mod)
+        bsin = apl_mod * np.sin(phase_mod)
+        cycles.append(bcos * np.cos(t_rad) + bsin * np.sin(t_rad))
+    return np.concatenate(cycles)
 
 
-    phase_shift = - 0.25 * 2 * np.pi
-    return np.sin((2*np.pi * t * (1/period)) + phase_shift) * seas_apl
-
-
-def simulate_bp_simple(start_date=None, ndays=7, freq="0.25H", seed=None,
-                       trend_fun=linear_trend, seasonal_fun=sinus_seasonal,
+def simulate_bp_simple(start_date=None, ndays=7, samples_per_hour=10, seed=None,
+                       trend_fun=linear_trend, seasonal_fun=cosinus_seasonal,
                        arma_scale=1,
                        ar1=np.array([1, -0.5]), ma=np.array([1])):
 
@@ -119,7 +125,8 @@ def simulate_bp_simple(start_date=None, ndays=7, freq="0.25H", seed=None,
     if seed:
         np.random.seed(seed)
 
-    period = freq_to_period_bp(freq)  # number of observations per cycle, e.g. if freq="H" and cycle 1day --> period=24
+    period = 24 * samples_per_hour  # number of observations per cycle, e.g. if freq="H" and cycle 1day --> period=24
+    freq = str(1/samples_per_hour) + "H"
     nsample = ndays * period
     dti = pd.date_range(start_date, periods=nsample, freq=freq)
     t = np.arange(0, len(dti), 1)
