@@ -27,21 +27,9 @@ def blr_simple(X, y):
         # Inference!
         # draw 3000 posterior samples using NUTS sampling
         trace = sample(3000, return_inferencedata=True)
-        trace.posterior["y_model"] = sum([trace.posterior["b"+str(i)] * xr.DataArray(X[:, i]) for i in range(X.shape[1])])
-        # prior = pm.sample_prior_predictive(model=model)
-        # posterior_predictive = pm.sample_posterior_predictive(trace, samples=500, model=model)
-        # idata = az.from_pymc3(
-        #     trace=trace,
-        #     posterior_predictive=posterior_predictive
-        # )
+        trace.posterior["y_model"] = sum([trace.posterior["b"+str(i)] * xr.DataArray(X[:, i]) for i in
+                                          range(X.shape[1])])
     return trace
-    # # az.plot_posterior(trace)
-    # fig, ax = plt.subplots(figsize=(7, 7))
-    # az.plot_lm(idata=trace, y="y", num_samples=100, axes=ax, y_model="y_model")
-    # ax.set_title("Posterior predictive regression lines")
-    # ax.set_xlabel("t")
-    # fig.savefig("blr.svg")
-
 
 def plot_blr_output(trace, x, x_true, true_regression_line):
     fig, ax = plt.subplots(figsize=(7, 7))
@@ -50,31 +38,27 @@ def plot_blr_output(trace, x, x_true, true_regression_line):
     ax.set_title("Posterior predictive regression lines")
     ax.set_xlabel("t")
     ax.set_title("Posterior predictive regression lines")
-    fig.savefig("blr.svg")
+    return fig
 
 
-def blr(x, y):
+def blr_corr(X, y):
     with Model() as model:  # model specifications in PyMC3 are wrapped in a with-statement
         # Define priors
 
-        intercept = Normal("Intercept", 0, sigma=20)
-        x_coeff = Normal("x", 0, sigma=20)
+        mu = sum([Normal("b"+str(i), 0, sigma=20) * X[:, i] for i in range(X.shape[1])])
+        sd_dist = pm.HalfCauchy.dist(beta=5)
+        # sd_dist = pm.Exponential.dist(1.0, shape=2)
+        # chol, corr, stds = pm.LKJCholeskyCov(
+        #     "chol", n=len(y), eta=2, sd_dist=sd_dist, compute_corr=True)
+        L_packed = pm.LKJCholeskyCov(
+            "chol", n=len(y), eta=2, sd_dist=sd_dist)
+        L = pm.expand_packed_triangular(len(y), L_packed)
+        likelihood = pm.MvNormal('y', mu=mu, chol=L, observed=y)
+        trace = sample(300, return_inferencedata=True)
+        trace.posterior["y_model"] = sum(
+            [trace.posterior["b" + str(i)] * xr.DataArray(X[:, i]) for i in range(X.shape[1])])
 
-        chol, corr, stds = pm.LKJCholeskyCov(
-            "chol", n=len(y), eta=2.0, sd_dist=pm.Exponential.dist(1.0, shape=2)
-        )
-
-        # Define likelihood
-        mu = intercept + x_coeff * x
-        likelihood = pm.MvNormal('y', mu=mu, chol=chol, observed=y)
-
-        # Inference!
-        # draw 3000 posterior samples using NUTS sampling
-        trace = sample(3000, return_inferencedata=True)
-
-    az.plot_posterior(trace)
-
-    print("bla")
+    return trace
 
 
 if __name__ == "__main__":
@@ -94,6 +78,7 @@ if __name__ == "__main__":
     X_red = X[red_idx, :]
     y_red = y[red_idx]
 
-    idata = blr_simple(X_red, y_red)
+    idata = blr_corr(X_red, y_red)
     true_regression_line = cosinus_seasonal(ts_true.t, ts_true.period, seas_ampl=seas_ampl)
-    plot_blr_output(idata, ts_true.t[red_idx], ts_true.t, true_regression_line)
+    fig = plot_blr_output(idata, ts_true.t[red_idx], ts_true.t, true_regression_line)
+    fig.savefig("blr_corr.svg")
