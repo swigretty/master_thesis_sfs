@@ -1,4 +1,4 @@
-from simulation.simulate_bp import simulate_bp_simple, evolving_cosinus_seasonal, cosinus_seasonal
+from simulation.simulate_bp import simulate_bp_simple, random_cosinus_seasonal, cosinus_seasonal
 from functools import partial
 import pymc3 as pm
 from pymc3 import HalfCauchy, Model, Normal, glm, plot_posterior_predictive_glm, sample
@@ -43,10 +43,9 @@ def blr_simple(X, y):
     # fig.savefig("blr.svg")
 
 
-def plot_blr_output(trace, x, true_regression_line):
+def plot_blr_output(trace, x, x_true, true_regression_line):
     fig, ax = plt.subplots(figsize=(7, 7))
-    ax.plot(x, true_regression_line, label="true regression line", lw=3.0, c="y")
-
+    ax.plot(x_true, true_regression_line, label="true regression line", lw=3.0, c="y")
     az.plot_lm(idata=trace, x=x, y="y", num_samples=100, axes=ax, y_model="y_model")
     ax.set_title("Posterior predictive regression lines")
     ax.set_xlabel("t")
@@ -84,7 +83,7 @@ if __name__ == "__main__":
     samples_per_hour = 10
     data_fraction = 0.3
 
-    seasonal_fun = partial(evolving_cosinus_seasonal, seas_ampl=seas_ampl)
+    seasonal_fun = partial(random_cosinus_seasonal, seas_ampl=seas_ampl)
     ts_true = simulate_bp_simple(seasonal_fun=seasonal_fun, ndays=ndays, samples_per_hour=samples_per_hour)
     fig = ts_true.plot()
     # plt.show(block=True)
@@ -97,4 +96,4 @@ if __name__ == "__main__":
 
     idata = blr_simple(X_red, y_red)
     true_regression_line = cosinus_seasonal(ts_true.t, ts_true.period, seas_ampl=seas_ampl)
-    plot_blr_output(idata, ts_true.t[red_idx], true_regression_line[red_idx])
+    plot_blr_output(idata, ts_true.t[red_idx], ts_true.t, true_regression_line)
