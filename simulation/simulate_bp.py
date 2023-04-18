@@ -97,7 +97,7 @@ def cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
     return bcos * np.cos(t_rad) + bsin * np.sin(t_rad)
 
 
-def evolving_sinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
+def evolving_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
     n_cycles = int(len(t)/period)
     cycles = []
     for c in range(n_cycles):
