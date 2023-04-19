@@ -97,13 +97,15 @@ def cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
     return bcos * np.cos(t_rad) + bsin * np.sin(t_rad)
 
 
-def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
+def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi, scale=0.8):
     n_cycles = int(len(t)/period)
     cycles = []
+    # mult_noise = np.random.normal(loc=1, scale=.1, size=len(t))  # what is the meas error
+    # return cosinus_seasonal(t, period, seas_ampl=seas_ampl, phase=phase) * mult_noise
     for c in range(n_cycles):
         t_mod = t[c * period: (c+1) * period]
-        apl_mod = np.random.normal(seas_ampl, scale=seas_ampl/5)
-        phase_mod = np.random.normal(phase, scale=phase/5)
+        apl_mod = np.random.normal(seas_ampl, scale=seas_ampl*scale)
+        phase_mod = np.random.normal(phase, scale=phase*scale)
         t_rad = 2 * np.pi * t_mod * (1 / period)
         bcos = apl_mod * np.cos(phase_mod)
         bsin = apl_mod * np.sin(phase_mod)
