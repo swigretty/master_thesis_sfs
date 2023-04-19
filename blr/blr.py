@@ -31,6 +31,7 @@ def blr_simple(X, y):
                                           range(X.shape[1])])
     return trace
 
+
 def plot_blr_output(trace, x, x_true, true_regression_line):
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.plot(x_true, true_regression_line, label="true regression line", lw=3.0, c="y")
@@ -45,8 +46,8 @@ def blr_corr(X, y):
     with Model() as model:  # model specifications in PyMC3 are wrapped in a with-statement
         # Define priors
 
-        mu = sum([Normal("b"+str(i), 0, sigma=20) * X[:, i] for i in range(X.shape[1])])
-        sd_dist = pm.HalfCauchy.dist(beta=5)
+        mu = sum([Normal("b"+str(i), 0, sigma=30) * X[:, i] for i in range(X.shape[1])])
+        sd_dist = pm.HalfCauchy.dist(beta=10)
         # sd_dist = pm.Exponential.dist(1.0, shape=2)
         # chol, corr, stds = pm.LKJCholeskyCov(
         #     "chol", n=len(y), eta=2, sd_dist=sd_dist, compute_corr=True)
