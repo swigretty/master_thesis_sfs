@@ -111,6 +111,11 @@ def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
     return np.concatenate(cycles)
 
 
+def get_design_matrix(t, period):
+    trad = t*2*np.pi*(1/period)
+    return np.column_stack(([1]*len(t), t, np.cos(trad), np.sin(trad)))
+
+
 def simulate_bp_simple(start_date=None, ndays=7, samples_per_hour=10, seed=None,
                        trend_fun=linear_trend, seasonal_fun=cosinus_seasonal,
                        arma_scale=1,
@@ -131,7 +136,7 @@ def simulate_bp_simple(start_date=None, ndays=7, samples_per_hour=10, seed=None,
     dti = pd.date_range(start_date, periods=nsample, freq=freq)
     t = np.arange(0, len(dti), 1)
 
-    trend = trend_fun(t, slope=0.0002)
+    trend = trend_fun(t)
     seasonality = seasonal_fun(t, period)
 
     ARMA = ArmaProcess(ar1, ma)

@@ -9,11 +9,6 @@ import numpy as np
 import random
 
 
-def get_design_matrix(t, period):
-    trad = t*2*np.pi*(1/period)
-    return np.column_stack(([1]*len(t), t, np.cos(trad), np.sin(trad)))
-
-
 def blr_simple(X, y):
     with Model() as model:  # model specifications in PyMC are wrapped in a with-statement
         # Define priors
