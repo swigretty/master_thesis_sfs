@@ -1,4 +1,4 @@
-from simulation.simulate_bp import simulate_bp_simple, random_cosinus_seasonal, cosinus_seasonal
+from simulation.simulate_bp import random_cosinus_seasonal, cosinus_seasonal
 from functools import partial
 import pymc3 as pm
 from pymc3 import HalfCauchy, Model, Normal, glm, plot_posterior_predictive_glm, sample

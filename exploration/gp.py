@@ -1,6 +1,44 @@
-from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic
+from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, Matern
 from sklearn.gaussian_process import GaussianProcessRegressor
 import matplotlib.pyplot as plt
+import numpy as np
+from functools import partial
+from sklearn.kernel_approximation import Nystroem
+
+
+def get_AR_kernel(order=1, length_scale=1):
+    return Matern(nu=order-0.5, length_scale=length_scale)
+
+
+class GPModel(object):
+    def __init__(self, kernel, rng=None, meas_noise=0, kernel_approx=False, normalize_y=True):
+        if rng is None:
+            rng = np.random.default_rng()
+
+        self.kernel = kernel
+        self.rng = rng
+        self.kernel_approx_method = partial(Nystroem, n_components=200, random_state=1)
+
+        self.gp = partial(GaussianProcessRegressor, n_restarts_optimizer=5, normalize_y=normalize_y,
+                          random_state=0, alpha=meas_noise)
+
+        if not kernel_approx:
+            self.gp = self.gp(kernel=self.kernel)
+            self.kernel_approx = None
+        else:
+            self.gp = self.gp()
+            self.kernel_approx = self.kernel_approx_method(kernel=self.kernel, n_components=300)
+
+    def predict(self, x: np.ndarray, return_std=False, return_cov=False):
+        if self.kernel_approx is not None:
+            x = self.kernel_approx.transform(x)
+        gp_mean, gp_unc = self.gp.predict(x, return_std=return_std, return_cov=return_cov)
+        return gp_mean, gp_unc
+
+    def fit_model(self, train_x: np.ndarray, train_y: np.ndarray):
+        train_x_trans = self.kernel_approx.fit_transform(train_x)
+        self.gp.fit(train_x_trans, train_y)
+        pass
 
 
 def fit_gp(X, y, period):

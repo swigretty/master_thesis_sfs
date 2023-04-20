@@ -14,6 +14,7 @@ import statsmodels.api as sm
 from statsmodels.tsa.seasonal import seasonal_decompose, DecomposeResult, STL
 from statsmodels.gam.api import GLMGam, BSplines
 
+from functools import partial
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
@@ -78,7 +79,7 @@ def linear_trend(t, slope=0, offset=0):
     return offset + (t * slope)
 
 
-def cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
+def cosinus_seasonal(t, period, seas_ampl=0, phase=np.pi):
     t_rad = 2 * np.pi * t * (1 / period)
     bcos = seas_ampl * np.cos(phase)
     bsin = seas_ampl * np.sin(phase)
@@ -103,12 +104,17 @@ def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi, scale=0.8):
 
 class BPTimseSeriesSimulator():
 
-    def __init__(self, rng=None, start_date=None, ndays=7, samples_per_hour=10, trend_fun=linear_trend,
-                 seasonal_fun=cosinus_seasonal, arma_scale=1, ar=np.array([1, 0.8]), ma=np.array([1])):
+    def __init__(self, rng=None, start_date=None, ndays=7, samples_per_hour=10,
+                 trend_fun=partial(linear_trend, slope=0, offset=0),
+                 seasonal_fun=partial(cosinus_seasonal, seas_ampl=0), arma_scale=1, ar=np.array([1, 0.8]),
+                 ma=np.array([1]), meas_noise_scale=0):
+        """
+        default is no meas noise, no trend and no seasonal_component
+        """
 
         self.rng = rng
         if rng is None:
-            self.rng = np.random.default_rng(seed=0)
+            self.rng = np.random.default_rng()
 
         if start_date is None:
             start_date = datetime(year=2023, month=1, day=1)
@@ -122,10 +128,19 @@ class BPTimseSeriesSimulator():
         self.arma_scale = arma_scale
         self.ar = ar
         self.ma = ma
+        self.meas_noise_scale = meas_noise_scale
+
+        self.ARMA = ArmaProcess(self.ar, self.ma)
+        logger.info(f"{self.ARMA.isstationary=}")
 
         self.period = 24 * self.samples_per_hour  # number of observations per cycle, e.g. if freq="H" and cycle 1day --> period=24
         self.freq_pandas_str = str(1 / samples_per_hour) + "H"
         self.nsample = ndays * self.period
+
+        self.dti = pd.date_range(self.start_date, periods=self.nsample, freq=self.freq_pandas_str)
+        self.t = np.arange(0, len(self.dti), 1)
+
+        self._ts = None
 
     def freq_to_period_bp(freq):
         """
@@ -138,28 +153,20 @@ class BPTimseSeriesSimulator():
 
         return int(timedelta(days=1) / freq)
 
-    def get_design_matrix(t, period):
-        trad = t*2*np.pi*(1/period)
-        return np.column_stack(([1]*len(t), t, np.cos(trad), np.sin(trad)))
+    def get_design_matrix(self):
+        trad = self.t*2*np.pi*(1/self.period)
+        return np.column_stack(([1]*len(self.t), self.t, np.cos(trad), np.sin(trad)))
 
-    @property
-    def simulate_bp_simple(self):
-        dti = pd.date_range(start_date, periods=nsample, freq=freq)
-        t = np.arange(0, len(dti), 1)
+    def generate_sample(self):
+        trend = self.trend_fun(self.t)
+        seasonality = self.seasonal_fun(self.t, self.period)
+        arma = self.ARMA.generate_sample(nsample=self.nsample, scale=self.arma_scale, distrvs=self.rng.standard_normal)
+        meas_noise = self.meas_noise_scale * self.rng.standard_normal(size=self.nsample)
+        self._ts = DecompoeResultBP(dti=self.dti, trend=trend, seasonal=seasonality, meas_noise=meas_noise,
+                                              resid=arma, period=self.period,
+                                              observed=trend+seasonality+meas_noise+arma)
 
-        trend = trend_fun(t)
-        seasonality = seasonal_fun(t, period)
-
-        ARMA = ArmaProcess(ar1, ma)
-        logger.info(f"{ARMA.isstationary=}")
-
-        arma = ARMA.generate_sample(nsample=nsample, scale=arma_scale)
-
-        meas_noise = np.random.normal(loc=0.0, scale=1, size=nsample)  # what is the meas error
-        # meas_noise = 0
-
-        return DecompoeResultBP(dti=dti, trend=trend, seasonal=seasonality, meas_noise=meas_noise, resid=arma,
-                                period=period, observed=trend+seasonality+meas_noise+arma)
+        return self._ts
 
 
 def decompose(ts_true):
