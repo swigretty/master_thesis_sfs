@@ -74,38 +74,26 @@ class DecompoeResultBP(DecomposeResult):
         return fig
 
 
-def freq_to_period_bp(freq):
-    """
-    from statsmodels.tsa.tsatools import freq_to_period
-    https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
-    """
-    if not isinstance(freq, offsets.DateOffset):
-        freq = to_offset(freq)  # go ahead and standardize
-    assert (timedelta(days=1) / freq) % 1 == 0
-
-    return int(timedelta(days=1) / freq)
-
-
 def linear_trend(t, slope=0, offset=0):
     return offset + (t * slope)
 
 
 def cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi):
-    t_rad = 2*np.pi*t * (1/period)
+    t_rad = 2 * np.pi * t * (1 / period)
     bcos = seas_ampl * np.cos(phase)
     bsin = seas_ampl * np.sin(phase)
     return bcos * np.cos(t_rad) + bsin * np.sin(t_rad)
 
 
 def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi, scale=0.8):
-    n_cycles = int(len(t)/period)
+    n_cycles = int(len(t) / period)
     cycles = []
     # mult_noise = np.random.normal(loc=1, scale=.1, size=len(t))  # what is the meas error
     # return cosinus_seasonal(t, period, seas_ampl=seas_ampl, phase=phase) * mult_noise
     for c in range(n_cycles):
-        t_mod = t[c * period: (c+1) * period]
-        apl_mod = np.random.normal(seas_ampl, scale=seas_ampl*scale)
-        phase_mod = np.random.normal(phase, scale=phase*scale)
+        t_mod = t[c * period: (c + 1) * period]
+        apl_mod = np.random.normal(seas_ampl, scale=seas_ampl * scale)
+        phase_mod = np.random.normal(phase, scale=phase * scale)
         t_rad = 2 * np.pi * t_mod * (1 / period)
         bcos = apl_mod * np.cos(phase_mod)
         bsin = apl_mod * np.sin(phase_mod)
@@ -113,44 +101,65 @@ def random_cosinus_seasonal(t, period, seas_ampl=10, phase=np.pi, scale=0.8):
     return np.concatenate(cycles)
 
 
-def get_design_matrix(t, period):
-    trad = t*2*np.pi*(1/period)
-    return np.column_stack(([1]*len(t), t, np.cos(trad), np.sin(trad)))
+class BPTimseSeriesSimulator():
 
+    def __init__(self, rng=None, start_date=None, ndays=7, samples_per_hour=10, trend_fun=linear_trend,
+                 seasonal_fun=cosinus_seasonal, arma_scale=1, ar=np.array([1, 0.8]), ma=np.array([1])):
 
-def simulate_bp_simple(start_date=None, ndays=7, samples_per_hour=10, seed=None,
-                       trend_fun=linear_trend, seasonal_fun=cosinus_seasonal,
-                       arma_scale=1,
-                       ar1=np.array([1, -0.5]), ma=np.array([1])):
+        self.rng = rng
+        if rng is None:
+            self.rng = np.random.default_rng(seed=0)
 
-    if start_date is None:
-        start_date = datetime(year=2023, month=1, day=1)
+        if start_date is None:
+            start_date = datetime(year=2023, month=1, day=1)
+        self.start_date = datetime(year=start_date.year, month=start_date.month, day=start_date.day, hour=0, minute=0,
+                                   second=0, microsecond=0, tzinfo=timezone.utc)
 
-    start_date = datetime(year=start_date.year, month=start_date.month, day=start_date.day, hour=0, minute=0, second=0,
-                          microsecond=0, tzinfo=timezone.utc)
+        self.ndays = ndays
+        self.samples_per_hour = samples_per_hour
+        self.trend_fun = trend_fun
+        self.seasonal_fun = seasonal_fun
+        self.arma_scale = arma_scale
+        self.ar = ar
+        self.ma = ma
 
-    if seed:
-        np.random.seed(seed)
+        self.period = 24 * self.samples_per_hour  # number of observations per cycle, e.g. if freq="H" and cycle 1day --> period=24
+        self.freq_pandas_str = str(1 / samples_per_hour) + "H"
+        self.nsample = ndays * self.period
 
-    period = 24 * samples_per_hour  # number of observations per cycle, e.g. if freq="H" and cycle 1day --> period=24
-    freq = str(1/samples_per_hour) + "H"
-    nsample = ndays * period
-    dti = pd.date_range(start_date, periods=nsample, freq=freq)
-    t = np.arange(0, len(dti), 1)
+    def freq_to_period_bp(freq):
+        """
+        from statsmodels.tsa.tsatools import freq_to_period
+        https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        """
+        if not isinstance(freq, offsets.DateOffset):
+            freq = to_offset(freq)  # go ahead and standardize
+        assert (timedelta(days=1) / freq) % 1 == 0
 
-    trend = trend_fun(t)
-    seasonality = seasonal_fun(t, period)
+        return int(timedelta(days=1) / freq)
 
-    ARMA = ArmaProcess(ar1, ma)
-    logger.info(f"{ARMA.isstationary=}")
+    def get_design_matrix(t, period):
+        trad = t*2*np.pi*(1/period)
+        return np.column_stack(([1]*len(t), t, np.cos(trad), np.sin(trad)))
 
-    arma = ARMA.generate_sample(nsample=nsample, scale=arma_scale)
+    @property
+    def simulate_bp_simple(self):
+        dti = pd.date_range(start_date, periods=nsample, freq=freq)
+        t = np.arange(0, len(dti), 1)
 
-    meas_noise = np.random.normal(loc=0.0, scale=1, size=nsample)  # what is the meas error
-    # meas_noise = 0
+        trend = trend_fun(t)
+        seasonality = seasonal_fun(t, period)
 
-    return DecompoeResultBP(dti=dti, trend=trend, seasonal=seasonality, meas_noise=meas_noise, resid=arma,
-                            period=period, observed=trend+seasonality+meas_noise+arma)
+        ARMA = ArmaProcess(ar1, ma)
+        logger.info(f"{ARMA.isstationary=}")
+
+        arma = ARMA.generate_sample(nsample=nsample, scale=arma_scale)
+
+        meas_noise = np.random.normal(loc=0.0, scale=1, size=nsample)  # what is the meas error
+        # meas_noise = 0
+
+        return DecompoeResultBP(dti=dti, trend=trend, seasonal=seasonality, meas_noise=meas_noise, resid=arma,
+                                period=period, observed=trend+seasonality+meas_noise+arma)
 
 
 def decompose(ts_true):

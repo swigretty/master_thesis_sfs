@@ -62,6 +62,8 @@ def get_binary_weights(n, split=None, prob=0.1):
 
 
 if __name__ == "__main__":
+    rng = np.random.default_rng(seed=0)
+
     data_fraction = 0.1
 
     simulation_config = dict(
