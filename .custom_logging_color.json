@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "color_fmt": {
+            "class": "colorlog.ColoredFormatter",
+            "format": "%(asctime)s %(log_color)s%(levelname)-2s%(reset)s %(bg_blue)s[%(name)s]%(reset)s %(filename)s:%(lineno)s:%(funcName)s(): %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        },
+
+        "default_fmt": {
+            "format": "%(asctime)s %(levelname)s %(name)s %(filename)s:%(lineno)s:%(funcName)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
+        }
+    },
+
+    "handlers": {
+        "console_default": {
+            "class": "logging.StreamHandler",
+            "formatter": "default_fmt",
+            "stream": "ext://sys.stdout"
+        },
+        "console_color": {
+            "class": "logging.StreamHandler",
+            "formatter": "color_fmt",
+            "stream": "ext://sys.stdout"
+        }
+    },
+    "loggers": {
+        "__main__":{
+            "level": "INFO",
+            "handlers": ["console_color"],
+            "propagate": false
+        },
+        "master_thesis_sfs": {
+            "level": "INFO",
+            "handlers": ["console_color"],
+            "propagate": false
+        }
+    }
+}

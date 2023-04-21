@@ -39,26 +39,26 @@ def get_binary_weights(n, split=None, prob=0.1):
 def get_default_config():
     default_config = {
         "rng": np.random.default_rng(seed=10),
-        "ndays": 4,
-        "samples_per_hour": 10
+        "ndays": 3,
+        "samples_per_hour": 5
     }
     return default_config
 
 
-if __name__ == "__main__":
-
-    # Simulate AR(1) with phi = 0.8
-    phi = 0.8
-    wn_scale = 1
-    s1_config = {"ar": np.array([1, -phi]), "arma_scale": wn_scale,  "ma": np.array([1])}
+def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
+    ar_order = len(ar) - 1
+    s1_config = {"ar": ar, "arma_scale": wn_scale,  "ma": np.array([1])}
     s1 = BPTimseSeriesSimulator(**s1_config, **get_default_config())
     ts1 = s1.generate_sample()
     ts1.plot()
     plt.show()
 
-    var_true = wn_scale/(1-phi**2)
     cov_true = arma_acovf(ar=s1_config["ar"], ma=s1_config["ma"], sigma2=s1_config["arma_scale"], nobs=s1.nsample)
+
+    # This is only true for AR1
+    var_true = wn_scale/(1-phi**2)
     print(f"{cov_true[0]=}, {var_true=}")
+
     # arima = ARIMA(ts1.sum(), order=(1, 0, 0), trend_offset=0)
     # s1fit = arima.fit(gls=False)
     # ar_est = np.array([1, -s1fit.params[1]])
@@ -68,23 +68,64 @@ if __name__ == "__main__":
     for (i, j) in itertools.product(range(s1.nsample), range(s1.nsample)):
         cov_true_matrix[i, j] = cov_true[i-j]
         cov_true_matrix[j, i] = cov_true[i-j]
-    cor_true_matrix = cov_true_matrix/cov_true[0]
 
-    # gpm = GPModel(kernel=cov_true[0] * get_AR_kernel(order=1, length_scale=5), normalize_y=False)
-    # # sample from prior
-    # mean_prior, cov_prior = gpm.predict(s1.t.reshape(-1, 1), return_cov=True)
-    cov_prior = (cov_true[0] * get_AR_kernel(order=1, length_scale=5))(s1.t.reshape(-1, 1))
+    mean_prior = np.zeros(ts1.t.shape[0])
+    cov_prior = (cov_true[0] * get_AR_kernel(order=ar_order, length_scale=5))(s1.t.reshape(-1, 1))
+    std_prior = np.sqrt(np.diag(cov_prior))
+    gpm = GPModel(kernel=cov_true[0] * get_AR_kernel(order=ar_order, length_scale=5), normalize_y=False, meas_noise=0)
 
-    fig, ax = plt.subplots(nrows=2, ncols=2)
+    idx_train = get_red_idx(len(ts1.t), data_fraction=data_fraction)
+    x_train = ts1.t[idx_train]
+    y_train = ts1.sum()[x_train]
+    gpm.fit_model(x_train.reshape(-1, 1), y_train)
+    mean_post, cov_post = gpm.predict(ts1.t.reshape(-1, 1), return_cov=True)
+    std_post = np.sqrt(np.diag(cov_post))
+    print(f"Posterior kernel {gpm.gp.kernel_}")
+
+    fig, ax = plt.subplots(nrows=3, ncols=2)
     ax[0, 0].plot(s1.t[:50], cov_true[:50])
     ax[1, 0].plot(s1.t[:50], cov_prior[0, :50])
+    ax[2, 0].plot(s1.t[:50], cov_post[0, :50])
+
     cmap = 'viridis'
     if min(cov_true) < 0:
         cmap = "PiYG"
     im1 = ax[0, 1].imshow(cov_true_matrix[:50, :50], cmap=cmap, vmax=max(cov_true), vmin=min(cov_true))
     im2 = ax[1, 1].imshow(cov_prior[:50, :50], cmap=cmap, vmax=max(cov_true), vmin=min(cov_true))
+    im3 = ax[2, 1].imshow(cov_post[:50, :50], cmap=cmap)
     fig.colorbar(im1)
+    fig.colorbar(im2)
+    fig.colorbar(im3)
     plt.show()
+
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
+    ax[0].plot(ts1.t, mean_prior,  "b-", label="posterior")
+    ax[0].fill_between(ts1.t, mean_prior-std_prior, mean_prior + std_prior,
+                     color='b', alpha=0.2, label='CI')
+    ax[0].plot(ts1.t, ts1.sum(), 'r-', label="true", alpha=0.5)
+
+    ax[1].plot(x_train, y_train, 'yo', label="observations", markersize=12)
+    ax[1].plot(ts1.t, mean_post,  "b-", label="posterior")
+    ax[1].fill_between(ts1.t, mean_post-std_post, mean_post + std_post,
+                     color='b', alpha=0.2, label='CI')
+    ax[1].plot(ts1.t, ts1.sum(), 'r-', label="true", alpha=0.5)
+    plt.legend()
+    plt.show()
+
+    return s1_config
+
+
+if __name__ == "__main__":
+
+    # Simulate AR(1) with phi = 0.8
+    phi = 0.8
+    wn_scale = 1
+
+    ar = np.array([1, -phi])
+    # s1_config = simulate_plot_ar(ar, wn_scale)
+
+    ar = np.array([1, -phi, -phi/2])
+    s2_config = simulate_plot_ar(ar, wn_scale)
 
 
 
