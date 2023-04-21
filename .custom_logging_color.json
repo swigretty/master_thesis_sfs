@@ -32,7 +32,7 @@
             "handlers": ["console_color"],
             "propagate": false
         },
-        "master_thesis_sfs": {
+        "root": {
             "level": "INFO",
             "handlers": ["console_color"],
             "propagate": false

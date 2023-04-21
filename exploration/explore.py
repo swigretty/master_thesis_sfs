@@ -4,10 +4,14 @@ from simulation.simulate_bp import BPTimseSeriesSimulator, random_cosinus_season
 from functools import partial
 from exploration.blr import blr_corr, plot_blr_output, blr_simple
 import matplotlib.pyplot as plt
-from exploration.gp import GPModel, get_AR_kernel
+from exploration.gp import GPModel, ARKernel
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.arima_process import arma_acovf
+from log_setup import setup_logging
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 def get_red_idx(n, data_fraction=0.3, weights=None):
@@ -15,7 +19,6 @@ def get_red_idx(n, data_fraction=0.3, weights=None):
     if weights is not None:
         weights = weights/sum(weights)
     return sorted(np.random.choice(range(n), size=k, replace=False, p=weights))
-
 
 
 def get_sesonal_weights(n, period, phase=np.pi):
@@ -45,6 +48,14 @@ def get_default_config():
     return default_config
 
 
+def find_optimal_length_scale(cor_lag_1, kernel, len_scale_choices=np.arange(1,10)):
+    cal_x = np.array([0, 1]).reshape(-1, 1)
+    result = {}
+    for len_scale in len_scale_choices:
+        result[len_scale] = np.abs(kernel(length_scale=len_scale)(cal_x)[0, 1] - cor_lag_1)
+    return min(result, key=result.get)
+
+
 def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     ar_order = len(ar) - 1
     s1_config = {"ar": ar, "arma_scale": wn_scale,  "ma": np.array([1])}
@@ -56,8 +67,8 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     cov_true = arma_acovf(ar=s1_config["ar"], ma=s1_config["ma"], sigma2=s1_config["arma_scale"], nobs=s1.nsample)
 
     # This is only true for AR1
-    var_true = wn_scale/(1-phi**2)
-    print(f"{cov_true[0]=}, {var_true=}")
+    var_true = wn_scale/(1-ar[1]**2)
+    logger.info(f"{cov_true[0]=}, {var_true=}")
 
     # arima = ARIMA(ts1.sum(), order=(1, 0, 0), trend_offset=0)
     # s1fit = arima.fit(gls=False)
@@ -69,10 +80,15 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
         cov_true_matrix[i, j] = cov_true[i-j]
         cov_true_matrix[j, i] = cov_true[i-j]
 
+    kernel_ = partial(ARKernel, order=ar_order)
+    length_scale = find_optimal_length_scale(cov_true[1]/cov_true[0], kernel_)
+    logger.info(f"best {length_scale=}")
+
     mean_prior = np.zeros(ts1.t.shape[0])
-    cov_prior = (cov_true[0] * get_AR_kernel(order=ar_order, length_scale=5))(s1.t.reshape(-1, 1))
+    kernel = cov_true[0] * kernel_(length_scale=length_scale)
+    cov_prior = kernel(s1.t.reshape(-1, 1))
     std_prior = np.sqrt(np.diag(cov_prior))
-    gpm = GPModel(kernel=cov_true[0] * get_AR_kernel(order=ar_order, length_scale=5), normalize_y=False, meas_noise=0)
+    gpm = GPModel(kernel=kernel, normalize_y=False, meas_noise=0)
 
     idx_train = get_red_idx(len(ts1.t), data_fraction=data_fraction)
     x_train = ts1.t[idx_train]
@@ -80,12 +96,13 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     gpm.fit_model(x_train.reshape(-1, 1), y_train)
     mean_post, cov_post = gpm.predict(ts1.t.reshape(-1, 1), return_cov=True)
     std_post = np.sqrt(np.diag(cov_post))
-    print(f"Posterior kernel {gpm.gp.kernel_}")
 
     fig, ax = plt.subplots(nrows=3, ncols=2)
     ax[0, 0].plot(s1.t[:50], cov_true[:50])
+    ax[0, 0].set_title(f"Theoretical Covariance for AR({ar_order}) with {ar=}")
     ax[1, 0].plot(s1.t[:50], cov_prior[0, :50])
-    ax[2, 0].plot(s1.t[:50], cov_post[0, :50])
+    ax[1, 0].set_title(f"Prior Covariance {kernel=}")
+    ax[2, 0].plot(s1.t[:50], cov_post[:50])
 
     cmap = 'viridis'
     if min(cov_true) < 0:
@@ -98,12 +115,11 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     fig.colorbar(im3)
     plt.show()
 
+    n = 100
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-    ax[0].plot(ts1.t, mean_prior,  "b-", label="posterior")
-    ax[0].fill_between(ts1.t, mean_prior-std_prior, mean_prior + std_prior,
-                     color='b', alpha=0.2, label='CI')
-    ax[0].plot(ts1.t, ts1.sum(), 'r-', label="true", alpha=0.5)
-
+    ax[0].plot(ts1.t, np.transpose(np.random.multivariate_normal(mean=mean_prior, cov=cov_prior, size=n)),  "b-", alpha=0.1)
+    ax[0].plot(ts1.t, ts1.sum(), 'r-', label="true", alpha=0.8)
+    ax[0].set_title(f"{n=} samples from prior")
     ax[1].plot(x_train, y_train, 'yo', label="observations", markersize=12)
     ax[1].plot(ts1.t, mean_post,  "b-", label="posterior")
     ax[1].fill_between(ts1.t, mean_post-std_post, mean_post + std_post,
@@ -116,15 +132,16 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
 
 
 if __name__ == "__main__":
+    setup_logging()
 
     # Simulate AR(1) with phi = 0.8
     phi = 0.8
     wn_scale = 1
 
     ar = np.array([1, -phi])
-    # s1_config = simulate_plot_ar(ar, wn_scale)
+    s1_config = simulate_plot_ar(ar, wn_scale)
 
-    ar = np.array([1, -phi, -phi/2])
+    ar = np.array([1, -phi/2, -phi/3])
     s2_config = simulate_plot_ar(ar, wn_scale)
 
 

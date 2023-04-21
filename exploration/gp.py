@@ -6,9 +6,11 @@ from functools import partial
 from sklearn.kernel_approximation import Nystroem
 
 
-def get_AR_kernel(order=1, length_scale=1):
-    return Matern(nu=order-0.5, length_scale=length_scale)
-
+class ARKernel(Matern):
+    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-5, 1e5), order=1):
+        nu = order - 0.5
+        super().__init__(length_scale=length_scale, length_scale_bounds=length_scale_bounds, nu=nu)
+        self.order = order
 
 class GPModel(object):
     def __init__(self, kernel, rng=None, meas_noise=0, kernel_approx=False, normalize_y=True):
@@ -36,8 +38,9 @@ class GPModel(object):
         return gp_mean, gp_unc
 
     def fit_model(self, train_x: np.ndarray, train_y: np.ndarray):
-        train_x_trans = self.kernel_approx.fit_transform(train_x)
-        self.gp.fit(train_x_trans, train_y)
+        if self.kernel_approx is not None:
+            train_x = self.kernel_approx.fit_transform(train_x)
+        self.gp.fit(train_x, train_y)
         pass
 
 
