@@ -1,5 +1,40 @@
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\chapter{Gaussian Process Regression}
+We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
+One approach as we have seen in seen in \ref{ch:time-series-decomposition-and-regression} is to restrict ourselves to a
+class of functions, which in our case has been the class of linear functions of the input.
+Another approach is to assign a prior probability to every possible function, where higher
+probabilities are assigned to functions that assume to be more likely.
 
-\chapter{Gaussian Process}
+the linear regression modelling
+approach cannot readily be used on irregularly spaced samples and uncertainty quantification
+will always be according to a global model parameter, yielding confidence interval which cannot account for local sample density.
+Instead of
+
+
+Non-linear regression problem.
+
+A gaussian process (GP) can be viewed as a normal distribution over functions and
+\citeauthor{rasmussen_gaussian_2006} provided the following formal definition:
+\begin{definition}[Gaussian Process]
+ A Gaussian process is a collection of random variables, any finite number of which have a joint Gaussian distribution.
+\end{definition}
+
+As a Gaussian distribution is defined by its mean and covariance matrix a gaussian process (GP) is uniquely identified
+by its mean $m(x)$ and covariance function $k(x,x')$. We write
+
+\begin{gather*}
+    f(x) = \sim GP(m(x), k(x,x')), \\
+\end{gather*}
+
+with
+
+\begin{gather*}
+    m(x) = \mathbb{E}[f(x)] \\
+    k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
+\end{gather*}
 
 Normal distribution over functions, i.e. an infinite set of random
 variables $(F_t: t \in T_0$ with $T_0=[0, T]$.
@@ -32,5 +67,18 @@ The finite marginals $F_{t_1}, \dots, F_{t_n}$ of GP are multivariate Gaussians.
 
 Parametrized by covariance function $k(x,x') = COV(f(x), f(x'))$
 
+A gaussian process is the a distribution over functions, completely defined by $k$ and $m$:
+\begin{gather*}
+    f(x) \sim GP(m(x), K(x, x'))
+\end{gather*}
 
+
+
+\[
+f(X)=\[f(x_{1}),f(x_{2}),...,f(x_{N}))\]^{T} \sim \mathcal{N}(\mu, K_{X,X})
+//Probabilistic framework forGP
+\log p(y|X) \propto -[y^{T}(K + \sigma^{2}I)^{-1}y+\log|K + \sigma^{2}I|]
+//Prediction on new unseen
+dataf_{*}|X_{*},X,y \sim \mathcal{N}(\mathbb{E}(f_{*}),\text{cov}(f_{*})) \\\mathbb{E}(f_{*}) = \mu_{X_{*}}+K_{X_{*},X}[K_{X,X}+\sigma^{2}I]^{-1}(y-\mu_{x}) \\\text{cov}(f_{*})=K_{X_{*},X_{*}}-K_{X_{*},X}[K_{X,X}+\sigma^{2}I]^{-1}K_{X,X_{*}}
+\]
 
