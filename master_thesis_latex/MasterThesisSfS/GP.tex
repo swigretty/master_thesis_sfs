@@ -1,29 +1,25 @@
-\usepackage{natbib}
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\chapter{Gaussian Process Regression}
+\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
-One approach as we have seen in seen in \ref{ch:time-series-decomposition-and-regression} is to restrict ourselves to a
+One approach as we have seen in seen in \ref{ch:time-series-decomposition-and-regression}
+is to restrict ourselves to a
 class of functions, which in our case has been the class of linear functions of the input.
 Another approach is to assign a prior probability to every possible function, where higher
-probabilities are assigned to functions that assume to be more likely.
+probabilities are assigned to functions that are assumed to be more likely.
+A Gaussian process can be viewed as a gaussian distribution over functions or as an infinite set of random
+variables representing the values of the function $f(x)$ at location $x$.
+The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
+by \citeauthor{rasmussen_gaussian_2006}:
 
-the linear regression modelling
-approach cannot readily be used on irregularly spaced samples and uncertainty quantification
-will always be according to a global model parameter, yielding confidence interval which cannot account for local sample density.
-Instead of
-
-
-Non-linear regression problem.
-
-A gaussian process (GP) can be viewed as a normal distribution over functions and
-\citeauthor{rasmussen_gaussian_2006} provided the following formal definition:
-\begin{definition}[Gaussian Process]
+\begin{definition}[Gaussian Process]\label{def:GP}
  A Gaussian process is a collection of random variables, any finite number of which have a joint Gaussian distribution.
 \end{definition}
 
-As a Gaussian distribution is defined by its mean and covariance matrix a gaussian process (GP) is uniquely identified
-by its mean $m(x)$ and covariance function $k(x,x')$. We write
+
+As a (multivariate) Gaussian distribution is defined by its mean and covariance matrix a gaussian process (GP) is
+uniquely identified by its mean $m(x)$ and covariance function $k(x,x')$.
+
+We write
 
 \begin{gather*}
     f(x) = \sim GP(m(x), k(x,x')), \\
@@ -36,6 +32,74 @@ with
     k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
 \end{gather*}
 
+Where where $m$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
+about correlation of the response variable at different inputs.
+
+If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
+$F_x \equiv f(x)$ such that for all finite index set $A \subset X, A={x_0, \dots x_n}$ it olds that:
+
+\[F_A = [F_{x_0}, \dots F_{x_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
+for
+\begin{gather*}
+    K_{AA} =
+    \begin{bmatrix}
+        k(x_0, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots  & \vdots \\
+        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix} \text{and }
+    \mu_A =
+    \begin{bmatrix}
+        m(x_1) \\
+        \vdots \\
+        \mu(x_n)
+    \end{bmatrix}
+\end{gather*}
+The finite marginals $F_{x_0}, \dots, F_{x_n}$ of the GP are thus have a multivariate gaussian distribution.
+In our running example we consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
+
+Note that Gaussian processes with finite index sets and hence with joint gaussian distribution is just a specific case
+of Gaussian process.
+
+If we consider the linear regression case from \ref{ch:time-series-decomposition-and-regression} and assume a prior distribution
+on the $\beta$'s, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
+\[
+    \mu \sim N(0, XX^{\top})
+\]
+and represents a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
+This special case of gaussian process regression with this specific kernel function is known as baysian linear regression.
+
+
+\section{Bayesian Linear Regression}
+
+If we consider again the linear regression model from \ref{ch:time-series-decomposition-and-regression} but
+for simplicity we will assume iid gaussian noise:
+\begin{gather}
+       \mu(x) = x^{\top}\beta, y = \mu(x) + \epsilon \\
+    \epsilon \sim N(0, \sigma_n^2)
+\end{gather}
+where x is the input vector, which could be just the time point $t$ and $\beta$ is the vector with the regression coefficients.
+
+Assuming observations $y = [y_0 \dots y_n]^{\top}$ for inputs $X = [x_0 \dots x_n]^{\top}$ we can calculate the likelihood,
+which is the probability density of the observations given $X$ and $\beta$:
+
+\begin{gather}
+    p(y|X,\beta) = \prod_{i=1}^{n}p(y_i|x_i, \beta) = \prod_{i=1}^{n}\frac{1}{\sqrt {2\pi}\sigma_n}
+    exp(-\frac{ (y_i- x_i^{\top}\beta)^{2}}{2 \sigma_n^2})
+    = \frac{1}{(2 \pi \sigma_n^2)^{n/2}} exp(-\frac{1}{2\sigma_n^2} ||y-X^{\top}\beta||^2) = N(X^{\top} \beta, \sigma_n² I)
+\end{gather}
+
+
+
+
+
+
+
+
+
+
+
+When looking at a finite collections of function outputs $(F_x: t \in T_0$ with $T_0=[0, T]$
+And according to \ref{def:GP} the  $$
 Normal distribution over functions, i.e. an infinite set of random
 variables $(F_t: t \in T_0$ with $T_0=[0, T]$.
 The set of random variable is completely defined by the
