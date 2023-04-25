@@ -15,6 +15,8 @@ logger = getLogger(__name__)
 
 
 def get_red_idx(n, data_fraction=0.3, weights=None):
+    if data_fraction == 1:
+        return range(n)
     k = int(n * data_fraction)
     if weights is not None:
         weights = weights/sum(weights)
@@ -61,7 +63,8 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     s1_config = {"ar": ar, "arma_scale": wn_scale,  "ma": np.array([1])}
     s1 = BPTimseSeriesSimulator(**s1_config, **get_default_config())
     ts1 = s1.generate_sample()
-    ts1.plot()
+    fig = ts1.plot()
+    fig.savefig(f"true_ts_ar{ar_order}_{data_fraction}.svg")
     plt.show()
 
     cov_true = arma_acovf(ar=s1_config["ar"], ma=s1_config["ma"], sigma2=s1_config["arma_scale"], nobs=s1.nsample)
@@ -97,12 +100,17 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     mean_post, cov_post = gpm.predict(ts1.t.reshape(-1, 1), return_cov=True)
     std_post = np.sqrt(np.diag(cov_post))
 
-    fig, ax = plt.subplots(nrows=3, ncols=2)
+    cov_opt = gpm.gp.kernel_(s1.t.reshape(-1, 1))
+
+    fig, ax = plt.subplots(nrows=4, ncols=2, figsize=(20, 30))
     ax[0, 0].plot(s1.t[:50], cov_true[:50])
-    ax[0, 0].set_title(f"Theoretical Covariance for AR({ar_order}) with {ar=}")
+    ax[0, 0].set_title(f"Theoretical Cov for {ar=}")
     ax[1, 0].plot(s1.t[:50], cov_prior[0, :50])
-    ax[1, 0].set_title(f"Prior Covariance {kernel=}")
+    ax[1, 0].set_title(f"Initial Prior Cov {kernel=}")
     ax[2, 0].plot(s1.t[:50], cov_post[:50])
+    ax[2, 0].set_title(f"Posterior Cov")
+    ax[3, 0].plot(s1.t[:50], cov_opt[0, :50])
+    ax[3, 0].set_title(f"Optimal Prior Cov {gpm.gp.kernel_=}")
 
     cmap = 'viridis'
     if min(cov_true) < 0:
@@ -110,9 +118,13 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     im1 = ax[0, 1].imshow(cov_true_matrix[:50, :50], cmap=cmap, vmax=max(cov_true), vmin=min(cov_true))
     im2 = ax[1, 1].imshow(cov_prior[:50, :50], cmap=cmap, vmax=max(cov_true), vmin=min(cov_true))
     im3 = ax[2, 1].imshow(cov_post[:50, :50], cmap=cmap)
+    im4 = ax[3, 1].imshow(cov_opt[:50, :50], cmap=cmap)
+
     fig.colorbar(im1)
     fig.colorbar(im2)
     fig.colorbar(im3)
+    fig.colorbar(im4)
+    fig.savefig(f"covariance_ar{ar_order}_{data_fraction}.svg")
     plt.show()
 
     n = 100
@@ -126,6 +138,7 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
                      color='b', alpha=0.2, label='CI')
     ax[1].plot(ts1.t, ts1.sum(), 'r-', label="true", alpha=0.5)
     plt.legend()
+    fig.savefig(f"regression_line_ar{ar_order}_{data_fraction}.svg")
     plt.show()
 
     return s1_config
@@ -139,10 +152,10 @@ if __name__ == "__main__":
     wn_scale = 1
 
     ar = np.array([1, -phi])
-    s1_config = simulate_plot_ar(ar, wn_scale)
+    s1_config = simulate_plot_ar(ar, wn_scale, data_fraction=.1)
 
     ar = np.array([1, -phi/2, -phi/3])
-    s2_config = simulate_plot_ar(ar, wn_scale)
+    s2_config = simulate_plot_ar(ar, wn_scale, data_fraction=.1)
 
 
 
