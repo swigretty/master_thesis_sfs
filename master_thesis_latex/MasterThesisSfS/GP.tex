@@ -21,24 +21,22 @@ uniquely identified by its mean $m(x)$ and covariance function $k(x,x')$.
 
 We write
 
-\begin{gather*}
-    f(x) = \sim GP(m(x), k(x,x')), \\
-\end{gather*}
-
+\begin{gather}
+    f(x) \sim GP(m(x), k(x,x')), \\
+\end{gather}
 with
-
-\begin{gather*}
+\begin{gather}
     m(x) = \mathbb{E}[f(x)] \\
     k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
-\end{gather*}
+\end{gather}
 
 Where where $m$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
 about correlation of the response variable at different inputs.
 
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
-$F_x \equiv f(x)$ such that for all finite index set $A \subset X, A={x_0, \dots x_n}$ it olds that:
+$F_x := f(x)$ such that for a set $A \subset X$ with $A={x_0, \dots x_n}$ it holds that:
 
-\[F_A = [F_{x_0}, \dots F_{x_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
+\[F_A = [F_{x_0}, \dots , F_{x_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
 for
 \begin{gather*}
     K_{AA} =
@@ -54,7 +52,7 @@ for
         \mu(x_n)
     \end{bmatrix}
 \end{gather*}
-The finite marginals $F_{x_0}, \dots, F_{x_n}$ of the GP are thus have a multivariate gaussian distribution.
+The finite marginals $F_{x_0}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
 In our running example we consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
 
 Note that Gaussian processes with finite index sets and hence with joint gaussian distribution is just a specific case
@@ -72,77 +70,26 @@ This special case of gaussian process regression with this specific kernel funct
 \section{Bayesian Linear Regression}
 
 If we consider again the linear regression model from \ref{ch:time-series-decomposition-and-regression} but
-for simplicity we will assume iid gaussian noise:
-\begin{gather}
-       \mu(x) = x^{\top}\beta, y = \mu(x) + \epsilon \\
-    \epsilon \sim N(0, \sigma_n^2)
-\end{gather}
-where x is the input vector, which could be just the time point $t$ and $\beta$ is the vector with the regression coefficients.
+we denote the mean function with $f(x)$ instead of $\mu(t)$:
+\begin{align*}
+    f(x) &= x^{\top}\beta, & y &= f(x) + E, & E &\sim N(0, \sigma_n^2)
+\end{align*}
+with $x$ being again the input vector and $\beta$ is the vector with the regression coefficients.
+In our example $x$ consists of the time point $t$ of the observation y and maybe
+some terms derived from $t$.
 
-Assuming observations $y = [y_0 \dots y_n]^{\top}$ for inputs $X = [x_0 \dots x_n]^{\top}$ we can calculate the likelihood,
+Assuming observations $y = [y_0 \dots y_n]^{\top}$ for inputs $X = [x_0 \dots x_n]^{\top}$
+we can calculate the likelihood,
 which is the probability density of the observations given $X$ and $\beta$:
 
-\begin{gather}
+\begin{gather*}
     p(y|X,\beta) = \prod_{i=1}^{n}p(y_i|x_i, \beta) = \prod_{i=1}^{n}\frac{1}{\sqrt {2\pi}\sigma_n}
-    exp(-\frac{ (y_i- x_i^{\top}\beta)^{2}}{2 \sigma_n^2})
-    = \frac{1}{(2 \pi \sigma_n^2)^{n/2}} exp(-\frac{1}{2\sigma_n^2} ||y-X^{\top}\beta||^2) = N(X^{\top} \beta, \sigma_n² I)
-\end{gather}
-
-
-
-
-
-
-
-
-
-
-
-When looking at a finite collections of function outputs $(F_x: t \in T_0$ with $T_0=[0, T]$
-And according to \ref{def:GP} the  $$
-Normal distribution over functions, i.e. an infinite set of random
-variables $(F_t: t \in T_0$ with $T_0=[0, T]$.
-The set of random variable is completely defined by the
-mean function $m: T_0 \to \mathbb{R}$ and the covariance or kernel
-function $k: T_0 \times T_0 \to \mathbb{R}$.
-For each $t \in T_0$ there is a $F_t$ such that
-$A \subset T_0, A={t_0, \dots t_n}$
-it olds that
-\[F_A = [F_{t_0}, \dots F_{t_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
-for
-\begin{gather*}
-    K_{AA} =
-    \begin{bmatrix}
-        k(t_1, t_1) & k(t_1, t_2) & \dots & k(t_1, t_n)\\
-        \vdots  &  & \vdots  & \vdots \\
-        k(t_n, t_1)  & k(t_n, t_1) & \dots  & k(t_n, t_n)
-    \end{bmatrix} \text{and }
-    \mu_A =
-    \begin{bmatrix}
-        m(t_1) \\
-        \vdots \\
-        \mu(t_n)
-    \end{bmatrix}
+    \exp(-\frac{ (y_i- x_i^{\top}\beta)^{2}}{2 \sigma_n^2}) \\
+    = \frac{1}{(2 \pi \sigma_n^2)^{n/2}} \exp(-\frac{1}{2\sigma_n^2}
+    ||y-X^{\top}\beta||_2^2) = N(X^{\top} \beta, \sigma_n^2 I)
 \end{gather*}
-where $m$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
-about correlation of the response variable at different time points.
-
-The finite marginals $F_{t_1}, \dots, F_{t_n}$ of GP are multivariate Gaussians.
-
-Parametrized by covariance function $k(x,x') = COV(f(x), f(x'))$
-
-A gaussian process is the a distribution over functions, completely defined by $k$ and $m$:
-\begin{gather*}
-    f(x) \sim GP(m(x), K(x, x'))
-\end{gather*}
+with $||a||_2^2$ being the euclidian norm of some vector $a$.
 
 
 
-\[
-f(X)=\[f(x_{1}),f(x_{2}),...,f(x_{N}))\]^{T} \sim \mathcal{N}(\mu, K_{X,X})
-//Probabilistic framework forGP
-\log p(y|X) \propto -[y^{T}(K + \sigma^{2}I)^{-1}y+\log|K + \sigma^{2}I|]
-//Prediction on new unseen
-dataf_{*}|X_{*},X,y \sim \mathcal{N}(\mathbb{E}(f_{*}),\text{cov}(f_{*})) \\\mathbb{E}(f_{*}) = \mu_{X_{*}}+K_{X_{*},X}[K_{X,X}+\sigma^{2}I]^{-1}(y-\mu_{x}) \\\text{cov}(f_{*})=K_{X_{*},X_{*}}-K_{X_{*},X}[K_{X,X}+\sigma^{2}I]^{-1}K_{X,X_{*}}
-\]
 
