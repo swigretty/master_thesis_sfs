@@ -9,7 +9,7 @@ probabilities are assigned to functions that are assumed to be more likely.
 A Gaussian process can be viewed as a gaussian distribution over functions or as an infinite set of random
 variables representing the values of the function $f(x)$ at location $x$.
 The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
-by \citeauthor{rasmussen_gaussian_2006}:
+by \citeauthor{rasmussen_gaussian_2006} :
 
 \begin{definition}[Gaussian Process]\label{def:GP}
  A Gaussian process is a collection of random variables, any finite number of which have a joint Gaussian distribution.
@@ -38,7 +38,7 @@ $F_x := f(x)$ such that for a set $A \subset X$ with $A={x_0, \dots x_n}$ it hol
 
 \[F_A = [F_{x_0}, \dots , F_{x_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
 for
-\begin{gather*}
+\begin{gather}
     K_{AA} =
     \begin{bmatrix}
         k(x_0, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
@@ -51,7 +51,7 @@ for
         \vdots \\
         \mu(x_n)
     \end{bmatrix}
-\end{gather*}
+\end{gather}
 The finite marginals $F_{x_0}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
 In our running example we consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
 
@@ -69,27 +69,89 @@ This special case of gaussian process regression with this specific kernel funct
 
 \section{Bayesian Linear Regression}
 
-If we consider again the linear regression model from \ref{ch:time-series-decomposition-and-regression} but
+If we consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression} but
 we denote the mean function with $f(x)$ instead of $\mu(t)$:
 \begin{align*}
-    f(x) &= x^{\top}\beta, & y &= f(x) + E, & E &\sim N(0, \sigma_n^2)
+    f(x) &= x^{\top}\beta, & y &= f(x) + E, & E &\sim N(0, \Sigma_n)
 \end{align*}
-with $x$ being again the input vector and $\beta$ is the vector with the regression coefficients.
-In our example $x$ consists of the time point $t$ of the observation y and maybe
-some terms derived from $t$.
+with $x \in \mathbb{R}^p$ being again the input vector and $\beta \in \mathbb{R}^p$ is the vector with
+the regression coefficients.
 
 Assuming observations $y = [y_0 \dots y_n]^{\top}$ for inputs $X = [x_0 \dots x_n]^{\top}$
 we can calculate the likelihood,
 which is the probability density of the observations given $X$ and $\beta$:
 
 \begin{gather*}
-    p(y|X,\beta) = \prod_{i=1}^{n}p(y_i|x_i, \beta) = \prod_{i=1}^{n}\frac{1}{\sqrt {2\pi}\sigma_n}
-    \exp(-\frac{ (y_i- x_i^{\top}\beta)^{2}}{2 \sigma_n^2}) \\
-    = \frac{1}{(2 \pi \sigma_n^2)^{n/2}} \exp(-\frac{1}{2\sigma_n^2}
-    ||y-X^{\top}\beta||_2^2) = N(X^{\top} \beta, \sigma_n^2 I)
+    p(y|X,\beta) =
+    = \frac{1}{( (2\pi)^{n/2} \sqrt {\det(\Sigma_n))}}
+    \exp(-\frac{1}{2}(y − X\beta)^{\top} \Sigma_n^{-1}(y - X\beta))
+    = N(X \beta, \Sigma_n)
 \end{gather*}
-with $||a||_2^2$ being the euclidian norm of some vector $a$.
+
+Unlike in chapter \ref{ch:time-series-decomposition-and-regression} we will now also
+assume a prior distribution over the regression coefficients $\beta$, based on
+what we believe is are likely values for the coefficients. We will choose a gaussian
+distribution with mean $0$ and covariance $\Sigma_p$, i.e.:
+
+\begin{gather*}
+    p(\beta) = N(0, \Sigma_p)
+\end{gather*}
+
+Given our observations $y = [y_0 \dots y_n]^{\top}$  we can use Bayes' theorem to calculate the posterior distribution over the $\beta$s:
+\begin{gather*}
+    p(\beta|y, X) = \frac{p(y,\beta|X)}{p(y|X)} = \frac{p(y|X,\beta)p(\beta)}{p(y|X)}
+\end{gather*}
+
+One approach is to just plug in the expressions for $p(y|X,\beta)$ and $p(\beta|y, X)$ from above, with:
+
+\begin{gather*}
+    p(y|X) = \int p(y|X,w) p(w) dw
+\end{gather*}
+
+Or it can be helpful to combine the coefficients and the observations into a single random vector with
+multivariate normal distribution:
+
+%\begin{gather*}
+%    \begin{bmatrix}
+%        y_0 \\
+%        \vdots \\
+%        y_n \\
+%        \beta_0 \\
+%        \vdots \\
+%        \beta_{p-1}
+%    \end{bmatrix}
+%    =  \begin{bmatrix}
+%        X \\
+%        I_p
+%    \end{bmatrix}
+%    \beta + E
+%
+%    \sim N \left(
+%    \begin{bmatrix}
+%        0 \\
+%        \vdots \\
+%        0 \\
+%        0 \\
+%        \vdots \\
+%        0
+%    \end{bmatrix},
+%        \begin{bmatrix}
+%        \Sigma_{yy} &  &  & \Sigma_{yw}\\
+%        \\
+%        \\
+%        0 \\
+%        \\
+%    \end{bmatrix}
+%
+%
+%    \right) = p(y, \beta)
+%\end{gather*}
 
 
-
-
+\[ \left|
+\begin{array}{c;{2pt/2pt}r}
+\mbox{\LARGE $Q$} & \begin{matrix} 0 \\ 0 \end{matrix} \\ \hdashline[2pt/2pt]
+\begin{matrix} 2 & 3 \end{matrix} & -1
+\end{array}
+\right|
+\]
