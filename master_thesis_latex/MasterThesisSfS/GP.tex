@@ -1,4 +1,6 @@
+
 \chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
 One approach as we have seen in seen in \ref{ch:time-series-decomposition-and-regression}
@@ -36,7 +38,7 @@ about correlation of the response variable at different inputs.
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
 $F_x := f(x)$ such that for a set $A \subset X$ with $A={x_0, \dots x_n}$ it holds that:
 
-\[F_A = [F_{x_0}, \dots , F_{x_n}] \sim \mathcal{N}(m_A,\,K_{AA})\]
+\[F_A = [F_{x_0}, \dots , F_{x_n}] \sim \N(m_A,\,K_{AA})\]
 for
 \begin{gather}
     K_{AA} =
@@ -56,12 +58,16 @@ The finite marginals $F_{x_0}, \dots, F_{x_n}$ of the GP thus have a multivariat
 In our running example we consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
 
 Note that Gaussian processes with finite index sets and hence with joint gaussian distribution is just a specific case
-of Gaussian process.
+of Gaussian process. If we assume an ARMA process with gaussian innovations for the blood pressure time series
+we can view the time series
+as collection of normally distributed random variables and are thus dealing with a gaussian process.
 
-If we consider the linear regression case from \ref{ch:time-series-decomposition-and-regression} and assume a prior distribution
+
+If we consider the linear regression case from \ref{ch:time-series-decomposition-and-regression} and assume a
+prior distribution
 on the $\beta$'s, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
 \[
-    \mu \sim N(0, XX^{\top})
+    \mu \sim \N(0, XX^{\top})
 \]
 and represents a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
 This special case of gaussian process regression with this specific kernel function is known as baysian linear regression.
@@ -72,20 +78,20 @@ This special case of gaussian process regression with this specific kernel funct
 If we consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression} but
 we denote the mean function with $f(x)$ instead of $\mu(t)$:
 \begin{align*}
-    f(x) &= x^{\top}\beta, & y &= f(x) + E, & E &\sim N(0, \Sigma_n)
+    f(x) &= x^{\top}\beta, & y &= f(x) + E, & E &\sim \N(0, \Sigma_n)
 \end{align*}
 with $x \in \mathbb{R}^p$ being again the input vector and $\beta \in \mathbb{R}^p$ is the vector with
 the regression coefficients.
 
-Assuming observations $y = [y_0 \dots y_n]^{\top}$ for inputs $X = [x_0 \dots x_n]^{\top}$
+Assuming observations $y = [y_1 \dots y_n]^{\top}$ for inputs $X = [x_1 \dots x_n]^{\top}$
 we can calculate the likelihood,
 which is the probability density of the observations given $X$ and $\beta$:
 
 \begin{gather*}
     p(y|X,\beta) =
     = \frac{1}{( (2\pi)^{n/2} \sqrt {\det(\Sigma_n))}}
-    \exp(-\frac{1}{2}(y − X\beta)^{\top} \Sigma_n^{-1}(y - X\beta))
-    = N(X \beta, \Sigma_n)
+    \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_n^{-1}(y-X\beta))
+    = \N(X \beta, \Sigma_n)
 \end{gather*}
 
 Unlike in chapter \ref{ch:time-series-decomposition-and-regression} we will now also
@@ -94,10 +100,10 @@ what we believe is are likely values for the coefficients. We will choose a gaus
 distribution with mean $0$ and covariance $\Sigma_p$, i.e.:
 
 \begin{gather*}
-    p(\beta) = N(0, \Sigma_p)
+    p(\beta) = \N(0, \Sigma_p)
 \end{gather*}
 
-Given our observations $y = [y_0 \dots y_n]^{\top}$  we can use Bayes' theorem to calculate the posterior distribution over the $\beta$s:
+Given our observations $y = [y_1 \dots y_n]^{\top}$  we can use Bayes' theorem to calculate the posterior distribution over the $\beta$s:
 \begin{gather*}
     p(\beta|y, X) = \frac{p(y,\beta|X)}{p(y|X)} = \frac{p(y|X,\beta)p(\beta)}{p(y|X)}
 \end{gather*}
@@ -111,22 +117,58 @@ One approach is to just plug in the expressions for $p(y|X,\beta)$ and $p(\beta|
 Or it can be helpful to combine the coefficients and the observations into a single random vector with
 multivariate normal distribution:
 
-%\begin{gather*}
-%    \begin{bmatrix}
-%        y_0 \\
-%        \vdots \\
-%        y_n \\
-%        \beta_0 \\
-%        \vdots \\
-%        \beta_{p-1}
-%    \end{bmatrix}
-%    =  \begin{bmatrix}
-%        X \\
-%        I_p
-%    \end{bmatrix}
-%    \beta + E
+\begin{gather}
+    \begin{bmatrix}
+        y_1 \\
+        \vdots \\
+        y_n \\
+        \beta_1 \\
+        \vdots \\
+        \beta_p
+    \end{bmatrix}
+    = \begin{bmatrix} X \\ I_p \end{bmatrix} \beta + E
+    \sim \N \left(
+        \begin{bmatrix}
+        \mu_1 \\
+        \vdots \\
+        \mu_{y_n} \\
+        \mu_{\beta_1} \\
+        \vdots \\
+        \mu_{\beta_{p}}
+        \end{bmatrix},
+        \begin{bmatrix}
+            \Sigma_{yy} & \begin{matrix} \\ \Sigma_{y\beta} \\  \\ \end{matrix} \\
+            \begin{matrix} & \Sigma_{\beta y} & \end{matrix} & \Sigma_{\beta \beta}
+        \end{bmatrix}
+        \right)
+    = p(y, \beta)
+\end{gather}
+
+with $\Sigma_{yy} \in \mathbb{R}^{n\times n}$, $\Sigma_{\beta y} \in \mathbb{R}^{p\times n}$,
+$\Sigma{\beta \beta} \in \mathbb{R}^{p\times p}$, $\Sigma_{y\beta} = \Sigma_{\beta y}^{\top}$.
+
+Since $E &\sim \N(0, \Sigma_n)$ and $ \beta \sim \N(0, \Sigma_p)$ we have:
+
+\begin{align*}
+   \Sigma_{yy} = X \Sigma_p X^{\top} + \Sigma_n  & \Sigma_{\beta y} = \Sigma_p X^{\top} & \Sigma{\beta \beta} = \Sigma_p \\
+   \mu_{y_0} = \dots = \mu_{y_n} = \mu_{\beta_0} =  \dots = \mu_{\beta_{p-1}} = 0
+\end{align*}
+
+One well known properties of multivariate normal distributions is that the conditional distribution of
+$\beta$ given $y$ is also normal and has the following mean $\bar{\mu}$ and covariance $\bar{\Sigma}$:
+
+\begin{gather}
+    p(\beta | y X) = \N(\bar{\mu}, \bar{\Sigma}) \\
+\end{gather}
+with:
+\begin{gather}
+    \bar{\Sigma} = \Sigma_{\beta \beta} - \Sigma_{\beta y} \Sigma_{y y}^{-1} \Sigma_{y \beta} \\
+    \bar{\mu} = \mu_{\beta} -
+\end{gather}
+
+%    \sim
 %
-%    \sim N \left(
+%    N \left(
 %    \begin{bmatrix}
 %        0 \\
 %        \vdots \\
@@ -135,23 +177,25 @@ multivariate normal distribution:
 %        \vdots \\
 %        0
 %    \end{bmatrix},
-%        \begin{bmatrix}
-%        \Sigma_{yy} &  &  & \Sigma_{yw}\\
-%        \\
-%        \\
-%        0 \\
-%        \\
+%
+%    \begin{bmatrix}
+%        \Sigma_{yy} & \begin{matrix} \\ \Sigma_{yw} \\  \\ \end{matrix} \\
+%        \begin{matrix} & \Sigma_{wy} & \end{matrix} & \Sigma_{ww}
 %    \end{bmatrix}
 %
 %
 %    \right) = p(y, \beta)
-%\end{gather*}
+%\end{gather}
 
 
-\[ \left|
-\begin{array}{c;{2pt/2pt}r}
-\mbox{\LARGE $Q$} & \begin{matrix} 0 \\ 0 \end{matrix} \\ \hdashline[2pt/2pt]
-\begin{matrix} 2 & 3 \end{matrix} & -1
-\end{array}
-\right|
-\]
+%$\begin{bNiceArray}{cw{c}{1cm}c|c}[margin]
+%\Block{3-3}{A} & & & 0 \\
+%& & & \Vdots \\
+%& & & 0 \\
+%\hline
+%0 & \Cdots& 0 & 0
+%\end{bNiceArray}$
+%
+%
+%
+
