@@ -267,42 +267,42 @@ The expression in \ref{def:predictive-dist} can then be derived similarly to bef
 conditioning of gaussian random vectors described in \ref{def:conditioning}.
 
 \subsection{Gaussian Process Regression}
+By abandoning the parameters $\beta$, in Gaussian process regression we are always
+directly aiming for the predictive distribution of
+$f^{\ast} := f(x^{\ast})$ at $x^{\ast}$ given our observations.
+In order to derive $f^{\ast}|\mathbf{Y}$
+we will again consider the Bayesian linear regression example from the last section.
+
+We chose a gaussian prior over the regression coefficients and for the prior distribution $p(\mathbf{Y}$) we had:
+
+\begin{gather*}
+    \mathbf{Y} \sim \N(0,  \Sigma_p X^{\top} + \Sigma_n)
+\end{gather*}
+
+Alternatively we can assume a distribution over $\mathbf{Y}$ as a function of x:
+
+\begin{gather*}
+    \mathbf{Y}(x) \sim GP(0, k(x, x'))
+\end{gather*}
+where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} =  \Sigma_p X^{\top} + \Sigma_n$
 
 
+to obtain $y^{\ast}|\mathbf{Y}$
+
+We have seen that the likelihood of the observations $Y$ given $X$ and $\beta$ is given by:
+\begin{gather*}
+    \mathbf{Y}|X,\beta \sim \N(X \beta, \Sigma_n)
+\end{gather*}
+
+If we assume now
+
+If we assume $\mathbf{Y}$ as a random function of $x$ we can write:
+
+\begin{gather*}
+    \mathbf{Y}(x) \sim GP(X \beta, K_{YY})
+\end{gather*}
+
+where $K_{YY} needs to be $
 
 
-
-
-%    \sim
-%
-%    N \left(
-%    \begin{bmatrix}
-%        0 \\
-%        \vdots \\
-%        0 \\
-%        0 \\
-%        \vdots \\
-%        0
-%    \end{bmatrix},
-%
-%    \begin{bmatrix}
-%        \Sigma_{yy} & \begin{matrix} \\ \Sigma_{yw} \\  \\ \end{matrix} \\
-%        \begin{matrix} & \Sigma_{wy} & \end{matrix} & \Sigma_{ww}
-%    \end{bmatrix}
-%
-%
-%    \right) = p(y, \beta)
-%\end{gather}
-
-
-%$\begin{bNiceArray}{cw{c}{1cm}c|c}[margin]
-%\Block{3-3}{A} & & & 0 \\
-%& & & \Vdots \\
-%& & & 0 \\
-%\hline
-%0 & \Cdots& 0 & 0
-%\end{bNiceArray}$
-%
-%
-%
 
