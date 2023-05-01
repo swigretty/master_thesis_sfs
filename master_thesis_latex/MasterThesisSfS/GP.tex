@@ -2,20 +2,19 @@
 
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
-One approach as we have seen in seen in \ref{ch:time-series-decomposition-and-regression}
-is to restrict ourselves to a
-class of functions, which in our case has been the class of linear functions of the input.
+In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
+In \ref{ch:time-series-decomposition-and-regression} we restricted ourselves to the class of linear functions.
 Another approach is to assign a prior probability to every possible function, where higher
 probabilities are assigned to functions that are assumed to be more likely.
-Inference in the Bayesian framework is then based on the posterior distribution of these
+Inference in this Bayesian setting is then based on the posterior distribution of these
 functions given some potentially noisy observations of $f(x)$.
 
 This chapter first provides a definition of a Gaussian Process and then describes how they
 can be used to solve a regression problem.
 
-\section{Gaussian Process Definition}
+\section{Gaussian Process Definition}\label{sec:gaussian-process-definition}
 
-A Gaussian process can be viewed as a gaussian distribution over functions or as an infinite set of random
+A Gaussian process (GP) can be viewed as a gaussian distribution over functions or as an infinite set of random
 variables representing the values of the function $f(x)$ at location $x$.
 The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
 by \citeauthor{rasmussen_gaussian_2006} :
@@ -25,27 +24,24 @@ by \citeauthor{rasmussen_gaussian_2006} :
 \end{definition}
 
 
-As a (multivariate) Gaussian distribution is defined by its mean and covariance matrix a gaussian process (GP) is
-uniquely identified by its mean $m(x)$ and covariance function $k(x,x')$.
+As a (multivariate) Gaussian distribution is defined by its mean and covariance matrix, a GP is
+uniquely identified by its mean $m(x)$ and covariance (kernel) function $k(x,x')$.
 
 We write
 
-\begin{gather}
-    f(x) \sim GP(m(x), k(x,x')), \\
-\end{gather}
+\begin{gather*}
+    f(x) \sim GP(m(x), k(x,x'))
+\end{gather*}
 with
-\begin{gather}
+\begin{gather*}
     m(x) = \mathbb{E}[f(x)] \\
     k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
-\end{gather}
-
-Where where $m$ is called the mean function and k is called covariance (kernel) function, which encodes some assumption
-about correlation of the response variable at different inputs.
+\end{gather*}
 
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
 $F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
 
-\[F_A = [F_{x_0}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
+\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
 for
 \begin{gather}
     K_{AA} =
@@ -65,31 +61,33 @@ The finite marginals $F_{x_1}, \dots, F_{x_n}$ of the GP thus have a multivariat
 In our running example we consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
 
 Note that Gaussian processes with finite index sets and hence with joint gaussian distribution is just a specific case
-of Gaussian process. If we assume an ARMA process with gaussian innovations for the blood pressure time series
-we can view the time series
-as collection of normally distributed random variables and are thus dealing with a gaussian process.
+of GP. If we assume an ARMA process with gaussian innovations for the blood pressure time series, one can view the time series
+as collection of normally distributed random variables and are thus dealing with a GP.
 
 
-If we consider the linear regression case from \ref{ch:time-series-decomposition-and-regression} and assume a
+If we consider the linear regression case from chapter \ref{ch:time-series-decomposition-and-regression} and assume a
 prior distribution
 on the $\beta$'s, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
 \[
     \mu \sim \N(0, XX^{\top})
 \]
 and represents a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
-This special case of gaussian process regression with this specific kernel function is known as baysian linear regression.
+This special case of gaussian process regression with this specific kernel function is known as baysian linear regression
+and will be presented in the next section.
 
 
 \section{Gaussian Process Regression}
-Predictions in the Bayesian regression setting is finding the posterior distribution of  $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$
-given some potentially noisy observations of $f(x)$. This is made possible by employing a prior distribution
-over the function $f(x)$. As we have seen before if we use a Gaussian process to do so, we can interpret this as
-assuming a Gaussian distribution over $f(x)$.
+Predictions in the Bayesian regression setting is finding the posterior distribution of
+$f^{\ast} := f(x^{\ast})$ at some input $x^{\ast}$, given some potentially noisy observations of $f(x)$.
+This is made possible by employing a prior distribution
+over the function $f(x)$. As shown in section \ref{sec:gaussian-process-definition}, a GP is essentially
+assuming a Gaussian distribution over functions.
+
 
 \subsection{Bayesian Linear Regression}
 
-If we consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}, however
-a more general setting is assumed where the data generating process does not need to be a time series process.
+We consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}.
+However, we assume a more general setting, where the data generating process does not need to be a time series process.
 We denote the mean function with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a noisy observations of
 $f(x_i)$, where the additive error $E_i$ does not necessarily need to arrive from a time series process $E(t)$.
 We obtain the following data generating model:
@@ -99,24 +97,24 @@ We obtain the following data generating model:
 with $x_i \in \mathbb{R}^p$ being again the input vector and $\beta \in \mathbb{R}^p$ is the vector with
 the regression coefficients.
 
-and in matrix from:
+In matrix from:
 \begin{align*}
     \mathbf{Y} = X \beta + \mathbf{E}
 \end{align*}
 Where $\mathbf{Y} = [Y_{1}, \dots Y_{n}]^{\top}$ is the observed data,
 $X = [x_{1}, \dots x_{n}]^{\top} \in \mathbb{R}^{n \times p}$ is the design matrix.
-As before gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$
-are assumed:
+We asume again gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$:
 \begin{gather*}
     \mathbf{E} \sim \N(0, \Sigma_n)
 \end{gather*}
-If $\mathbf{E}$ is an ARMA process then this assumption is valid as long as the
-innovations are always normally distributed.
+If $\mathbf{E}$ is an ARMA process with gaussian innovations,
+$\mathbf{E}$ being a sum of innovations, will also have gaussian distribution and
+this assumption is thus valid.
 
-The likelihood of the observations $Y$ given $X$ and $\beta$ is then:
+The likelihood of the observations $\mathbf{Y}$ given $X$ and $\beta$ is then:
 
 \begin{gather*}
-    p(Y|X,\beta) =
+    p(\mathbf{Y}|X,\beta) =
     = \frac{1}{( (2\pi)^{n/2} \sqrt {\det(\Sigma_n))}}
     \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_n^{-1}(y-X\beta))
     = \N(X \beta, \Sigma_n)
@@ -131,15 +129,17 @@ To stay in the realm of gaussian processes the prior has to be guassian and we c
     p(\beta) = \N(0, \Sigma_p)
 \end{gather*}
 
-Given our observations $Y$  we can use Bayes' theorem to calculate the posterior distribution over $\beta$:
+Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the posterior distribution over $\beta$:
 \begin{gather*}
-    p(\beta|y, X) = \frac{p(y,\beta|X)}{p(y|X)} = \frac{p(y|X,\beta)p(\beta)}{p(y|X)}
+    p(\beta| \mathbf{Y}, X) = \frac{p(\mathbf{Y},\beta|X)}{p(\mathbf{Y}|X)} =
+    \frac{p(\mathbf{Y}|X,\beta)p(\beta)}{p(\mathbf{Y}|X)}
 \end{gather*}
 
-One approach is to just plug in the expressions for $p(y|X,\beta)$ and $p(\beta|y, X)$ from above, with:
+One approach is to just plug in the expressions for
+$p(\mathbf{Y}|X,\beta)$ and $p(\beta|\mathbf{Y}, X)$ from above, with:
 
 \begin{gather*}
-    p(y|X) = \int p(y|X,w) p(w) dw = \N(0, X \Sigma_p X^{\top} + \Sigma_n)
+    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,w) p(w) dw = \N(0, X \Sigma_p X^{\top} + \Sigma_n)
 \end{gather*}
 
 Or it can be helpful to combine the coefficients and the observations into a single random vector with
@@ -199,7 +199,7 @@ Gaussian random vectors with the following joint distribution:
         \Sigma_{BA} & \Sigma_{BB}
     \end{bmatrix}
 \end{gather}
-The distribution $p(\mathbf{B} | \mathbf{A}=a$ is also normally distributed with mean $\bar{\mu}$ and covariance
+The distribution $p(\mathbf{B} | \mathbf{A}=a)$ is also normally distributed with mean $\bar{\mu}$ and covariance
 $\bar{\Sigma}$ of the following form:
 
 \begin{align}\label{def:conditioning}
