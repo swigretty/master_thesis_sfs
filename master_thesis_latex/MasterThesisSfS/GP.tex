@@ -41,16 +41,16 @@ with
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
 $F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
 
-\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
+\[\mathbf{F}_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\boldsymbol{\mu}_A,\,K_{AA})\]
 for
-\begin{gather}
+\begin{gather}\label{def:Kernel-Matrix}
     K_{AA} =
     \begin{bmatrix}
         k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
         \vdots  &  & \vdots  & \vdots \\
         k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
     \end{bmatrix} \text{and }
-    \mu_A =
+    \boldsymbol{\mu}_A =
     \begin{bmatrix}
         \mu(x_1) \\
         \vdots \\
@@ -67,9 +67,9 @@ as collection of normally distributed random variables and are thus dealing with
 
 If we consider the linear regression case from chapter \ref{ch:time-series-decomposition-and-regression} and assume a
 prior distribution
-on the $\beta$'s, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
+on $\boldsymbol{\beta}$, i.e. $\boldsymbol{\beta} \sim N(0, I)$ then the predictive distribution over $\boldsymbol{\mu} = X \boldsymbol{\beta}$ is Gaussian:
 \[
-    \mu \sim \N(0, XX^{\top})
+    \boldsymbol{\mu} \sim \N(0, XX^{\top})
 \]
 and represents a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
 This special case of gaussian process regression with this specific kernel function is known as baysian linear regression
@@ -84,7 +84,7 @@ over the function $f(x)$. As shown in section \ref{sec:gaussian-process-definiti
 assuming a Gaussian distribution over functions.
 
 
-\subsection{Bayesian Linear Regression}
+\subsection{Bayesian Linear Regression}\label{subsec:bayesian-linear-regression}
 
 We consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}.
 However, we assume a more general setting, where the data generating process does not need to be a time series process.
@@ -92,44 +92,45 @@ We denote the mean function with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a
 $f(x_i)$, where the additive error $E_i$ does not necessarily need to arrive from a time series process $E(t)$.
 We obtain the following data generating model:
 \begin{align*}
-    f(x_i) &= x_i^{\top}\beta, & Y_i &= f(x_i) + E_i,  & (i = 1, \dots n)
+    f(x_i) &= x_i^{\top}\boldsymbol{\beta}, & Y_i &= f(x_i) + E_i,  & (i = 1, \dots n)
 \end{align*}
-with $x_i \in \mathbb{R}^p$ being again the input vector and $\beta \in \mathbb{R}^p$ is the vector with
+with $x_i \in \mathbb{R}^p$ being again the input vector and $\boldsymbol{\beta} \in \mathbb{R}^p$ is the vector with
 the regression coefficients.
 
 In matrix from:
 \begin{align*}
-    \mathbf{Y} = X \beta + \mathbf{E}
+    \mathbf{Y} = X \boldsymbol{\beta} + \mathbf{E}
 \end{align*}
 Where $\mathbf{Y} = [Y_{1}, \dots Y_{n}]^{\top}$ is the observed data,
 $X = [x_{1}, \dots x_{n}]^{\top} \in \mathbb{R}^{n \times p}$ is the design matrix.
-We asume again gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$:
+We assume again gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$:
 \begin{gather*}
     \mathbf{E} \sim \N(0, \Sigma_n)
 \end{gather*}
-If $\mathbf{E}$ is an ARMA process with gaussian innovations,
-$\mathbf{E}$ being a sum of innovations, will also have gaussian distribution and
-this assumption is thus valid.
+If $\mathbf{E}$ is an ARMA process then every element of the time series $E_{i}$
+is itself a sum of innovations. Therefore, $\mathbf{E}$ is gaussian as long as it has
+gaussian innovations.
 
-The likelihood of the observations $\mathbf{Y}$ given $X$ and $\beta$ is then:
+The likelihood of the observations $\mathbf{Y}$ given $X$ and $\boldsymbol{\beta}$ is then:
 
 \begin{gather*}
-    p(\mathbf{Y}|X,\beta) =
+    p(\mathbf{Y}|X,\boldsymbol{\beta}) =
     = \frac{1}{( (2\pi)^{n/2} \sqrt {\det(\Sigma_n))}}
-    \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_n^{-1}(y-X\beta))
-    = \N(X \beta, \Sigma_n)
+    \exp(-\frac{1}{2}(y - X\boldsymbol{\beta})^{\top} \Sigma_n^{-1}(y-X\boldsymbol{\beta}))
+    = \N(X \boldsymbol{\beta}, \Sigma_n)
 \end{gather*}
 
-The Bayesian approach differs from the on in chapter \ref{ch:time-series-decomposition-and-regression} in
-that we additionally assume a prior distribution over the regression coefficients $\boldsymbol{\beta}$, based on
-what we believe are likely values for the coefficients.
+Until now the regression model is exactly the same as in chapter \ref{ch:time-series-decomposition-and-regression}.
+The Bayesian approach is different in that we additionally assume a prior distribution over the
+regression coefficients $\boldsymbol{\beta}$, based on what we believe are likely values for the coefficients.
 To stay in the realm of gaussian processes the prior has to be guassian and we choose:
 
 \begin{gather*}
     p(\boldsymbol{\beta}) = \N(0, \Sigma_p)
 \end{gather*}
+Note how the function $f(x_i)=x_i^{\top}\boldsymbol{\beta}$ is now no longer deterministic but a random function.
 
-Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the posterior distribution over $\beta$:
+Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the posterior distribution over $\boldsymbol{\beta}$:
 \begin{gather*}
     p(\boldsymbol{\beta}| \mathbf{Y}, X) = \frac{p(\mathbf{Y},\boldsymbol{\beta}|X)}{p(\mathbf{Y}|X)} =
     \frac{p(\mathbf{Y}|X,\boldsymbol{\beta})p(\boldsymbol{\beta})}{p(\mathbf{Y}|X)}
@@ -139,7 +140,7 @@ One approach is to just plug in the expressions for
 $p(\mathbf{Y}|X,\boldsymbol{\beta})$ and $p(\boldsymbol{\beta}|\mathbf{Y}, X)$ from above, with:
 
 \begin{gather*}
-    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,w) p(w) dw = \N(0, X \Sigma_p X^{\top} + \Sigma_n)
+    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\boldsymbol{\beta}) p(\boldsymbol{\beta}) d\boldsymbol{\beta} = \N(0, X \Sigma_p X^{\top} + \Sigma_n)
 \end{gather*}
 
 Or it can be helpful to combine the coefficients and the observations into a single random vector with
@@ -183,51 +184,56 @@ multivariate normal distribution:
 
 with $\Sigma_p X^{\top} + \Sigma_n \in \mathbb{R}^{n\times n}$ and $\Sigma_p X^{\top} \in \mathbb{R}^{p\times n}$.
 
-To find now the posterior distribution $p(\boldsymbol{\beta} |  \mathbf{Y}, X)$ one can use the well known rules for deriving conditional
-distributions for jointly Gaussian random vectors, which will be presented quickly.
-Let's say that $\mathbf{A} \sim \N(\mu_A, \Sigma_{AA})$ and $\mathbf{B} \sim \N(\mu_B, \Sigma_{BB})$ are
+To find now the posterior distribution $p(\boldsymbol{\beta} | \mathbf{Y}, X)$ one can use the rules for deriving conditional
+distributions for multivariate Gaussian's.
+
+\begin{theorem}\label{thrm:Gaussian-Conditioning} (\citeauthor{von_mises_mathematical_1964})
+
+Let $\mathbf{A} \sim \N(\boldsymbol{\mu}_A, \Sigma_{AA})$ and $\mathbf{B} \sim \N(\boldsymbol{\mu}_B, \Sigma_{BB})$ be
 Gaussian random vectors with the following joint distribution:
 
 \begin{gather}
     p(\mathbf{A}, \mathbf{B}) = \N(
     \begin{bmatrix}
-        \mu_A \\
-        \mu_B
+        \boldsymbol{\mu}_A \\
+        \boldsymbol{\mu}_B
     \end{bmatrix},
     \begin{bmatrix}
         \Sigma_{AA} & \Sigma_{AB} \\
         \Sigma_{BA} & \Sigma_{BB}
     \end{bmatrix}
 \end{gather}
-The distribution $p(\mathbf{B} | \mathbf{A}=a)$ is also normally distributed with mean $\bar{\mu}$ and covariance
-$\bar{\Sigma}$ of the following form:
 
-\begin{align}\label{def:conditioning}
-    \bar{\Sigma} = \Sigma_{B B} - \Sigma_{B A} \Sigma_{A A}^{-1} \Sigma_{A B} & & \bar{\mu} = \mu_{B} + \Sigma_{BA} \Sigma_{AA}^{-1}(a - \mu_A)
+Then the conditional distribution $p(\mathbf{B} | \mathbf{A}=a)$ is also normally distributed
+with mean $\bar{\boldsymbol{\mu}}$ and covariance $\bar{\Sigma}$ of the following form:
+
+\begin{align}
+    \bar{\Sigma} = \Sigma_{B B} - \Sigma_{B A} \Sigma_{A A}^{-1} \Sigma_{A B} & & \bar{\boldsymbol{\mu}} = \boldsymbol{\mu}_{B} + \Sigma_{BA} \Sigma_{AA}^{-1}(a - \boldsymbol{\mu}_A)
+\end{align}
+\end{theorem}
+
+Using theorem \ref{thrm:Gaussian-Conditioning} the posterior distribution over $\boldsymbol{\beta}$ is then given by:
+\begin{gather*}
+    p(\boldsymbol{\beta} | \mathbf{Y}=y, X) \sim \N(\bar{\boldsymbol{\mu}}, \bar{\Sigma}), \\
+    \bar{\Sigma} = \Sigma_{p} - \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_n)^{-1} X  \Sigma_p, \\
+    \bar{\boldsymbol{\mu}} = \boldsymbol{\mu}_{\beta} + \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_n)^{-1}y
+\end{gather*}
+
+The expression for the posterior mean and covariance matrix can be further simplified using Woodbury matrix identity
+and we obtain:
+\begin{align}\label{def:conditional-mean-var}
+    \bar{\Sigma} = (X^{\top}\Sigma_n^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\boldsymbol{\mu}} = \bar{\Sigma} X^{\top} \Sigma_n^{-1} y
 \end{align}
 
-
-Using this rule we obtain for the mean and covariance of $p(\boldsymbol{\beta} | \mathbf{Y}=y, X) \sim \N(\bar{\mu}, \bar{\Sigma})$:
-
-\begin{align*}
-    \bar{\Sigma} = \Sigma_{p} - \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_n)^{-1} X  \Sigma_p & & \bar{\mu} = \mu_{\beta} + \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_n)^{-1}y
-\end{align*}
-
-and using Woodbury matrix identity we can further simplify:
-\begin{align*}
-    \bar{\Sigma} = (X^{\top}\Sigma_n^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\mu} = \bar{\Sigma} X^{\top} \Sigma_n^{-1} y
-\end{align*}
-
-Deriving the predictive distribution of $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$ given our
-observations is then straight forward:
-
-\begin{gather}\label{def:predictive-dist}
-    p(f^{\ast} | \mathbf{Y}, X, x^{\ast}) = \N(x^{\ast^{\top}} \bar{\mu}, x^{\ast^{\top}} \bar{\Sigma} x^{\ast})
-\end{gather}
+Since $f(x) = x^{\top}\boldsymbol{\beta}$, one can use the posterior mean and covariance matrix from
+\ref{def:conditional-mean-var} to obtain the predictive distribution of $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$
+given our observations:
+\begin{align}\label{def:predictive-dist}
+    p(f^{\ast} | \mathbf{Y}, X, x^{\ast}) = \N(x^{\ast^{\top}} \bar{\boldsymbol{\mu}}, x^{\ast^{\top}} \bar{\Sigma} x^{\ast}) \\
+\end{align}
 
 One can also use the rules for conditioning to directly derive $f^{\ast} | \mathbf{Y}, X, x^{\ast}$.
-Similarly to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X, x^{\ast})$:
-
+Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X, x^{\ast})$:
 
 \begin{gather}
     \begin{bmatrix}
@@ -263,30 +269,29 @@ Similarly to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}|
     = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
 \end{gather}
 
-The expression in \ref{def:predictive-dist} can then be derived similarly to before using the rules for
-conditioning of gaussian random vectors described in \ref{def:conditioning}.
+The expression in \ref{def:predictive-dist} can then be derived using theorem \ref{thrm:Gaussian-Conditioning} on
+conditioning of multivariate Gaussian's.
 
 \subsection{Gaussian Process Regression}
-By abandoning the parameters $\beta$, in Gaussian process regression we are always
+By abandoning the parameters $\boldsymbol{\beta}$, in Gaussian process regression we are always
 directly aiming for the predictive distribution of
 $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$ given our observations.
 
 Let us first transform the Bayesian linear regression example from the last section
 into a GP regression problem.
 
-We had:
+For the distribution of $\mathbf{F}_X = [f(x_1) \dots f(x_n))]$ with given $X = [x_1 \dots x_n]^{\top}$ we had:
 \begin{gather*}
-    \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_n) \\
-    \text{and} \\
-    \mathbf{f}|X \sim \N(0,  X \Sigma_p X^{\top})
+    \mathbf{F}_X \sim \N(0,  X \Sigma_p X^{\top})
 \end{gather*}
 
-Alternatively we can assume a distribution over the function $\mathbf{f(x)}$:
+Alternatively this can be written as a distribution over the function $f(x)$:
 
 \begin{gather*}
     f(x) \sim GP(0, k(x, x'))
 \end{gather*}
-where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} =  X \Sigma_p X^{\top}$
+where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} =  X \Sigma_p X^{\top}$.
+For example if we assume $\Sigma_p = \sigma_p I$, we would choose $k(x,x') = \sigma_p x^{\top} x'$.
 
 %Assuming $\Sigma_p = \sigma_p I$ and $\Sigma_n = \sigma_n I)$ we get for the kernel function:
 %
@@ -296,7 +301,10 @@ where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} = 
 
 %δ pq is a Kronecker delta which is one iff p = q and zero otherwise.
 
-If we combine $f^{\ast}$ and $\mathbf{Y}$ into a single random vector:
+Combining $f^{\ast}$ and $\mathbf{Y}$ into a single random vector we can use the theorem \ref{thrm:Gaussian-Conditioning}
+to arrive at the same posterior predictive distribution
+$p(f^{\ast} | \mathbf{Y}, X, x^{\ast})$ as presented in \ref{def:predictive-dist}.
+The joint distribution of $f^{\ast}$ and $\mathbf{Y}$ can be expressed as follows:
 
 \begin{gather}
     \begin{bmatrix}
@@ -316,38 +324,50 @@ If we combine $f^{\ast}$ and $\mathbf{Y}$ into a single random vector:
     = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
 \end{gather}
 
-The conditioning rules can then be used to derive the posterior predictive distribution
-$p(f^{\ast} | \mathbf{Y}, X, x^{\ast})$:
+where:
+\begin{gather*}
+    K_{XX} =
+    \begin{bmatrix}
+        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots  & \vdots \\
+        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix}, \\
+    K_{Xx^{\ast}} = K_{x^{\ast}X}^{\top} =
+    \begin{bmatrix}
+        k(x_1, x^{\ast}) \\
+        \vdots \\
+        k(x_n,  x^{\ast})
+    \end{bmatrix} \text{ and }
+    K_{x^{\ast}x^{\ast}} = k(x^{\ast}x^{\ast})
+\end{gather*}
 
-\begin{align}
-    p(f^{\ast} | \mathbf{Y}, X, x^{\ast}) = \N(x^{\ast^{\top}} \bar{\mu}, x^{\ast^{\top}} \bar{\Sigma} x^{\ast}) \\
-    \text{with}: \\
-    \bar{\Sigma} = (X^{\top}\Sigma_n^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\mu} = \bar{\Sigma} X^{\top} \Sigma_n^{-1} y
-\end{align}
-
-In time series modelling we might say that $\E$ is not simply an error term but is actuall part of our signal which
-we want to predict. Hence we are not only interested in $p(f^{\ast} | \mathbf{Y}, X, x^{\ast})$ but also
-in the predictive distribution of
-$\mathbf{Y^{\ast}} | \mathbf{Y}, X, x^{\ast})$ with $\mathbf{Y^{\ast}} = \mathbf{Y}(x^{\ast}) = f(x^{\ast} + \mathbf{E}(x^{\ast}))$:
+Unlike in chapter \ref{ch:time-series-decomposition-and-regression}, $f(x)$ is no longer assumed to be a
+deterministic function. This way, GP regression allows us to treat $\mathbf{E}$ not simply as an error term but an actual part of
+our signal which we can predict. If $\mathbf{E}$ is not independent noise but for example a time series, where
+the elements of $\mathbf{E}$ are correlated, we want to leverage the information we have about an unobserved
+time point given our observations.
+Hence, we are not only interested in $p(f^{\ast} | \mathbf{Y}, X, x^{\ast})$ but also
+in the predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, x^{\ast})$ for $Y^{\ast} = Y(x^{\ast}) = f(x^{\ast}) + E(x^{\ast})$.
 
 We had:
 \begin{gather*}
     \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_n) \\
 \end{gather*}
 
-Alternatively we can assume a distribution over the function $\mathbf{Y}(x)$:
+Alternatively we can assume a distribution over the function $Y(x)$:
 
 \begin{gather*}
-    \mathbf{Y}(x) \sim GP(0, k(x, x'))
+    Y(x) \sim GP(0, k(x, x'))
 \end{gather*}
 where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_n$
 
-If we combine $\mathbf{Y}^{\ast}$ and $\mathbf{Y}$ into a single random vector:
+One can follow again the same procedure as before, by combining $Y^{\ast}$ and $\mathbf{Y}$ into a single random vector
+and deriving the predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, x^{\ast})$ by conditioning.
 
 \begin{gather}
     \begin{bmatrix}
         \mathbf{Y} \\
-        \mathbf{Y}^{\ast}
+        Y^{\ast}
     \end{bmatrix} =
     \sim \N \left(
         \begin{bmatrix}
@@ -363,13 +383,20 @@ If we combine $\mathbf{Y}^{\ast}$ and $\mathbf{Y}$ into a single random vector:
 \end{gather}
 
 
-One could hence also assume additional measurement noise:
 
+
+
+TODO
+One could hence also assume additional measurement noise:
 \begin{align*}
-    \mathbf{Z}(x) = \mathbf{Y}(x) + \epsilon = f(x) + \mathbf{E}(x) + \epsilon  && \epsilon \sim \N(0, \sigma_n^{2})
+    Z(x) = Y(x) + \epsilon = f(x) + E(x) + \epsilon  && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
 
+
+
+TODO
+This still  assumes that $\Sigma_n$ is known.
 
 
 
