@@ -1,13 +1,13 @@
 \chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 
-We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
-In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
+We again consider a regression problem of mapping the input $\mathbf{x}$ to an output $f(\mathbf{x})$.
+In order to solve such a problem one usually needs some additional constraints on the $f(\mathbf{x})$.
 In \ref{ch:time-series-decomposition-and-regression} we restricted ourselves to the class of linear functions.
 Another approach is to assign a prior probability to every possible function, where higher
 probabilities are assigned to functions that are assumed to be more likely.
 Inference in this Bayesian setting is then based on the posterior distribution of these
-functions given some potentially noisy observations of $f(x)$.
+functions given some potentially noisy observations of $f(\mathbf{x})$.
 
 This chapter first provides a definition of a Gaussian Process and then describes how it
 can be used to solve a regression problem.
@@ -15,7 +15,7 @@ can be used to solve a regression problem.
 \section{Gaussian Process Definition}\label{sec:gaussian-process-definition}
 
 A Gaussian process (GP) can be viewed as a gaussian distribution over functions or as an infinite set of random
-variables representing the values of the function $f(x)$ at location $x$.
+variables representing the values of the function $f(\mathbf{x})$ at location $\mathbf{x}$.
 The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
 by \citeauthor{rasmussen_gaussian_2006} :
 
@@ -25,36 +25,36 @@ by \citeauthor{rasmussen_gaussian_2006} :
 
 
 As a (multivariate) Gaussian distribution is defined by its mean and covariance matrix, a GP is
-uniquely identified by its mean $m(x)$ and covariance (kernel) function $k(x,x')$.
+uniquely identified by its mean $m(\mathbf{x})$ and covariance (kernel) function $k(\mathbf{x},\mathbf{x}')$.
 
 We write
 
 \begin{gather*}
-    f(x) \sim GP(m(x), k(x,x'))
+    f(\mathbf{x}) \sim GP(m(\mathbf{x}), k(\mathbf{x},\mathbf{x}'))
 \end{gather*}
 with
 \begin{gather*}
-    m(x) = \mathbb{E}[f(x)] \\
-    k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
+    m(\mathbf{x}) = \mathbb{E}[f(\mathbf{x})] \\
+    k(\mathbf{x},\mathbf{x}') = \mathbb{E}[(f(\mathbf{x})-m(\mathbf{x}))(f(\mathbf{x}')-m(\mathbf{x}'))]
 \end{gather*}
 
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
-$F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
+$F_x := f(\mathbf{x})$ such that for a set $A \subset X$ with $A={\mathbf{x}_1, \dots \mathbf{x}_n}$ it holds that:
 
 \[\mathbf{F}_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\boldsymbol{\mu}_A,\,K_{AA})\]
 for
 \begin{gather}\label{def:Kernel-Matrix}
     K_{AA} =
     \begin{bmatrix}
-        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+        k(\mathbf{x}_1, \mathbf{x}_1) & k(\mathbf{x}_1, \mathbf{x}_2) & \dots & k(\mathbf{x}_1, \mathbf{x}_n)\\
         \vdots  &  & \vdots  & \vdots \\
-        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+        k(\mathbf{x}_n, \mathbf{x}_1)  & k(\mathbf{x}_n, \mathbf{x}_1) & \dots  & k(\mathbf{x}_n, \mathbf{x}_n)
     \end{bmatrix} \text{and }
     \boldsymbol{\mu}_A =
     \begin{bmatrix}
-        \mu(x_1) \\
+        \mu(\mathbf{x}_1) \\
         \vdots \\
-        \mu(x_n)
+        \mu(\mathbf{x}_n)
     \end{bmatrix}
 \end{gather}
 The finite marginals $F_{x_1}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
@@ -71,29 +71,29 @@ on $\boldsymbol{\beta}$, i.e. $\boldsymbol{\beta} \sim N(0, I)$ then the predict
 \[
     \boldsymbol{\mu} \sim \N(0, XX^{\top})
 \]
-and represents a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
+and represents a GP with mean function $m(\mathbf{x}) = 0$ and kernel function $k(\mathbf{x}, \mathbf{x}') = \mathbf{x}^{\top}\mathbf{x}'$.
 This special case of gaussian process regression with this specific kernel function is known as baysian linear regression
 and will be presented in the next section.
 
 
 \section{Gaussian Process Regression}
 Predictions in the Bayesian regression setting is finding the posterior distribution of
-$f^{\ast} := f(x^{\ast})$ at some input $x^{\ast}$, given some potentially noisy observations of $f(x)$.
+$f^{\ast} := f(\mathbf{x}^{\ast})$ at some input $\mathbf{x}^{\ast}$, given some potentially noisy observations of $f(\mathbf{x})$.
 This is made possible by employing a prior distribution
-over the function $f(x)$. As shown in section \ref{sec:gaussian-process-definition}, a GP is essentially
+over the function $f(\mathbf{x})$. As shown in section \ref{sec:gaussian-process-definition}, a GP is essentially
 assuming a Gaussian distribution over functions.
 
 
 \subsection{Bayesian Linear Regression}\label{subsec:bayesian-linear-regression}
 We consider again the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}.
 However, we assume a more general setting, where the data generating process does not need to be a time series process.
-We denote the mean function with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a noisy observations of
-$f(x_i)$, where the additive error $E_i$ does not necessarily need to arrive from a time series process $E(t)$.
+We denote the mean function with $f(\mathbf{x})$ instead of $\mu(t)$ and $Y_i$ is again a noisy observations of
+$f(\mathbf{x}_i)$, where the additive error $E_i$ does not necessarily need to arrive from a time series process $E(t)$.
 We obtain the following data generating model:
 \begin{align*}
-    f(x_i) &= x_i^{\top}\boldsymbol{\beta}, & Y_i &= f(x_i) + E_i,  & (i = 1, \dots n)
+    f(\mathbf{x}_i) &= \mathbf{x}_i^{\top}\boldsymbol{\beta}, & Y_i &= f(\mathbf{x}_i) + E_i,  & (i = 1, \dots n)
 \end{align*}
-with $x_i \in \mathbb{R}^p$ being again the input vector and $\boldsymbol{\beta} \in \mathbb{R}^p$ is the vector with
+with $\mathbf{x}_i \in \mathbb{R}^p$ being again the input vector and $\boldsymbol{\beta} \in \mathbb{R}^p$ is the vector with
 the regression coefficients.
 
 In matrix from:
@@ -101,7 +101,7 @@ In matrix from:
     \mathbf{Y} = X \boldsymbol{\beta} + \mathbf{E}
 \end{align*}
 Where $\mathbf{Y} = [Y_{1}, \dots Y_{n}]^{\top}$ is the observed data,
-$X = [x_{1}, \dots x_{n}]^{\top} \in \mathbb{R}^{n \times p}$ is the design matrix.
+$X = [\mathbf{x}_{1}, \dots \mathbf{x}_{n}]^{\top} \in \mathbb{R}^{n \times p}$ is the design matrix.
 We assume again gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$:
 \begin{gather*}
     \mathbf{E} \sim \N(0, \Sigma_n)
@@ -127,7 +127,7 @@ To stay in the realm of gaussian processes the prior has to be guassian and we c
 \begin{gather*}
     p(\boldsymbol{\beta}) = \N(0, \Sigma_p)
 \end{gather*}
-Note how the function $f(x_i)=x_i^{\top}\boldsymbol{\beta}$ is now no longer deterministic but a random function.
+Note how the function $f(\mathbf{x}_i)=\mathbf{x}_i^{\top}\boldsymbol{\beta}$ is now no longer deterministic but a random function.
 
 Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the posterior distribution over $\boldsymbol{\beta}$:
 \begin{gather*}
@@ -224,15 +224,15 @@ and we obtain:
     \bar{\Sigma} = (X^{\top}\Sigma_n^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\boldsymbol{\mu}} = \bar{\Sigma} X^{\top} \Sigma_n^{-1} y
 \end{align}
 
-Since $f(x) = x^{\top}\boldsymbol{\beta}$, one can use the posterior mean and covariance matrix from
-\ref{def:conditional-mean-var} to obtain the predictive distribution of $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$
+Since $f(\mathbf{x}) = \mathbf{x}^{\top}\boldsymbol{\beta}$, one can use the posterior mean and covariance matrix from
+\ref{def:conditional-mean-var} to obtain the predictive distribution of $f^{\ast} := f(\mathbf{x}^{\ast})$ at $\mathbf{x}^{\ast}$
 given our observations:
 \begin{align}\label{def:predictive-dist}
-    p(f^{\ast} | \mathbf{Y}, X, x^{\ast}) = \N(x^{\ast^{\top}} \bar{\boldsymbol{\mu}}, x^{\ast^{\top}} \bar{\Sigma} x^{\ast}) \\
+    p(f^{\ast} | \mathbf{Y}, X, \mathbf{x}^{\ast}) = \N(\mathbf{x}^{\ast^{\top}} \bar{\boldsymbol{\mu}}, \mathbf{x}^{\ast^{\top}} \bar{\Sigma} \mathbf{x}^{\ast}) \\
 \end{align}
 
-One can also use the rules for conditioning to directly derive $f^{\ast} | \mathbf{Y}, X, x^{\ast}$.
-Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X, x^{\ast})$:
+One can also use the rules for conditioning to directly derive $f^{\ast} | \mathbf{Y}, X, \mathbf{x}^{\ast}$.
+Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X, \mathbf{x}^{\ast})$:
 
 \begin{gather}
     \begin{bmatrix}
@@ -259,13 +259,13 @@ Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X
                 & & \\
                 & & \\
             \end{matrix}
-            & \begin{matrix} \\ \\ \\ X \Sigma_p x^{\ast} \\ \\ \\ \end{matrix} \\
+            & \begin{matrix} \\ \\ \\ X \Sigma_p \mathbf{x}^{\ast} \\ \\ \\ \end{matrix} \\
             \hdashline \\
-            \begin{matrix} &  x^{\ast^{\top}}  \Sigma_p X^{\top} & \end{matrix} & \Sigma_p
+            \begin{matrix} &  \mathbf{x}^{\ast^{\top}}  \Sigma_p X^{\top} & \end{matrix} & \Sigma_p
         \end{array}
         \right]
         \right)
-    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+    = p(\mathbf{Y}, f^{\ast}| X, \mathbf{x}^{\ast})
 \end{gather}
 
 The expression in \ref{def:predictive-dist} can then be derived using theorem \ref{thrm:Gaussian-Conditioning} on
@@ -279,27 +279,27 @@ to tell which functions of the infinite space of all functions are more likely t
 As these functions are not characterized with explicit sets of
 parameters, this approach belongs to the branch of non-parametric modelling.
 By abandoning the parameters $\boldsymbol{\beta}$, Gaussian process regression
-directly aims for the predictive distribution of $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$ given our observations.
+directly aims for the predictive distribution of $f^{\ast} := f(\mathbf{x}^{\ast})$ at $\mathbf{x}^{\ast}$ given our observations.
 
 Starting with the Bayesian linear regression example from last section and transforming it into a GP regression
-problem, we recall that the distribution of $\mathbf{F}_X = [f(x_1) \dots f(x_n))]^{\top}$ with given $X = [x_1 \dots x_n]^{\top}$ is:
+problem, we recall that the distribution of $\mathbf{F}_X = [f(\mathbf{x}_1) \dots f(\mathbf{x}_n))]^{\top}$ with given $X = [\mathbf{x}_1 \dots \mathbf{x}_n]^{\top}$ is:
 \begin{gather*}
     \mathbf{F}_X \sim \N(0,  X \Sigma_p X^{\top})
 \end{gather*}
 
-Alternatively this can be written as a distribution over the function $f(x)$:
+Alternatively this can be written as a distribution over the function $f(\mathbf{x})$:
 
 \begin{gather*}
-    f(x) \sim GP(0, k(x, x'))
+    f(\mathbf{x}) \sim GP(0, k(\mathbf{x}, \mathbf{x}'))
 \end{gather*}
-where $k(x,x')$ needs to be chosen such that for an input X we obtain $K_{XX} =  X \Sigma_p X^{\top}$.
+where $k(\mathbf{x},\mathbf{x}')$ needs to be chosen such that for an input X we obtain $K_{XX} =  X \Sigma_p X^{\top}$.
 
-For example if we assume $\Sigma_p = \sigma_p I$, we would choose $k(x,x') = \sigma_p x^{\top} x'$, with the
-input pairs $x$ and $x'$ only entering as a dot product.
+For example if we assume $\Sigma_p = \sigma_p I$, we would choose $k(\mathbf{x},\mathbf{x}') = \sigma_p \mathbf{x}^{\top} \mathbf{x}'$, with the
+input pairs $\mathbf{x}$ and $\mathbf{x}'$ only entering as a dot product.
 Note that since $\Sigma_p$ is postive definite we can define $\Sigma_p^{\frac{1}{2}} = (\Sigma_p^{\frac{1}{2}})^2=\Sigma_p$.
-Then defining $\phi(x) = \Sigma_p^{\frac{1}{2}} x$ the kernel function becomes $k(x, x') = \phi(x)^{\top} \phi(x')$,
-which is again the dot product of pairs of $\phi(x)$.
-This shows that Baysian linear regression with transformed inputs $\phi(x)$ and prior covariance matrix $\Sigma_p = I$,
+Then defining $\phi(\mathbf{x}) = \Sigma_p^{\frac{1}{2}} \mathbf{x}$ the kernel function becomes $k(\mathbf{x}, \mathbf{x}') = \phi(\mathbf{x})^{\top} \phi(\mathbf{x}')$,
+which is again the dot product of pairs of $\phi(\mathbf{x})$.
+This shows that Baysian linear regression with transformed inputs $\phi(\mathbf{x})$ and prior covariance matrix $\Sigma_p = I$,
 has the same effect as choosing a more complicated $\Sigma_p$ and leaving the inputs untouched.
 
 
@@ -315,7 +315,7 @@ has the same effect as choosing a more complicated $\Sigma_p$ and leaving the in
 
 Combining $f^{\ast}$ and $\mathbf{Y}$ into a single random vector we can use the theorem \ref{thrm:Gaussian-Conditioning}
 to arrive at the same posterior predictive distribution
-$p(f^{\ast} | \mathbf{Y}, X, x^{\ast})$ as presented in \ref{def:predictive-dist}.
+$p(f^{\ast} | \mathbf{Y}, X, \mathbf{x}^{\ast})$ as presented in \ref{def:predictive-dist}.
 The joint distribution of $f^{\ast}$ and $\mathbf{Y}$ can be expressed as follows:
 
 \begin{gather}
@@ -329,48 +329,48 @@ The joint distribution of $f^{\ast}$ and $\mathbf{Y}$ can be expressed as follow
         0
         \end{bmatrix},
         \begin{bmatrix}
-        K_{XX} + \Sigma_n & K_{Xx^{\ast}} \\
-        K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
+        K_{XX} + \Sigma_n & K_{X\mathbf{x}^{\ast}} \\
+        K_{\mathbf{x}^{\ast}X} & K_{\mathbf{x}^{\ast}\mathbf{x}^{\ast}}
         \end{bmatrix}
         \right)
-    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+    = p(\mathbf{Y}, f^{\ast}| X, \mathbf{x}^{\ast})
 \end{gather}
 
 where:
 \begin{gather*}
     K_{XX} =
     \begin{bmatrix}
-        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+        k(\mathbf{x}_1, \mathbf{x}_1) & k(\mathbf{x}_1, \mathbf{x}_2) & \dots & k(\mathbf{x}_1, \mathbf{x}_n)\\
         \vdots  &  & \vdots  & \vdots \\
-        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+        k(\mathbf{x}_n, \mathbf{x}_1)  & k(\mathbf{x}_n, \mathbf{x}_1) & \dots  & k(\mathbf{x}_n, \mathbf{x}_n)
     \end{bmatrix}, \\
-    K_{Xx^{\ast}} = K_{x^{\ast}X}^{\top} =
+    K_{X\mathbf{x}^{\ast}} = K_{\mathbf{x}^{\ast}X}^{\top} =
     \begin{bmatrix}
-        k(x_1, x^{\ast}) \\
+        k(\mathbf{x}_1, \mathbf{x}^{\ast}) \\
         \vdots \\
-        k(x_n,  x^{\ast})
+        k(\mathbf{x}_n,  \mathbf{x}^{\ast})
     \end{bmatrix} \text{ and }
-    K_{x^{\ast}x^{\ast}} = k(x^{\ast}x^{\ast})
+    K_{\mathbf{x}^{\ast}\mathbf{x}^{\ast}} = k(\mathbf{x}^{\ast}\mathbf{x}^{\ast})
 \end{gather*}
 
-Unlike in chapter \ref{ch:time-series-decomposition-and-regression}, $f(x)$ is no longer assumed to be a
+Unlike in chapter \ref{ch:time-series-decomposition-and-regression}, $f(\mathbf{x})$ is no longer assumed to be a
 deterministic function. This way, GP regression allows us to treat $\mathbf{E}$ not simply as an error term but an actual part of
 our signal which we can predict. If $\mathbf{E}$ is not independent noise but for example a time series, where
 the elements of $\mathbf{E}$ are correlated, we want to leverage the information we have about an unobserved
 time point given our observations.
 Hence, we are not interested in the posterior distribution of $f^{\ast}$ only, but also of
-$Y^{\ast} := Y(x^{\ast}) = f(x^{\ast}) + E(x^{\ast})$.
+$Y^{\ast} := Y(\mathbf{x}^{\ast}) = f(\mathbf{x}^{\ast}) + E(\mathbf{x}^{\ast})$.
 
 Recall the prior distribution over $\mathbf{Y}$:
 \begin{gather*}
     \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_n) \\
 \end{gather*}
 
-Alternatively, this can be expressed as a distribution over the function $Y(x)$:
+Alternatively, this can be expressed as a distribution over the function $Y(\mathbf{x})$:
 \begin{gather*}
-    Y(x) \sim GP(0, k(x, x'))
+    Y(\mathbf{x}) \sim GP(0, k(\mathbf{x}, \mathbf{x}'))
 \end{gather*}
-The kernel function $k(x,x')$ needs to be chosen such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_n$.
+The kernel function $k(\mathbf{x},\mathbf{x}')$ needs to be chosen such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_n$.
 One can then follow again the same procedure as before and combine $Y^{\ast}$ and $\mathbf{Y}$ into a single random vector:
 
 \begin{gather}
@@ -384,14 +384,14 @@ One can then follow again the same procedure as before and combine $Y^{\ast}$ an
         0
         \end{bmatrix},
         \begin{bmatrix}
-        K_{XX} & K_{Xx^{\ast}} \\
-        K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
+        K_{XX} & K_{X\mathbf{x}^{\ast}} \\
+        K_{\mathbf{x}^{\ast}X} & K_{\mathbf{x}^{\ast}\mathbf{x}^{\ast}}
         \end{bmatrix}
         \right)
-    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+    = p(\mathbf{Y}, f^{\ast}| X, \mathbf{x}^{\ast})
 \end{gather}
 
-The predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, x^{\ast})$ is then again derived by conditioning.
+The predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, \mathbf{x}^{\ast})$ is then again derived by conditioning.
 
 Note how until now we have still assumed $\Sigma_n$, the covariance matrix of $\mathbf{E}$, to be known.
 However, deriving $\Sigma_n$ for an ARMA process with irregularly spaced samples is not straight forward, as has already
@@ -400,8 +400,8 @@ specific kernel function solves this problem.
 
 \subsection{Kernel Fuctions}\label{subsec:kernel}
 
-Choosing a prior distribution over $f(x)$ or $Y(x)$ boils down to choosing a kernel function.
-The kernel or covariance function encodes assumptions about correlation between arbitrary input pairs $x$ and $x'$.
+Choosing a prior distribution over $f(\mathbf{x})$ or $Y(\mathbf{x})$ boils down to choosing a kernel function.
+The kernel or covariance function encodes assumptions about correlation between arbitrary input pairs $\mathbf{x}$ and $\mathbf{x}'$.
 This enforces certain properties on the kernel function, which are symmetry and positive definiteness.
 %which enforces
 %certain properties on these kernel functions. A valid kernel function must be:
@@ -426,7 +426,7 @@ Additionally one can combine valid covariance functions, $k1$ and $k2$ into new 
 TODO
 One could hence also assume additional measurement noise:
 \begin{align*}
-    Z(x) = Y(x) + \epsilon = f(x) + E(x) + \epsilon  && \epsilon \sim \N(0, \sigma_n^{2})
+    Z(\mathbf{x}) = Y(\mathbf{x}) + \epsilon = f(\mathbf{x}) + E(\mathbf{x}) + \epsilon  && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
 
