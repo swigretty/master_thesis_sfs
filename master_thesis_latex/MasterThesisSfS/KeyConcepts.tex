@@ -4,41 +4,95 @@
 
 \chapter{Characteristics of Time Series}
 
-A \textbf{time series} $(x_t: t \in T_0t)$ is a collection of observations $x_t$ ,
-each one being recorded at a specific time $t$. $T_0$ is the set of times at which observations are made.
-In case of discrete time series $T_0$ is a discrete set, e.g. for the equispaced case $T_0 = \{1, 2, \dots T\}$ and
-for the unequally spaced case $T_0 = \{t_1, t_2, \dots t_n\}$ with $t_1 < t_2 < \dots t_n$.
-For continuous time series $T_0$ is an interval, e.g. $T_0 = (0, T]$.
-
-A \textbf{time series model} for the observed data $(x_t: t \in T_0)$ is specified by the collection of random variables
-$(X_t: t \in T_0)$ of which $(x_t: t \in T_0)$ is thought to be a realization.
-Alternatively the time series model can also be considered a random function $f: T_0 \to \mathbb{R}$.
-
-Throughout the thesis the term time series is used both refer to the data and the process from which it is generated.
-
-\citeauthor{brockwell_introduction_2016}
+\section{Time Series Definition}
 
 
-TODO Notation should be adapted/extended to unequally spaced case.
+    A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
+    with strictly increasing observation times.
+    The compact notation $(x_t: t \in \mathbb{T})$ will be used to refer to a time series in general,
+    where $\mathbb{T}$ is a set of observation time points. More specifically:
+\begin{itemize}
+    \item $(x_t: t \in \{1, 2, \dots n\})$ refers to a discrete and equispaced time series of length n
+    \item $(x_{t_i}: i \in \{1, 2, \dots n\})$ refers to an irregularly spaced time series of length n
+    with observations at time points $t_1 < t_2 < \dots t_n$
+    \item $(x_{t}: t \in (0, T])$ refers to a continuous time series
+\end{itemize}
 
+    A \textbf{time series model} for the observed data $(x_t: t \in \mathbb{T})$ is specified by the sequence of
+    random variables $(X_t: t \in \mathbb{T})$ of which $(x_t: t \in \mathbb{T})$ is thought to be a realization of.
 
-\textbf{mean function}
-TODO
-$\mu(t)$
+Whenever $\mathbb{T}$ has finite length, we will often use a random column vector $\mathbf{X}$ to refer to
+the time series model $(X_t: t \in \mathbb{T})$.
+Sometimes a time series model will be expressed as a random function $f: \mathbb{T} \to \mathbb{R}$ instead
+of a collection of random variables.
+Throughout the thesis, the term time series is used both to refer to the data and the process from which it is generated.
 
+\section{Moments of a Time Series}
 
-\textbf{autocovariance function}
-TODO
+A time series process $(X_t: t \in \mathbb{T})$ is usually characterized by its first and second moment.
+
+\begin{definition}(\citeauthor{brockwell_introduction_2016})
+    The \textbf{mean function} of a time series $(X_t: t \in \mathbb{T})$ is:
+    \[
+        \mu_X(t) = E(X_t)
+    \]
+    The \textbf{covariance function} of a time series $(X_t: t \in \mathbb{T})$ is:
+    \[
+        \gamma_X(r,s) = Cov(X_r, X_s) = E[(X_r - \mu_X(r))(X_s-\mu_X(s))]
+    \]
+\end{definition}
 
 \section{Stationarity}
-TODO
 
-Stationarity is needed for being able to statistically learn from time series data.
+Given that one has one observation $x_t$ per time point $t$,
+a necessary condition to statistically learn from a time series is stationarity.
+
+\begin{definition}(\citeauthor{brockwell_introduction_2016})
+    A time series $(X_t: t \in \mathbb{T})$ is strictly stationary iff
+    the distribution of $(X_{t_1}), \dots X_{t_n})$ is identical to the distribution of
+    $(X_{t_{1+h}}, \dots ,X_{t_{n+h}})$ for all $n \in \mathbb{N}^{+}$
+    and shifts $h \in \mathbb{Z}$:
+\end{definition}
+
+
+\begin{definition}(\citeauthor{brockwell_introduction_2016})
+    A time series $(X_t: t \in \mathbb{T})$ is weakly stationary if
+    \[
+        \mu_X(t) \text{ is independent of t,}
+    \]
+    and
+    \[
+        \gamma_X(t+h, t) \text{ is indpendent of $t$ for each $h$}
+    \]
+\end{definition}
+
+Whenever the term stationary is used, it is referring to weak stationarity.
+
+\section{Example of Time Series}
+
+\begin{enumerate}[label=Example \arabic*]
+    \item iid noise
+    \item
+\end{enumerate}
+
+\begin{example}
+    iid noise
+    asdfas
+    asdfasdfasdf
+    asdfasdfasd
+\end{example}
+
+
+
+
 
 
 
 \section{ARMA Model}
-TODO
+
+
+
+
 
 
 Autoregressive Process

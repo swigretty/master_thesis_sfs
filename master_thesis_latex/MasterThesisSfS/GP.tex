@@ -292,7 +292,7 @@ to tell which functions of the infinite space of all functions are more likely t
 As these functions are not characterized with explicit sets of
 parameters, this approach belongs to the branch of non-parametric modelling.
 By abandoning the parameters $\beta$, Gaussian process regression
-directly aims for the predictive distribution of $f^{\ast} := f(x^{\ast})$ at $x^{\ast}$ given our observations.
+directly aims for the predictive distribution of $f^{\ast} := f(x^{\ast})$ at an input $x^{\ast}$ given our observations.
 
 Starting with the Bayesian linear regression example from last section and transforming it into a GP regression
 problem, we recall that the distribution of $F_X = [f(x_1) \dots f(x_n))]^{\top}$ with given $X = [x_1 \dots x_n]^{\top}$ is:
@@ -487,6 +487,9 @@ predictive distribution of $f^{\ast}$ or $y^{\ast}$.
 
 The choice of kernel function depends on the assumptions about correlation in your output given arbitrary input pairs
 $x$ and $x'$.
+
+
+
 
 TODO: different kernels, stationary kernels, link to power spectral density, with plots
 
