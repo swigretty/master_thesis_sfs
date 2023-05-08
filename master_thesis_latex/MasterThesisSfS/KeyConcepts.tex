@@ -1,4 +1,4 @@
-%! Author = gianna
+\usepackage{amsfonts}%! Author = gianna
 %! Date = 06.04.23
 
 
@@ -6,37 +6,35 @@
 
 \section{Time Series Definition}
 
-
     A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
     with strictly increasing observation times.
-    The compact notation $(x_t: t \in \mathbb{T})$ will be used to refer to a time series in general,
-    where $\mathbb{T}$ is a set of observation time points. More specifically:
+    Let $\mathbb{T}$ be a set of observation time points,
+    then the sequence of random variables $(X_t: t \in \mathbb{T})$ or simply $(X_t)$ is a \textbf{time series process}
+    with observation times $t \in \mathbb{T}$.
+    More specifically:
 \begin{itemize}
-    \item $(x_t: t \in \{1, 2, \dots n\})$ refers to a discrete and equispaced time series of length n
-    \item $(x_{t_i}: i \in \{1, 2, \dots n\})$ refers to an irregularly spaced time series of length n
+    \item $(X_t: t \in \{1, 2, \dots n\})$ refers to a discrete and equispaced time series of length n
+    \item $(X_{t_i}: i \in \{1, 2, \dots n\})$ refers to an irregularly spaced time series of length n
     with observations at time points $t_1 < t_2 < \dots t_n$
-    \item $(x_{t}: t \in (0, T])$ refers to a continuous time series
+    \item $(X_{t}: t \in (0, T])$ refers to a continuous time series
 \end{itemize}
 
-    A \textbf{time series model} for the observed data $(x_t: t \in \mathbb{T})$ is specified by the sequence of
-    random variables $(X_t: t \in \mathbb{T})$ of which $(x_t: t \in \mathbb{T})$ is thought to be a realization of.
-
-Whenever $\mathbb{T}$ has finite length, we will often use a random column vector $\mathbf{X}$ to refer to
-the time series model $(X_t: t \in \mathbb{T})$.
+When $\mathbb{T}$ has finite length, we will often use a random column vector $\mathbf{X}$ to refer to
+the time series process $(X_t)$.
 Sometimes a time series model will be expressed as a random function $f: \mathbb{T} \to \mathbb{R}$ instead
 of a collection of random variables.
-Throughout the thesis, the term time series is used both to refer to the data and the process from which it is generated.
+Throughout the thesis, the term time series is used both to refer to the data $(x_t)$ and the process $(X_t)$ from which it is generated.
 
 \section{Moments of a Time Series}
 
-A time series process $(X_t: t \in \mathbb{T})$ is usually characterized by its first and second moment.
+A time series process $(X_t)$ is usually characterized by its first and second moment.
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})
-    The \textbf{mean function} of a time series $(X_t: t \in \mathbb{T})$ is:
+    The \textbf{mean function} of a time series $(X_t)$ is:
     \[
         \mu_X(t) = E(X_t)
     \]
-    The \textbf{covariance function} of a time series $(X_t: t \in \mathbb{T})$ is:
+    The \textbf{covariance function} of a time series $(X_t)$ is:
     \[
         \gamma_X(r,s) = Cov(X_r, X_s) = E[(X_r - \mu_X(r))(X_s-\mu_X(s))]
     \]
@@ -44,19 +42,19 @@ A time series process $(X_t: t \in \mathbb{T})$ is usually characterized by its 
 
 \section{Stationarity}
 
-Given that one has one observation $x_t$ per time point $t$,
+Given that one has only one observation $x_t$ per time point $t$,
 a necessary condition to statistically learn from a time series is stationarity.
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})
-    A time series $(X_t: t \in \mathbb{T})$ is strictly stationary iff
-    the distribution of $(X_{t_1}), \dots X_{t_n})$ is identical to the distribution of
+    A time series $(X_t)$ is strictly stationary iff
+    the distribution of $(X_{t_1}, \dots X_{t_n})$ is identical to the distribution of
     $(X_{t_{1+h}}, \dots ,X_{t_{n+h}})$ for all $n \in \mathbb{N}^{+}$
     and shifts $h \in \mathbb{Z}$:
 \end{definition}
 
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})
-    A time series $(X_t: t \in \mathbb{T})$ is weakly stationary if
+    A time series $(X_t)$ is weakly stationary if
     \[
         \mu_X(t) \text{ is independent of t,}
     \]
@@ -68,35 +66,46 @@ a necessary condition to statistically learn from a time series is stationarity.
 
 Whenever the term stationary is used, it is referring to weak stationarity.
 
-\section{Example of Time Series}
+\section{Special cases of Time Series Processes}\label{sec:example-of-time-series-processes}
 
-\begin{enumerate}[label=Example \arabic*]
-    \item iid noise
-    \item
-\end{enumerate}
+\begin{definition} If $(X_t)$ is \textbf{white noise} process,
+    then $X_t \sim WN(0, \sigma^2)$, that is $X_t \sim F$ iid for some
+    distribution $F$ with mean $0$ and varaince $\sigma^2$. A special case is Gaussian White
+    noise where $X_t \sim \N(0, \sigma^2)$ and $F= \Phi$
+\end{definition}
 
-\begin{example}
-    iid noise
-    asdfas
-    asdfasdfasdf
-    asdfasdfasd
-\end{example}
+\begin{definition}
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive process}
+    of order p or AR(p) if:
+    \[
+        X_t = \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + W_t
+    \]
+    where $W_t$ is independnet of all $X_k$, $k < t$ and $\phi_p \neq 0$. The variable $W_t$ is called
+    the innovation at time $t$.
+
+\end{definition}
+
+\begin{definition}
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{moving average process}
+    of order q or MA(q) if:
+    \[
+        X_t = W_t + \theta_1 W_{t-1} + \dots \theta_q W_{t-q}
+    \]
+    where $W_t$ is independent of all $X_k$, $k < t$ and $\theta_q \neq 0$. The variable $W_t$ is called
+    the innovation at time $t$.
+
+\end{definition}
 
 
+\begin{definition}
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive moving average process}
+    of autoregressive order p and moving average oder q or ARMA(p,q) if:
+    \[
+        X_t =  \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + \theta_1 W_{t-1} + \dots \theta_q W_{t-q} + W_t
+    \]
+    where $W_t$ is again independent of all $X_k$, $k < t$, $\theta_q \neq 0$, $\phi_q \neq 0$.
+\end{definition}
 
-
-
-
-
-\section{ARMA Model}
-
-
-
-
-
-
-Autoregressive Process
-Moving Average Process
 
 
 

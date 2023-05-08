@@ -95,15 +95,8 @@ literate={<-}{{$\leftarrow$}}1 {~}{{$\sim$}}1}
 
 
 % added by Gianna
-%\usepackage{nicematrix}
-\usepackage{enumitem}
-\newcounter{xmpl}
-\newenvironment{example}
-    {\noindent
-     \refstepcouter{xmpl}
-     \textbf{Example \thexmpl }
-    }{\par\noindent%
-      \ignorespacesafterend}
+\theoremstyle{definition}
+\newtheorem{exmp}{Example}[section]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Path for your figures                      %%%
