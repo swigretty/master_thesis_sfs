@@ -1,4 +1,4 @@
-\usepackage{amsfonts}%! Author = gianna
+%! Author = gianna
 %! Date = 06.04.23
 
 
@@ -68,43 +68,43 @@ Whenever the term stationary is used, it is referring to weak stationarity.
 
 \section{Special cases of Time Series Processes}\label{sec:example-of-time-series-processes}
 
-\begin{definition} If $(X_t)$ is \textbf{white noise} process,
+\begin{example} If $(X_t)$ is a \textbf{white noise} process,
     then $X_t \sim WN(0, \sigma^2)$, that is $X_t \sim F$ iid for some
     distribution $F$ with mean $0$ and varaince $\sigma^2$. A special case is Gaussian White
-    noise where $X_t \sim \N(0, \sigma^2)$ and $F= \Phi$
-\end{definition}
+    noise where $W_t \sim \N(0, \sigma^2)$ and $F= \Phi$
+\end{example}
 
-\begin{definition}
+\begin{example}
     An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive process}
     of order p or AR(p) if:
     \[
         X_t = \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + W_t
     \]
-    where $W_t$ is independnet of all $X_k$, $k < t$ and $\phi_p \neq 0$. The variable $W_t$ is called
-    the innovation at time $t$.
+    where $\phi_p \neq 0$ and $(W_t)$ is a white noise process.
+    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
+\end{example}
 
-\end{definition}
-
-\begin{definition}
+\begin{example}
     An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{moving average process}
     of order q or MA(q) if:
     \[
         X_t = W_t + \theta_1 W_{t-1} + \dots \theta_q W_{t-q}
     \]
-    where $W_t$ is independent of all $X_k$, $k < t$ and $\theta_q \neq 0$. The variable $W_t$ is called
-    the innovation at time $t$.
+    where $\theta_q \neq 0$ and $(W_t)$ is a white noise process.
+    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
+\end{example}
 
-\end{definition}
 
-
-\begin{definition}
+\begin{example}
     An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive moving average process}
     of autoregressive order p and moving average oder q or ARMA(p,q) if:
     \[
         X_t =  \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + \theta_1 W_{t-1} + \dots \theta_q W_{t-q} + W_t
     \]
-    where $W_t$ is again independent of all $X_k$, $k < t$, $\theta_q \neq 0$, $\phi_q \neq 0$.
-\end{definition}
+    where $\phi_p \neq 0, \theta_q \neq 0$ and $(W_t)$ is a white noise process.
+    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$
+
+\end{example}
 
 
 
