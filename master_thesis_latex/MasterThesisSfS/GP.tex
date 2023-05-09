@@ -1,4 +1,5 @@
-\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\usepackage{natbib}
+\usepackage{amsfonts}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
@@ -475,6 +476,10 @@ However, deriving $\Sigma_e$ for an ARMA process with irregularly spaced samples
 been shown in chapter \ref{ch:time-series-decomposition-and-regression}.
 The next section will illustrate how choosing a specific kernel function solves this problem.
 
+\section{Mean Function}\label{subsec:mean-function}
+
+Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
+
 \section{Kernel Functions}\label{subsec:kernel}
 
 In the last section we started of with a describing the prior distribution over
@@ -489,10 +494,88 @@ The choice of kernel function depends on the assumptions about correlation in yo
 $x$ and $x'$.
 
 
+\subsection{Stationary Covariance Function}
+Does only depend on $\tau = x - x'$.
+
+\subsubsection{The Matérn Class of Covariance Functions}
+
+A expression for the Matérn covariance function is given by \citeauthor{rasmussen_gaussian_2006}:
+
+\begin{gather*}
+    k_{\nu}(\tau) = \sigma^2 \frac{2^{1-\nu}}{\Gamma(\nu)}(\frac{\sqrt{2\nu} \tau}{l})^{\nu} K_{\nu}
+    (\frac{\sqrt{2\nu} \tau}{l})
+\end{gather*}
+where $\nu$ and $l$ are positive parameters, $K_{\nu}$ is a modified Bessel function and
+$\sigma^2$ = $k_{\nu}(0)$
+
+For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance function can be simplified:
+
+\begin{gather}\label{kernel-matern}
+    k_{\nu=r+1/2}(\tau) = \sigma² \exp(-\frac{\sqrt{2r + 1} \tau}{l}) \frac{r!}{(2p)!}
+    \sum_{i=0}^{r} \frac{(r+i)!}{i!(r-i)!}(\frac{2 \sqrt{2 r + 1} \tau}{l})^{r-i}
+\end{gather}
+
+Setting $\nu = 1/2$ with input domain $X \subset \mathbb{R}$ gives raise to a continuous-time AR(1) process,
+also called Ornstein-Uhlenbeck process.
+With $\nu = 1/2$, i.e. $r=0$, the Matérn covariance function is given by:
+\begin{gather}\label{kernel-matern-ar1}
+    k(\tau) = \sigma^2 exp(- \tau/l)
+\end{gather}
+
+The autocovariance function of an Ornstein-Uhlenbeck (OU) process can be derived by solving the stochastic differential equation (SDE) that defines the process.
+
+Starting with the SDE for an OU process:
+
+$$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
+
+where $X_t$ is the value of the process at time $t$, $\theta$ is a positive constant that determines the speed of mean reversion, $\mu$ is the long-term mean of the process, $\sigma_w$ is the standard deviation of the random shocks, and $W_t$ is a standard Wiener process or Brownian motion.
+
+Let $Y_t = X_t - \mu$, then we have:
+
+$$dY_t = dX_t$$
+$$= \theta (\mu - X_t)dt + \sigma_w dW_t$$
+$$= \theta (-Y_t)dt + \sigma_w dW_t$$
+
+This is a linear stochastic differential equation with constant coefficients, which can be solved using the method of integrating factors. We multiply both sides of the equation by $e^{\theta t}$ and integrate from 0 to $t$:
+
+$$\int_{0}^{t} e^{\theta s} dY_s = -\int_{0}^{t} \theta e^{\theta s} Y_s ds + \int_{0}^{t} \sigma_w e^{\theta s} dW_s$$
+
+Using the fact that $\int_{0}^{t} \sigma_w e^{\theta s} dW_s$ is a Gaussian random variable with mean 0 and variance $\frac{\sigma_w^2}{2\theta}(1 - e^{-2\theta t})$, we can solve for $Y_t$ and get:
+
+$$Y_t = e^{-\theta t} Y_0 + \frac{\sigma_w}{\sqrt{2\theta}}\int_{0}^{t} e^{-\theta(t-s)} dW_s$$
+
+where $Y_0 = X_0 - \mu$.
+
+Now, we can use the definition of covariance to find the autocovariance function of the OU process:
+
+$$Cov(X_t, X_{t-k}) = E[(X_t - \mu)(X_{t-k} - \mu)]$$
+
+$$= E[(Y_t + \mu)(Y_{t-k} + \mu)]$$
+
+$$= E[Y_t Y_{t-k}] + \mu^2$$
+
+Substituting the expression for $Y_t$ and $Y_{t-k}$ from the above equation, we get:
+
+$$Cov(X_t, X_{t-k}) = e^{-\theta k} Var(Y_0) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$$
+
+where we have used the fact that $Var(Y_0) = \frac{\sigma_w^2}{2\theta}$.
+
+Therefore, the autocovariance function of an OU process is given by
+$Cov(X_t, X_{t-k}) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$,
+where $k\geq 0$ and $\theta > 0$. The process is covariance stationary if $\theta > 0$.
+
+This is the same expression as we have obtained in \ref{kernel-matern-ar1}, where
+$k(0) = \sigma^2 = \frac{\sigma_w^2}{2\theta}$ and $l=1/\theta$
+
+
+More generally a continuous AR(p) process has Matérn covariance function with $\nu = p - 1/2$.
+
 
 
 TODO: different kernels, stationary kernels, link to power spectral density, with plots
 
+A more detailed description of covariance functions and their property can be found
+in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
 \section{Model Selection - Choosing Hyperparameters}
 \citeauthor{rasmussen_gaussian_2006} p.113.
@@ -504,6 +587,8 @@ Use marginal likelihood (or evidence):
     log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
     \frac{1}{2} log \det{K_XX(\theta)} - \frac{n}{2} \log 2 \pi
 \end{gather}
+
+
 
 %This enforces the kernel function to be symmetric and positive definite.
 
