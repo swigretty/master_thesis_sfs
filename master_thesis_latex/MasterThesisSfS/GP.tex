@@ -64,7 +64,7 @@ In our running example we might consider $X$ to be the time interval $T_0=[0, T]
 
 Note that a GP with finite index set and hence with joint gaussian distribution is just a specific case
 of GP. If we assume an ARMA process with gaussian innovations for the blood pressure time series, one can view the time series
-as collection of normally distributed random variables and are thus dealing with a GP.
+as a collection of multivariate normally distributed random variables and thus as a GP.
 
 
 If we consider the linear regression case from chapter \ref{ch:time-series-decomposition-and-regression} and assume a
@@ -93,7 +93,7 @@ regression coefficients $\beta$.
 
 Recall the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}.
 However, we are assuming a more general setting, where the data generating process does not need to be a time series process.
-The function is denoted with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a noisy observations of
+The function is denoted with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a noisy observation of
 $f(x_i)$, where the additive error $E_i$ does not necessarily need to be from a time series process $(E_t: t \in \{t_1, t_2, \dots  t_n \})$.
 We obtain the following data generating model:
 \begin{align*}
@@ -120,7 +120,7 @@ The likelihood, i.e. the probability of the observations $\mathbf{Y}$ given $X$ 
 
 \begin{gather*}
     p(\mathbf{Y}|X,\beta) =
-    = \frac{1}{( (2\pi)^{n/2} \sqrt {\det(\Sigma_e))}}
+    = \frac{1}{(2\pi)^{n/2} \sqrt {\det(\Sigma_e)}}
     \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_e^{-1}(y-X\beta))
     = \N(X \beta, \Sigma_e)
 \end{gather*}
@@ -142,7 +142,7 @@ Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the 
 \end{gather*}
 
 One approach is to just plug in the expressions for
-$p(\mathbf{Y}|X,\beta)$ and $p(\beta|\mathbf{Y}, X)$ from above, with:
+$p(\mathbf{Y}|X,\beta)$ and $p(\beta|\mathbf{Y}, X)$ from above, with the marginal likelihood:
 
 \begin{gather*}
     p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
@@ -198,7 +198,7 @@ Let $A \sim \N(\mu_A, \Sigma_{AA})$ and $B \sim \N(\mu_B, \Sigma_{BB})$ be
 Gaussian random vectors with the following joint distribution:
 
 \begin{gather*}
-    p(A, B) = \N(
+    p(A, B) = \N \left(
     \begin{bmatrix}
         \mu_A \\
         \mu_B
@@ -207,6 +207,7 @@ Gaussian random vectors with the following joint distribution:
         \Sigma_{AA} & \Sigma_{AB} \\
         \Sigma_{BA} & \Sigma_{BB}
     \end{bmatrix}
+    \right)
 \end{gather*}
 
 Then the conditional distribution $p(\mathbf{B} | \mathbf{A}=a)$ is also normally distributed
@@ -379,7 +380,7 @@ unobserved time point given our observations.
 Hence, we are not interested in the posterior distribution of $f^{\ast}$ only, but also of
 $Y^{\ast} := Y(x^{\ast}) = f(x^{\ast}) + E(x^{\ast})$.
 
-Recall the prior distribution over $\mathbf{Y}$:
+Recall the expression for the marginal likelihood $p(\mathbf{Y}| X)$:
 \begin{gather*}
     \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_e) \\
 \end{gather*}
@@ -406,7 +407,7 @@ One can then follow again the same procedure as before and combine $Y^{\ast}$ an
         K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
         \end{bmatrix}
         \right)
-    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+    = p(\mathbf{Y}, Y^{\ast}| X, x^{\ast})
 \end{gather}
 
 The predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, x^{\ast})$ is then again derived by conditioning.
@@ -425,7 +426,7 @@ We can write:
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
-Assuming the the same linear model as before, we have for $F_X = [f(x_1), \dots f(x_n)]^{\top}$:
+Assuming the same linear model as before, we have for $F_X = [f(x_1), \dots f(x_n)]^{\top}$:
 \begin{gather*}
     F_X = X \beta + \mathbf{E}, \text{ with $\beta \sim \N(0, \Sigma_p)$ and $\mathbf{E} \sim \N(0, \Sigma_e)$}
 \end{gather*}
