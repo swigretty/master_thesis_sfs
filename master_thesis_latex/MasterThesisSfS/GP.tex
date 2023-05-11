@@ -1,5 +1,5 @@
-\usepackage{natbib}
-\usepackage{amsfonts}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\usepackage{mathtools}
+\usepackage{amsmath}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
@@ -481,6 +481,30 @@ The next section will illustrate how choosing a specific kernel function solves 
 
 Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
 
+Assuming we want to model $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function
+and the $E(x)$ is a time series process and $\epsilon$ is some iid. gaussian noise term with variance $\sigma_n^{2}$.
+%In matrix notation for an input $X$:
+%
+%$$ \mathbf{Y} = \matthbf{M} + \mathbf{E} + \mathbf{\epsilon}$$
+
+Then we can model $f(x)$ with a GP:
+$$ f(x) \sim GP(m(x), k(x,x'))$$
+By using the conditioning rule we arrive at the following predictive distribution for $f^{\ast} := f(x^{\ast})$:
+\begin{gather*}
+    p(f^{\ast}| \mathbf{Y} = y, X, x^{\ast}) = N(\bar{\mu}, \bar{\Sigma}) \\
+    \text{with:} \\
+    \bar{\mu} = m(x^{\ast}) + K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1}(y - m(x))
+    \text{where the predictive variance $\bar{\Sigma}$ is not affected by $m(x)$:}
+    \bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} K(X, x^{\ast})
+\end{gather*}
+Hence one could just fit a GP to $f(x) - m(x) = E(x)$:
+$$ E(x) = f(x) - m(x) \sim GP(0, k(x,x'))$$ and add $m(x)$ to the predictive mean of $E^{\ast} = E(x^{\ast})$ to
+arrive again at the predictive mean $\bar{\mu}$ of $f^{\ast}$ from above.
+
+
+
+Regardless on how we derive the deteministic function $m(x)$ this will not have an impact on
+
 \section{Kernel Functions}\label{subsec:kernel}
 
 In the last section we started of with a describing the prior distribution over
@@ -512,9 +536,23 @@ $\sigma^2$ = $k_{\nu}(0)$
 For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance function can be simplified:
 
 \begin{gather}\label{kernel-matern}
-    k_{\nu=r+1/2}(\tau) = \sigma² \exp(-\frac{\sqrt{2r + 1} \tau}{l}) \frac{r!}{(2p)!}
+    k_{\nu=r+1/2}(\tau) = \sigma^2 \exp(-\frac{\sqrt{2r + 1} \tau}{l}) \frac{r!}{(2p)!}
     \sum_{i=0}^{r} \frac{(r+i)!}{i!(r-i)!}(\frac{2 \sqrt{2 r + 1} \tau}{l})^{r-i}
 \end{gather}
+
+
+Or also with \texttt{includegraphics}:
+\begin{figure}[hbt!]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!' Try to
+                    %impose your will to LaTeX
+  \centering
+  \includegraphics[width=\textwidth]{Matern_3} %<< no file extension
+  %%         --- .5\textwidth stands for 50% of text width
+  \caption[Geyser data: binned histogram, Silverman's and another
+  kernel]%<<-- Legend for the list of figures at the beginning of you thesis
+  {Matérn kernel function and sample path for different $\nu$}% legend displayed below the graph.
+  \label{fig:matern}
+\end{figure}
+
 
 Setting $\nu = 1/2$ with input domain $X \subset \mathbb{R}$ gives raise to a continuous-time AR(1) process,
 also called Ornstein-Uhlenbeck process.
@@ -523,13 +561,14 @@ With $\nu = 1/2$, i.e. $r=0$, the Matérn covariance function is given by:
     k(\tau) = \sigma^2 exp(- \tau/l)
 \end{gather}
 
-The autocovariance function of an Ornstein-Uhlenbeck (OU) process can be derived by solving the stochastic differential equation (SDE) that defines the process.
+The autocovariance function of an Ornstein-Uhlenbeck process can be derived by solving the stochastic differential equation (SDE) that defines the process.
 
 Starting with the SDE for an OU process:
 
 $$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
 
-where $X_t$ is the value of the process at time $t$, $\theta$ is a positive constant that determines the speed of mean reversion, $\mu$ is the long-term mean of the process, $\sigma_w$ is the standard deviation of the random shocks, and $W_t$ is a standard Wiener process or Brownian motion.
+where $X_t$ is the value of the process at time $t$, $\theta$ is a positive constant that determines the speed of mean reversion,
+$\mu$ is the long-term mean of the process, $\sigma_w$ is the standard deviation of the random shocks, and $W_t$ is a standard Wiener process or Brownian motion.
 
 Let $Y_t = X_t - \mu$, then we have:
 
@@ -569,9 +608,35 @@ This is the same expression as we have obtained in \ref{kernel-matern-ar1}, wher
 $k(0) = \sigma^2 = \frac{\sigma_w^2}{2\theta}$ and $l=1/\theta$
 
 
+To see how the Ornstein-Uhlenbeck can be considered a continuous time analogue to the discrete time
+AR(1) process one can use the Euler-Maryuama discretization of the process.
+Considering again the SDE for an OU process:
+$$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
+The process can be discretized at times $(k \Delta t)_{k \in \mathbb{N}_0}$:
+
+$$ X_{k+1} - X_k = \theta \mu \delta t - \theta X_k \Delta t + \sigma_w (W_{k+1} - W_k)$$
+
+The random variables $(W_{k+1} - W_k)$ are independent and identically distributed normal random variables
+with expected value zero and variance $\Delta t$.
+Therefore, we can set $\sigma_w (W_{k+1} - W_k) = \sigma_w \sqrt{\Delta t} \epsilon$ with $\epsilon \sim \N(0,1)$
+to obtain the following recursion:
+$$ X_{k+1} = \theta \mu \Delta t - (\theta \Delta t - 1) X_k + \sigma_w \sqrt{\Delta t} \epsilon$$
+
+The recursion for an AR(1) process is:
+$$ X_{k+1} = c + a X_k + b \epsilon$$
+Which is identical to the expression above if $c= \theta \mu \Delta t$, $a=- \theta \Delta t$ and
+$b= \sigma_w \sqrt{\Delta t}$
+
+
+
+
+
+
+
+
+
+
 More generally a continuous AR(p) process has Matérn covariance function with $\nu = p - 1/2$.
-
-
 
 TODO: different kernels, stationary kernels, link to power spectral density, with plots
 

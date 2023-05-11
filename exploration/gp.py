@@ -12,6 +12,7 @@ class ARKernel(Matern):
         super().__init__(length_scale=length_scale, length_scale_bounds=length_scale_bounds, nu=nu)
         self.order = order
 
+
 class GPModel(object):
     def __init__(self, kernel, rng=None, meas_noise=0, kernel_approx=False, normalize_y=True):
         if rng is None:
