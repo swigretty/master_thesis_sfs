@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from logging import getLogger
 from log_setup import setup_logging
 from statsmodels.tsa.arima_process import arma_acovf
+from statsmodels.tsa.arima.model import ARIMA
 
 import matplotlib.pyplot as plt
 
@@ -107,6 +108,11 @@ if __name__ == "__main__":
     a = - OU_params.theta * delta_t + 1
     b = OU_params.sigma_w * np.sqrt(delta_t)
 
+    arima = ARIMA(OU_proc, order=(1, 0, 0), trend_offset=OU_params.theta)
+    s1fit = arima.fit(gls=False)
+    ar_est = np.array([1, -s1fit.params[1]])
+
+
     innovations = b * get_dW(T, random_state=seed)
 
     OU_proc_AR_1 = [0]
@@ -120,10 +126,18 @@ if __name__ == "__main__":
     plt.show()
 
 
-    # Estimated autocovariance
+    ## Estimated autocovariance
+
+    arima = ARIMA(OU_proc, order=(1, 0, 0), trend_offset=OU_params.theta)
+    s1fit = arima.fit(gls=False)
+    ar_est = np.array([1, -s1fit.params[1]])
+    cov_est = arma_acovf(ar=ar_est, ma=np.array([1]), sigma2=b, nobs=len(t))
 
 
-    # Theoretical autocovariance
+    ## Theoretical autocovariance
+
+    # COV Matérn Kernel and OU coefficients
+
 
     # COV AR(1)
     cov_true = arma_acovf(ar=a, ma=np.array([1]), sigma2=b, nobs=len(t))
