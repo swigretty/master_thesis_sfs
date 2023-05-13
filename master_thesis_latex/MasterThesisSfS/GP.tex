@@ -1,4 +1,3 @@
-\usepackage{mathtools}
 \usepackage{amsmath}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
@@ -119,7 +118,7 @@ Therefore, $\mathbf{E}$ is gaussian as long as it has gaussian innovations.
 The likelihood, i.e. the probability of the observations $\mathbf{Y}$ given $X$ and $\beta$ is then:
 
 \begin{gather*}
-    p(\mathbf{Y}|X,\beta) =
+    p(\mathbf{Y}|X,\beta)
     = \frac{1}{(2\pi)^{n/2} \sqrt {\det(\Sigma_e)}}
     \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_e^{-1}(y-X\beta))
     = \N(X \beta, \Sigma_e)
@@ -338,7 +337,7 @@ The joint distribution of $f^{\ast}$ and $\mathbf{Y}$ can be expressed as follow
     \begin{bmatrix}
         \mathbf{Y} \\
         f^{\ast}
-    \end{bmatrix} =
+    \end{bmatrix}
     \sim \N \left(
         \begin{bmatrix}
         0 \\
@@ -479,7 +478,16 @@ The next section will illustrate how choosing a specific kernel function solves 
 
 \section{Mean Function}\label{subsec:mean-function}
 
+
+A Gaussian process is fully specified by its mean function, $\mu(x)$, and its covariance
+function, $k(x, x')$.
+However, the mean function can always be subtracted from the observed data without changing
+the covariance structure of the data. In other words, if we subtract the mean function from the
+observed data, we obtain a new dataset with zero mean, but the same covariance structure.
+
+
 Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
+
 
 Assuming we want to model $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function
 and the $E(x)$ is a time series process and $\epsilon$ is some iid. gaussian noise term with variance $\sigma_n^{2}$.
@@ -489,21 +497,36 @@ and the $E(x)$ is a time series process and $\epsilon$ is some iid. gaussian noi
 
 Then we can model $f(x)$ with a GP:
 $$ f(x) \sim GP(m(x), k(x,x'))$$
+
 By using the conditioning rule we arrive at the following predictive distribution for $f^{\ast} := f(x^{\ast})$:
 \begin{gather*}
-    p(f^{\ast}| \mathbf{Y} = y, X, x^{\ast}) = N(\bar{\mu}, \bar{\Sigma}) \\
-    \text{with:} \\
-    \bar{\mu} = m(x^{\ast}) + K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1}(y - m(x))
-    \text{where the predictive variance $\bar{\Sigma}$ is not affected by $m(x)$:}
+    p(f^{\ast}| \mathbf{Y}= y, X, x^{\ast}) = N(\bar{\mu}, \bar{\Sigma}), \\
+    \bar{\mu} = m(x^{\ast}) + K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1}(y - m(X)),\\
     \bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} K(X, x^{\ast})
 \end{gather*}
-Hence one could just fit a GP to $f(x) - m(x) = E(x)$:
-$$ E(x) = f(x) - m(x) \sim GP(0, k(x,x'))$$ and add $m(x)$ to the predictive mean of $E^{\ast} = E(x^{\ast})$ to
-arrive again at the predictive mean $\bar{\mu}$ of $f^{\ast}$ from above.
+Note how the predictive variance $\bar{\Sigma}$ is not affected by $m(x)$.
+If instead a GP is fitted to $f(x) - m(x) = E(x)$ we can write:
+$$ E(x) = f(x) - m(x) \sim GP(0, k(x,x'))$$
+The predictive distribution over $E^{\ast} := E(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is then:
+\begin{gather*}
+    p(E^{\ast}| \mathbf{Z} = z, X, x^{\ast}) = N(\bar{\mu}_{E^{\ast}}, \bar{\Sigma}), \\
+    \bar{\mu}_{E^{\ast}} = K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} z,\\
+\end{gather*}
+Since $ z = y - m(X)$, the predictive distribution over $f^{\ast}$ is recovered by adding $m(x^{\ast})$ to
+the predictive mean $\bar{\mu}_{E^{\ast}}$. The predictive variance $\bar{\Sigma}$ remains unchanged,
+since it is not affected by the observations nor by $m(x)$.
 
+%In order to find $m(x)$ we again could assume the liner model from chapter \ref{ch:time-series-decomposition-and-regression}
+%and use the GP only to model the errors $E(x)$.
+%When fitting the model, one could optimize over the parameters $\beta$ jointly with
+%the hyperparameters of the covariance function.
+%However, we can also put a prior over the parameters $\beta$
+%and fit a GP to $f(x)$, as has been done in section \ref{sec:gaussian-process-regression}.
+Hence, when
+having some knowledge about $m(x)$ one should subtract it first before fitting a GP
+with a zero mean prior. This generally means subtracting the global mean from the data
+before fitting the GP.
 
-
-Regardless on how we derive the deteministic function $m(x)$ this will not have an impact on
 
 \section{Kernel Functions}\label{subsec:kernel}
 
@@ -570,43 +593,48 @@ $$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
 where $X_t$ is the value of the process at time $t$, $\theta$ is a positive constant that determines the speed of mean reversion,
 $\mu$ is the long-term mean of the process, $\sigma_w$ is the standard deviation of the random shocks, and $W_t$ is a standard Wiener process or Brownian motion.
 
-Let $Y_t = X_t - \mu$, then we have:
+The solution to the SDE is:
 
-$$dY_t = dX_t$$
-$$= \theta (\mu - X_t)dt + \sigma_w dW_t$$
-$$= \theta (-Y_t)dt + \sigma_w dW_t$$
+$$ X_t = X_0 e^{-\theta t} + \mu (1-e^{-\theta t}) +
+\sigma_w e^{-\theta t} \int_{0}^{t} e^{\theta s} dW_s$$
 
-This is a linear stochastic differential equation with constant coefficients, which can be solved using the method of integrating factors. We multiply both sides of the equation by $e^{\theta t}$ and integrate from 0 to $t$:
-
-$$\int_{0}^{t} e^{\theta s} dY_s = -\int_{0}^{t} \theta e^{\theta s} Y_s ds + \int_{0}^{t} \sigma_w e^{\theta s} dW_s$$
-
-Using the fact that $\int_{0}^{t} \sigma_w e^{\theta s} dW_s$ is a Gaussian random variable with mean 0 and variance $\frac{\sigma_w^2}{2\theta}(1 - e^{-2\theta t})$, we can solve for $Y_t$ and get:
-
-$$Y_t = e^{-\theta t} Y_0 + \frac{\sigma_w}{\sqrt{2\theta}}\int_{0}^{t} e^{-\theta(t-s)} dW_s$$
-
-where $Y_0 = X_0 - \mu$.
-
-Now, we can use the definition of covariance to find the autocovariance function of the OU process:
-
-$$Cov(X_t, X_{t-k}) = E[(X_t - \mu)(X_{t-k} - \mu)]$$
-
-$$= E[(Y_t + \mu)(Y_{t-k} + \mu)]$$
-
-$$= E[Y_t Y_{t-k}] + \mu^2$$
-
-Substituting the expression for $Y_t$ and $Y_{t-k}$ from the above equation, we get:
-
-$$Cov(X_t, X_{t-k}) = e^{-\theta k} Var(Y_0) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$$
-
-where we have used the fact that $Var(Y_0) = \frac{\sigma_w^2}{2\theta}$.
-
-Therefore, the autocovariance function of an OU process is given by
+%
+%Let $Y_t = X_t - \mu$, then we have:
+%
+%$$dY_t = dX_t$$
+%$$= \theta (\mu - X_t)dt + \sigma_w dW_t$$
+%$$= \theta (-Y_t)dt + \sigma_w dW_t$$
+%
+%This is a linear stochastic differential equation with constant coefficients, which can be solved using the method of integrating factors. We multiply both sides of the equation by $e^{\theta t}$ and integrate from 0 to $t$:
+%
+%$$\int_{0}^{t} e^{\theta s} dY_s = -\int_{0}^{t} \theta e^{\theta s} Y_s ds + \int_{0}^{t} \sigma_w e^{\theta s} dW_s$$
+%
+%Using the fact that $\int_{0}^{t} \sigma_w e^{\theta s} dW_s$ is a Gaussian random variable with mean 0 and variance $\frac{\sigma_w^2}{2\theta}(1 - e^{-2\theta t})$, we can solve for $Y_t$ and get:
+%
+%$$Y_t = e^{-\theta t} Y_0 + \frac{\sigma_w}{\sqrt{2\theta}}\int_{0}^{t} e^{-\theta(t-s)} dW_s$$
+%
+%where $Y_0 = X_0 - \mu$.
+%
+%Now, we can use the definition of covariance to find the autocovariance function of the OU process:
+%
+%$$Cov(X_t, X_{t-k}) = E[(X_t - \mu)(X_{t-k} - \mu)]$$
+%
+%$$= E[(Y_t + \mu)(Y_{t-k} + \mu)]$$
+%
+%$$= E[Y_t Y_{t-k}] + \mu^2$$
+%
+%Substituting the expression for $Y_t$ and $Y_{t-k}$ from the above equation, we get:
+%
+%$$Cov(X_t, X_{t-k}) = e^{-\theta k} Var(Y_0) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$$
+%
+%where we have used the fact that $Var(Y_0) = \frac{\sigma_w^2}{2\theta}$.
+The process is stationary if $\theta > 0$.
+The autocovariance function of an OU process is given by
 $Cov(X_t, X_{t-k}) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$,
-where $k\geq 0$ and $\theta > 0$. The process is covariance stationary if $\theta > 0$.
+where $k\geq 0$ and $\theta > 0$.
 
 This is the same expression as we have obtained in \ref{kernel-matern-ar1}, where
 $k(0) = \sigma^2 = \frac{\sigma_w^2}{2\theta}$ and $l=1/\theta$
-
 
 To see how the Ornstein-Uhlenbeck can be considered a continuous time analogue to the discrete time
 AR(1) process one can use the Euler-Maryuama discretization of the process.
