@@ -6,10 +6,15 @@ from logging import getLogger
 from log_setup import setup_logging
 from statsmodels.tsa.arima_process import arma_acovf
 from statsmodels.tsa.arima.model import ARIMA
-
+from statsmodels.tsa.stattools import acovf
 import matplotlib.pyplot as plt
+from sklearn.gaussian_process.kernels import Matern
+from exploration.constants import PLOT_PATH
+import matplotlib as mpl
 
 logger = getLogger(__name__)
+mpl.style.use('seaborn-v0_8')
+
 
 @dataclass
 class OUParams:
@@ -21,9 +26,8 @@ class OUParams:
 @dataclass
 class AR1Params:
     const: float  # constant trend/offset (exog in ARIMA output)
-    ar_L1 : float  # the AR1 coeff
+    ar_L1: float  # the AR1 coeff
     sigma_w: float  # innovation scale
-
 
 
 def get_OU_process(
@@ -42,7 +46,7 @@ def get_OU_process(
     """
     t = np.arange(0, T, delta_t, dtype=np.float128)  # float to avoid np.exp overflow
     exp_theta_t = np.exp(-OU_params.theta * t)
-    dW = get_dW(T, random_state)
+    dW = get_dW(len(t), random_state)
     integral_W = _get_integal_W(t, dW, OU_params)
     _X_0 = _select_X_0(X_0, OU_params)
     return (
@@ -97,44 +101,74 @@ def estimate_OU_params(X_t: np.ndarray) -> OUParams:
     return OUParams(theta, mu, sigma_w)
 
 
+def get_cov_ou(ou_params: OUParams, delta_t):
+    return ou_params.sigma_w**2/(2*ou_params.theta) * np.exp(-ou_params.theta * delta_t)
+
+
 if __name__ == "__main__":
     setup_logging()
     # generate process with random_state to reproduce results
     delta_t = 1
     seed = 10
-    T = 100
+    T = 1000
     t = np.arange(0, T, delta_t)
-    OU_params = OUParams(theta=0.07, mu=0.0, sigma_w=0.001)
-    AR1_params = AR1Params(const=OU_params.theta * OU_params.mu * delta_t, ar_L1=- OU_params.theta * delta_t + 1, sigma_w=OU_params.sigma_w * np.sqrt(delta_t))
+    OU_params = OUParams(theta=0.1, mu=0.0, sigma_w=0.001)
+
+    delta_t_ar = delta_t #* 0.1
+    t_ar = np.arange(0, T, delta_t_ar)
+    AR1_params = AR1Params(const=OU_params.theta * OU_params.mu * delta_t_ar, ar_L1=1-OU_params.theta * delta_t_ar,
+                           sigma_w=OU_params.sigma_w * np.sqrt(delta_t_ar))
 
     OU_proc = get_OU_process(T, delta_t, OU_params, random_state=seed)
     OU_params_hat = estimate_OU_params(OU_proc)
-    logger.info(f"Theoretical {OU_params} \n Estimated {OU_params_hat}")
+    logger.info(f"\n Theoretical {OU_params} \n Estimated {OU_params_hat}")
 
-    arima = ARIMA(OU_proc.astype(np.float), order=(1, 0, 0), trend="c") # constant trend
+    arima = ARIMA(OU_proc.astype(np.float), order=(1, 0, 0), trend="c")  # constant trend
     res = arima.fit()  # method="statespace"
     print(res.summary())
-    AR1_params_hat = AR1_params(const=res.params[0], ar_L1=res.params[1], sigma_w=res.params[2])
-    logger.info(f"Theoretical {AR1Params} \n Estimated {AR1_params_hat}")
+    AR1_params_hat = AR1Params(const=res.params[0], ar_L1=res.params[1], sigma_w=np.sqrt(res.params[2]))
+    logger.info(f"\n Theoretical {AR1_params} \n Estimated {AR1_params_hat}")
 
     OU_proc_AR_1 = [0]
-    for i in range(len(t)-1):
-        OU_proc_AR_1.append(AR1Params.const + AR1Params.ar_L1 * OU_proc_AR_1[-1] +
-                            AR1Params.sigma_w * np.random.standard_normal(1))
+    for t_ in t_ar:
+        X_t = AR1_params.const + AR1_params.ar_L1 * OU_proc_AR_1[-1] + AR1_params.sigma_w * np.random.standard_normal(1)
+        OU_proc_AR_1.append(X_t)
+    OU_proc_AR_1 = OU_proc_AR_1[:-1]
+        # if t_ in t:
+        #     OU_proc_AR_1.append(X_t)
+
+
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(t, OU_proc, label="OU")
-    ax.plot(t, OU_proc_AR_1, label="AR1")
+    ax.plot(t_ar, OU_proc_AR_1, label="AR1")
     ax.legend()
     plt.show()
 
     ## Theoretical autocovariance
     # AR1
-    ar1_cov = arma_acovf(ar=AR1Params.ar_L1, ma=np.array([1]), sigma2=AR1Params.sigma_w, nobs=len(t))
-    cov_0 = AR1Params.sigma_w**2/(1-AR1Params.ar_L1**2)
-    cov_1 = cov_0 * AR1Params.ar_L1**2
+    ar1_cov = arma_acovf(ar=np.array([1, - AR1_params.ar_L1]), ma=np.array([1]), sigma2=AR1_params.sigma_w**2,
+                         nobs=len(t_ar))
+    cov_0 = AR1_params.sigma_w**2/(1-AR1_params.ar_L1**2)
+    cov_1 = cov_0 * AR1_params.ar_L1
+    ar1_cov_hat = acovf(OU_proc)
 
     # COV Matérn Kernel and OU coefficients
+    cov_ou = [get_cov_ou(OU_params, delta_t * i) for i in range(len(t))]
+
+    matern_kernel = cov_ou[0] * Matern(nu=0.5, length_scale=1/OU_params.theta)
+    cov_matern = matern_kernel(np.array(t).reshape(-1, 1))
+
+    fig, ax = plt.subplots()
+    ax.plot(t_ar[: 50 * int(delta_t /delta_t_ar) ], ar1_cov[:50 * int(delta_t /delta_t_ar)], "r.", label="cov_ar1")
+    ax.plot(t[:50], cov_matern[0, :50], "b--",  label="matern", )
+    ax.plot(t[:50], cov_ou[:50], "y*", label="cov_ou")
+    ax.legend()
+    fig.savefig(PLOT_PATH / "covariance_ar_ou_matern.pdf")
+    plt.show()
+
+
+
 
 
 
