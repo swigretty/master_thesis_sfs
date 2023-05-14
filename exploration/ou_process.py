@@ -18,6 +18,14 @@ class OUParams:
     sigma_w: float  # Brownian motion scale (standard deviation)
 
 
+@dataclass
+class AR1Params:
+    const: float  # constant trend/offset (exog in ARIMA output)
+    ar_L1 : float  # the AR1 coeff
+    sigma_w: float  # innovation scale
+
+
+
 def get_OU_process(
     T: int,
     delta_t,
@@ -94,55 +102,43 @@ if __name__ == "__main__":
     # generate process with random_state to reproduce results
     delta_t = 1
     seed = 10
-    T = 100_000
+    T = 100
     t = np.arange(0, T, delta_t)
-
     OU_params = OUParams(theta=0.07, mu=0.0, sigma_w=0.001)
+    AR1_params = AR1Params(const=OU_params.theta * OU_params.mu * delta_t, ar_L1=- OU_params.theta * delta_t + 1, sigma_w=OU_params.sigma_w * np.sqrt(delta_t))
+
     OU_proc = get_OU_process(T, delta_t, OU_params, random_state=seed)
-
     OU_params_hat = estimate_OU_params(OU_proc)
-    logger.info(OU_params_hat)
-    logger.info("bla")
+    logger.info(f"Theoretical {OU_params} \n Estimated {OU_params_hat}")
 
-    c = OU_params.theta * OU_params.mu * delta_t
-    a = - OU_params.theta * delta_t + 1
-    b = OU_params.sigma_w * np.sqrt(delta_t)
-
-    arima = ARIMA(OU_proc, order=(1, 0, 0), trend_offset=OU_params.theta)
-    s1fit = arima.fit(gls=False)
-    ar_est = np.array([1, -s1fit.params[1]])
-
-
-    innovations = b * get_dW(T, random_state=seed)
+    arima = ARIMA(OU_proc.astype(np.float), order=(1, 0, 0), trend="c") # constant trend
+    res = arima.fit()  # method="statespace"
+    print(res.summary())
+    AR1_params_hat = AR1_params(const=res.params[0], ar_L1=res.params[1], sigma_w=res.params[2])
+    logger.info(f"Theoretical {AR1Params} \n Estimated {AR1_params_hat}")
 
     OU_proc_AR_1 = [0]
-    for w in innovations:
-        OU_proc_AR_1.append(c + a * OU_proc_AR_1[-1] + w)
+    for i in range(len(t)-1):
+        OU_proc_AR_1.append(AR1Params.const + AR1Params.ar_L1 * OU_proc_AR_1[-1] +
+                            AR1Params.sigma_w * np.random.standard_normal(1))
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.plot(t, OU_proc, label="OU")
-    ax.plot(t, OU_proc_AR_1[:-1], label="AR1")
+    ax.plot(t, OU_proc_AR_1, label="AR1")
     ax.legend()
     plt.show()
 
-
-    ## Estimated autocovariance
-
-    arima = ARIMA(OU_proc, order=(1, 0, 0), trend_offset=OU_params.theta)
-    s1fit = arima.fit(gls=False)
-    ar_est = np.array([1, -s1fit.params[1]])
-    cov_est = arma_acovf(ar=ar_est, ma=np.array([1]), sigma2=b, nobs=len(t))
-
-
     ## Theoretical autocovariance
+    # AR1
+    ar1_cov = arma_acovf(ar=AR1Params.ar_L1, ma=np.array([1]), sigma2=AR1Params.sigma_w, nobs=len(t))
+    cov_0 = AR1Params.sigma_w**2/(1-AR1Params.ar_L1**2)
+    cov_1 = cov_0 * AR1Params.ar_L1**2
 
     # COV Matérn Kernel and OU coefficients
 
 
-    # COV AR(1)
-    cov_true = arma_acovf(ar=a, ma=np.array([1]), sigma2=b, nobs=len(t))
-    cov_0 = b**2/(1-a**2)
-    cov_1 = cov_0 * a**2
+
+
 
 
 
