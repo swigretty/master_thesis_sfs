@@ -51,17 +51,11 @@ def plot_kernel(kernel, t=np.linspace(0, 20, 200), kernel_config_list=None, plot
     plt.show()
 
 
-
-
-
 if __name__ == "__main__":
     setup_logging()
     kernel = Matern
 
     plot_kernel(kernel, kernel_config_list=[{"nu": 0.5}, {"nu": 2.5}, {"nu": np.inf}])
-
-
-
 
 
 
