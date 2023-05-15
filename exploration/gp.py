@@ -9,7 +9,15 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 
-def plot_gpr_samples(gpr_model, n_samples, ax, global_mean=0):
+def plot_kernel_function(ax, x, kernel):
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
+    KXX = kernel(x)
+    ax.plot(x, KXX[0, :])
+    ax.set_title(f"{kernel}")
+
+
+def plot_gpr_samples(ax, x, y, y_mean, y_std):
     """Plot samples drawn from the Gaussian process model.
 
     If the Gaussian process model is not trained then the drawn samples are
@@ -26,15 +34,13 @@ def plot_gpr_samples(gpr_model, n_samples, ax, global_mean=0):
     ax : matplotlib axis
         The matplotlib axis where to plot the samples.
     """
-    x = np.linspace(0, 5, 100)
-    X = x.reshape(-1, 1)
 
-    y_mean, y_std = gpr_model.gp.predict(X, return_std=True)
-    y_samples = gpr_model.sample_from_prior(X, n_samples, global_mean=global_mean)
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
+    if y_std.ndim > 1:
+        raise ValueError(f"y_std must have 1 dimension not {y_std.ndim}")
 
-    y_mean = np.zeros(y_samples.shape[0]) + global_mean
-
-    for idx, single_prior in enumerate(y_samples.T):
+    for idx, single_prior in enumerate(y.T):
         ax.plot(
             x,
             single_prior,
@@ -44,7 +50,7 @@ def plot_gpr_samples(gpr_model, n_samples, ax, global_mean=0):
         )
     ax.plot(x, y_mean, color="black", label="Mean")
     ax.fill_between(
-        x,
+        x.reshape(-1),
         y_mean - y_std,
         y_mean + y_std,
         alpha=0.1,
@@ -53,8 +59,7 @@ def plot_gpr_samples(gpr_model, n_samples, ax, global_mean=0):
     )
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-    return X, y_samples
-    # ax.set_ylim([-3, 3])
+
 
 
 class ARKernel(Matern):
@@ -90,6 +95,8 @@ class GPModel(object):
         return gp_mean, gp_unc
 
     def fit_model(self, train_x: np.ndarray, train_y: np.ndarray):
+        if train_x.ndim == 1:
+            train_x = train_x.reshape(-1, 1)
         if self.kernel_approx is not None:
             train_x = self.kernel_approx.fit_transform(train_x)
         self.gp.fit(train_x, train_y)
@@ -101,7 +108,23 @@ class GPModel(object):
         y_cov = self.kernel(x)
         y_mean = np.zeros(x.shape[0]) + global_mean
         y_samples = self.rng.multivariate_normal(y_mean, y_cov, n_samples).T
-        return y_samples
+        return y_samples, y_mean, y_cov
+
+    def sample_from_posterior(self, x, n_samples):
+        if not hasattr(self.gp, "X_train_"):  # Unfitted;predict based on GP prior
+            raise "GP has not been fitted yet, cannot sample from posterior"
+
+        if x.ndim == 1:
+            x = x.reshape(-1, 1)
+        y_mean, y_cov = self.predict(x, return_cov=True)
+        y_samples = [
+            self.rng.multivariate_normal(
+                y_mean[:, target], y_cov[..., target], n_samples
+            ).T[:, np.newaxis]
+            for target in range(y_mean.shape[1])
+        ]
+        y_samples = np.hstack(y_samples)
+        return y_samples, y_mean, y_cov
 
 
 def fit_gp(X, y, period):
