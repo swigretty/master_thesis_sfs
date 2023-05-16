@@ -13,11 +13,14 @@ def plot_kernel_function(ax, x, kernel):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     KXX = kernel(x)
+    k_values = KXX[0, :]
+    # idx_max = np.argmax(k_values < 0.01)
+    # ax.plot(x[:idx_max], KXX[0, :idx_max])
     ax.plot(x, KXX[0, :])
     ax.set_title(f"{kernel}")
 
 
-def plot_gpr_samples(ax, x, y, y_mean, y_std):
+def plot_gpr_samples(ax, x, y, y_mean, y_std, ylim=None):
     """Plot samples drawn from the Gaussian process model.
 
     If the Gaussian process model is not trained then the drawn samples are
@@ -59,7 +62,8 @@ def plot_gpr_samples(ax, x, y, y_mean, y_std):
     )
     ax.set_xlabel("x")
     ax.set_ylabel("y")
-
+    if ylim:
+        ax.set_ylim(ylim)
 
 
 class ARKernel(Matern):
@@ -102,29 +106,31 @@ class GPModel(object):
         self.gp.fit(train_x, train_y)
         pass
 
-    def sample_from_prior(self, x, n_samples, global_mean=0):
+    def sample_y(self, x, n_samples):
         if x.ndim == 1:
             x = x.reshape(-1, 1)
-        y_cov = self.kernel(x)
-        y_mean = np.zeros(x.shape[0]) + global_mean
-        y_samples = self.rng.multivariate_normal(y_mean, y_cov, n_samples).T
+
+        y_mean, y_cov = self.predict(x, return_cov=True)
+        if y_mean.ndim == 1:
+            y_samples = self.rng.multivariate_normal(y_mean, y_cov, n_samples).T
+        else:
+            y_samples = [
+                self.rng.multivariate_normal(
+                    y_mean[:, target], y_cov[..., target], n_samples
+                ).T[:, np.newaxis]
+                for target in range(y_mean.shape[1])
+            ]
+            y_samples = np.hstack(y_samples)
         return y_samples, y_mean, y_cov
+
+    def sample_from_prior(self, x, n_samples, global_mean=0):
+        y_samples, y_mean, y_cov = self.sample_y(x, n_samples)
+        return y_samples + global_mean, y_mean + global_mean, y_cov
 
     def sample_from_posterior(self, x, n_samples):
         if not hasattr(self.gp, "X_train_"):  # Unfitted;predict based on GP prior
             raise "GP has not been fitted yet, cannot sample from posterior"
-
-        if x.ndim == 1:
-            x = x.reshape(-1, 1)
-        y_mean, y_cov = self.predict(x, return_cov=True)
-        y_samples = [
-            self.rng.multivariate_normal(
-                y_mean[:, target], y_cov[..., target], n_samples
-            ).T[:, np.newaxis]
-            for target in range(y_mean.shape[1])
-        ]
-        y_samples = np.hstack(y_samples)
-        return y_samples, y_mean, y_cov
+        return self.sample_y(x, n_samples)
 
 
 def fit_gp(X, y, period):

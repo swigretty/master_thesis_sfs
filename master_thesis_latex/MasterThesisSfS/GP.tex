@@ -524,8 +524,34 @@ since it is not affected by the observations nor by $m(x)$.
 %and fit a GP to $f(x)$, as has been done in section \ref{sec:gaussian-process-regression}.
 Hence, when
 having some knowledge about $m(x)$ one should subtract it first before fitting a GP
-with a zero mean prior. This generally means subtracting the global mean from the data
-before fitting the GP.
+with a zero mean prior.
+
+If unknown one can optimize over the paramters of the mean function and the hyperparameters
+of the convariance function jointly.
+
+Also in the case of $m(x)$ being a constant $c$ one one can simply add $c^2$ to the covariance function
+and have $m(x) =0$
+
+$f(x) \sim GP(m(x)=0, k(x_i, x_j))$
+
+that is to say,
+
+$E[f(x)] = 0$, $cov[f(x_i), f(x_j)] = k(x_i, x_j)$
+
+If a constant c is added to the kernel,
+
+    $cov[f(x_i), f(x_j)] = E[(f(x_i) - E[f(x_i)])(f(x_j) -E[f(x_i)])]= E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)] = k(x_i, x_j) + c$
+
+So actually it is the same as a GP with
+
+    $sqrt(c), k(x_i, x_j)$
+
+because
+
+    $cov[f(x_i), f(x_j)] = E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)] - c = k(x_i, x_j)$
+
+
+
 
 
 \section{Kernel Functions}\label{subsec:kernel}
