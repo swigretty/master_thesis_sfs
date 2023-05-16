@@ -16,6 +16,10 @@ def plot_kernel_function(ax, x, kernel):
     k_values = KXX[0, :]
     # idx_max = np.argmax(k_values < 0.01)
     # ax.plot(x[:idx_max], KXX[0, :idx_max])
+
+    if x.shape[1] > 1:
+        x = x[:, 1]
+
     ax.plot(x, KXX[0, :])
     ax.set_title(f"{kernel}")
 
@@ -38,11 +42,13 @@ def plot_gpr_samples(ax, x, y, y_mean, y_std, ylim=None):
         The matplotlib axis where to plot the samples.
     """
 
-    if x.ndim == 1:
-        x = x.reshape(-1, 1)
+    if x.ndim > 1:
+        if x.shape[1] > 1:
+            x = x[:, 1]
+        else:
+            x = x.reshape(-1)
     if y_std.ndim > 1:
         raise ValueError(f"y_std must have 1 dimension not {y_std.ndim}")
-
     for idx, single_prior in enumerate(y.T):
         ax.plot(
             x,
@@ -51,9 +57,10 @@ def plot_gpr_samples(ax, x, y, y_mean, y_std, ylim=None):
             alpha=0.7,
             label=f"Sampled function #{idx + 1}",
         )
+
     ax.plot(x, y_mean, color="black", label="Mean")
     ax.fill_between(
-        x.reshape(-1),
+        x,
         y_mean - y_std,
         y_mean + y_std,
         alpha=0.1,
@@ -123,9 +130,14 @@ class GPModel(object):
             y_samples = np.hstack(y_samples)
         return y_samples, y_mean, y_cov
 
-    def sample_from_prior(self, x, n_samples, global_mean=0):
+    def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0):
+        if x.ndim == 1:
+            x = x.reshape(-1, 1)
+
+        mean_f_val = np.array([mean_f(val) for val in x])
+        mean_f_val_full = np.vstack([mean_f_val for i in range(n_samples)]).T
         y_samples, y_mean, y_cov = self.sample_y(x, n_samples)
-        return y_samples + global_mean, y_mean + global_mean, y_cov
+        return y_samples + mean_f_val_full, y_mean + np.mean(mean_f_val_full, axis=1), y_cov
 
     def sample_from_posterior(self, x, n_samples):
         if not hasattr(self.gp, "X_train_"):  # Unfitted;predict based on GP prior

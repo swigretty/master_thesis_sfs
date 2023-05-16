@@ -26,18 +26,23 @@ def simulate_bp_gp(kernel, global_mean=120):
     return x, y_samples
 
 
-def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
-                    kernel=1 * Matern(nu=0.5, length_scale=1), data_fraction=0.3, data_fraction_weights=None):
+def sim_fit_plot_gp(x=np.linspace(0, 40, 200), mean_f=lambda x: 120,
+                    kernel=1 * Matern(nu=0.5, length_scale=1), data_fraction=0.3,
+                    data_fraction_weights=None, meas_noise=0.1):
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
 
     gpm = GPModel(kernel=kernel, normalize_y=False)
 
-    y_prior, y_prior_mean, y_prior_cov = gpm.sample_from_prior(x, n_samples=4, global_mean=global_mean)
+    y_prior, y_prior_mean, y_prior_cov = gpm.sample_from_prior(
+        x, n_samples=5, mean_f=mean_f)
+    global_mean = np.mean(y_prior)
     y_prior_std = np.diag(y_prior_cov)
 
     ylim = None
     if y_prior_std[-1] > 50:
         plot_lim = 50
-        ylim = [global_mean - plot_lim, global_mean + plot_lim]
+        ylim = [np.mean(y_prior) - plot_lim, np.mean(y_prior) + plot_lim]
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 10))
 
     plot_gpr_samples(ax[0, 0], x, y_prior, y_prior_mean, np.diag(y_prior_cov),
@@ -46,14 +51,12 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
 
     # Posterior
     y = y_prior[:, 0]
-
-    idx = get_red_idx(len(x), data_fraction=data_fraction, weights=data_fraction_weights)
-
+    # x = np.column_stack((np.ones((x.shape[0])), x))
+    idx = get_red_idx(x.shape[0], data_fraction=data_fraction, weights=data_fraction_weights)
     y_red = y[idx]
     x_red = x[idx]
-
     kernel = kernel + ConstantKernel(constant_value=global_mean)
-    gpm = GPModel(kernel=kernel, normalize_y=False)
+    gpm = GPModel(kernel=kernel, normalize_y=False, meas_noise=meas_noise)
     gpm.fit_model(x_red, y_red)
     y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=4)
     plot_gpr_samples(ax[1, 0], x, y_post, y_post_mean, np.diag(y_post_cov))
@@ -68,19 +71,46 @@ if __name__ == "__main__":
     setup_logging()
     # 110 to 130 (healthy range)
     # physiological:  60 to 300
+    long_term_trend_kernel = 100 * RBF(length_scale=50.0)
+
+    def mean_fun_const(x):
+        return 120
+
+
     for data_fraction in np.linspace(0.1, 1, 6):
+
         kernel_ar1 = 1 * Matern(nu=0.5, length_scale=1)
-        fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_ar1)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_const_{data_fraction:.2f}.pdf")
+        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const, kernel=kernel_ar1)
+        # fig.savefig(PLOT_PATH / f"sim_fit_plot_const_{data_fraction:.2f}.pdf")
+        #
+        # kernel_dot = kernel_ar1 + DotProduct(sigma_0=1)
+        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
+        #                       kernel=kernel_dot)
+        # fig.savefig(PLOT_PATH / f"sim_fit_plot_dot_{data_fraction:.2f}.pdf")
+        #
+        # kernel_rbf = kernel_ar1 + long_term_trend_kernel
+        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
+        #                       kernel=kernel_rbf)
+        # fig.savefig(PLOT_PATH / f"sim_fit_plot_rbf_{data_fraction:.2f}.pdf")
+        #
+        # kernel_sin = kernel_ar1 + 10.0 * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds=(2,4))
+        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
+        #                       kernel=kernel_sin)
+        # fig.savefig(PLOT_PATH / f"sim_fit_plot_sin_{data_fraction:.2f}.pdf")
+        #
+        kernel_sinrbf = kernel_ar1 + 4 * RBF(length_scale=10) * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds="fixed")
+        fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
+                              kernel=kernel_sinrbf)
+        fig.savefig(PLOT_PATH / f"sim_fit_plot_sinrbf_{data_fraction:.2f}.pdf")
 
-        kernel_dot = kernel_ar1 + DotProduct(sigma_0=1)
-        fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_dot)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_dot_{data_fraction:.2f}.pdf")
-
-        kernel_sin = kernel_ar1 + 10.0 * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds=(2,4))
-        fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_sin)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_sin_{data_fraction:.2f}.pdf")
-
+        kernel_sinsinrbf = kernel_ar1 + 4 * RBF(
+            length_scale=10) * ExpSineSquared(length_scale=1.0, periodicity=3.0,
+                                              periodicity_bounds="fixed") + RBF(
+            length_scale=100) * ExpSineSquared(length_scale=7, periodicity=7*3,
+                                               periodicity_bounds="fixed")
+        fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
+                              kernel=kernel_sinsinrbf)
+        fig.savefig(PLOT_PATH / f"sim_fit_plot_sinsinrbf_{data_fraction:.2f}.pdf")
 
     #
     # fig, ax = plt.subplots()
