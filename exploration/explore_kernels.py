@@ -11,33 +11,38 @@ import matplotlib as mpl
 logger = getLogger(__name__)
 
 
-def plot_kernel(kernel, t=np.linspace(0, 20, 200), kernel_config_list=None, plot_file=None):
+def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None):
 
     mpl.style.use('seaborn-v0_8')
-    if kernel_config_list is None:
-        kernels = [kernel()]
-    else:
-        kernels = [kernel(**conf) for conf in kernel_config_list]
+    first_kernel = kernels[0]
 
     plot_path = PLOT_PATH / "kernels"
     if plot_file is None:
-        plot_file = plot_path / f"{kernel.__name__}_{len(kernels)}.pdf"
+        plot_file = plot_path / f"{first_kernel.__class__.__name__}_{len(kernels)}.pdf"
     else:
         plot_file = plot_path / plot_file
+
     plot_path.mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(30, 10))
     ax[0].set_title("Kernel Function")
     ax[1].set_title("Sample Path")
 
+    try:
+        max_length_scale = max([k.length_scale for k in kernels])
+        t_max = max_length_scale * 5
+    except Exception:
+        t_max = max(t)
+
     for i, k in enumerate(kernels):
         # color = CSS4_COLORS[i * 3]
-        t_max = k.length_scale * 5
-        idx_max = next(idx for idx, x in enumerate(t) if x >= t_max)
-
+        try:
+            idx_max = next(idx for idx, x in enumerate(t) if x >= t_max)
+        except StopIteration:
+            idx_max = len(t)
         K_t = k(np.array(t).reshape(-1, 1))
         mu = np.zeros(len(t))
-        ax[0].plot(t[: idx_max], K_t[0, : idx_max], label=f"{kernel_config_list[i]}")
+        ax[0].plot(t[: idx_max], K_t[0, : idx_max], label=f"{k}")
         # cmap = 'viridis'
         # if np.min(K_t) < 0:
         #     cmap = "PiYG"
@@ -53,9 +58,12 @@ def plot_kernel(kernel, t=np.linspace(0, 20, 200), kernel_config_list=None, plot
 
 if __name__ == "__main__":
     setup_logging()
-    kernel = Matern
 
-    plot_kernel(kernel, kernel_config_list=[{"nu": 0.5}, {"nu": 2.5}, {"nu": np.inf}])
+    kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
+    plot_kernels(kernels)
 
+    kernels = [ExpSineSquared(length_scale=sc) for sc in [0.1, 1, 10]]
+    plot_kernels(kernels)
 
-
+    kernels = [ExpSineSquared(length_scale=ls) * RBF(length_scale=ls) for ls in [0.1, 1, 10]]
+    plot_kernels(kernels, plot_file="sinrbf.pdf")

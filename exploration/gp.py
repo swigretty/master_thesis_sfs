@@ -7,6 +7,7 @@ from sklearn.kernel_approximation import Nystroem
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.utils import check_random_state
+import re
 
 
 def plot_kernel_function(ax, x, kernel):
@@ -21,10 +22,12 @@ def plot_kernel_function(ax, x, kernel):
         x = x[:, 1]
 
     ax.plot(x, KXX[0, :])
-    ax.set_title(f"{kernel}")
+
+    title = re.sub("(.{120})", "\\1\n", str(kernel), 0, re.DOTALL)
+    ax.set_title(title)
 
 
-def plot_gpr_samples(ax, x, y, y_mean, y_std, ylim=None):
+def plot_gpr_samples(ax, x, y_mean, y_std, y=None, ylim=None):
     """Plot samples drawn from the Gaussian process model.
 
     If the Gaussian process model is not trained then the drawn samples are
@@ -49,14 +52,15 @@ def plot_gpr_samples(ax, x, y, y_mean, y_std, ylim=None):
             x = x.reshape(-1)
     if y_std.ndim > 1:
         raise ValueError(f"y_std must have 1 dimension not {y_std.ndim}")
-    for idx, single_prior in enumerate(y.T):
-        ax.plot(
-            x,
-            single_prior,
-            linestyle="--",
-            alpha=0.7,
-            label=f"Sampled function #{idx + 1}",
-        )
+    if y is not None:
+        for idx, single_prior in enumerate(y.T):
+            ax.plot(
+                x,
+                single_prior,
+                linestyle="--",
+                alpha=0.7,
+                label=f"Sampled function #{idx + 1}",
+            )
 
     ax.plot(x, y_mean, color="black", label="Mean")
     ax.fill_between(
@@ -88,7 +92,7 @@ class GPModel(object):
         self.kernel = kernel
         self.rng = rng
         self.kernel_approx_method = partial(Nystroem, n_components=200, random_state=1)
-
+        self.meas_noise = meas_noise
         self.gp = partial(GaussianProcessRegressor, n_restarts_optimizer=5, normalize_y=normalize_y,
                           random_state=0, alpha=meas_noise)
 

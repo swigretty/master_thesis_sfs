@@ -17,106 +17,111 @@ logger = getLogger(__name__)
 mpl.style.use('seaborn-v0_8')
 
 
-def simulate_bp_gp(kernel, global_mean=120):
-    gpm = GPModel(kernel=kernel)
-    # y_samples = gpm.sample_from_prior(x, global_mean=global_mean)
-    x, y_samples = plot_gpr_samples(gpr_model=gpm, n_samples=10, ax=ax, global_mean=global_mean)
-    plt.show()
-    logger.info("Finished")
-    return x, y_samples
+def sim_fit_plot_gp(x=np.linspace(0, 40, 200), kernel=1 * Matern(nu=0.5, length_scale=1),
+                    mean_f=lambda x: 120, data_fraction_weights=None, meas_noise=0, figname=None):
+
+    x, y_prior, y_prior_mean, y_prior_cov = sim_gp(x, kernel, mean_f)
+    y_prior_noisy = y_prior
+    if meas_noise:
+        y_prior_noisy = y_prior + meas_noise * np.random.standard_normal((y_prior.shape))
+        y_prior_cov[np.diag_indices_from(y_prior_cov)] += meas_noise
+
+    fig_list = []
+    for data_fraction in np.linspace(0.1, 1, 4):
+        fig = fit_plot_gp(x, y_prior_noisy, y_prior_mean, y_prior_cov, kernel=kernel,
+                          data_fraction=data_fraction, data_fraction_weights=data_fraction_weights,
+                          meas_noise=meas_noise, y_true=y_prior)
+        if figname is not None:
+            fig.savefig(PLOT_PATH / f"{figname}_{data_fraction:.2f}.pdf")
+        fig_list.append(fig)
+    return fig
 
 
-def sim_fit_plot_gp(x=np.linspace(0, 40, 200), mean_f=lambda x: 120,
-                    kernel=1 * Matern(nu=0.5, length_scale=1), data_fraction=0.3,
-                    data_fraction_weights=None, meas_noise=0.1):
+def sim_gp(x, kernel, mean_f):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
-
     gpm = GPModel(kernel=kernel, normalize_y=False)
-
     y_prior, y_prior_mean, y_prior_cov = gpm.sample_from_prior(
         x, n_samples=5, mean_f=mean_f)
-    global_mean = np.mean(y_prior)
-    y_prior_std = np.diag(y_prior_cov)
+    return x, y_prior, y_prior_mean, y_prior_cov
 
+
+def fit_plot_gp(x, y_prior, y_prior_mean, y_prior_cov,
+                kernel=1 * Matern(nu=0.5, length_scale=1),
+                data_fraction=0.3,
+                data_fraction_weights=None,
+                meas_noise=0.1, y_true=None):
+
+    y_prior_std = np.diag(y_prior_cov)
     ylim = None
-    if y_prior_std[-1] > 50:
+    if any(y_prior_std) > 50:
         plot_lim = 50
         ylim = [np.mean(y_prior) - plot_lim, np.mean(y_prior) + plot_lim]
-    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 10))
+    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 15))
 
-    plot_gpr_samples(ax[0, 0], x, y_prior, y_prior_mean, np.diag(y_prior_cov),
-                     ylim=ylim)
+    plot_gpr_samples(ax[0, 0], x, y_prior_mean, y_prior_std, y=y_prior, ylim=ylim)
     plot_kernel_function(ax[0, 1], x, kernel)
+    ax[0, 0].set_title("Samples from prior distribution")
 
     # Posterior
-    y = y_prior[:, 0]
     # x = np.column_stack((np.ones((x.shape[0])), x))
+    sample_idx = 0
     idx = get_red_idx(x.shape[0], data_fraction=data_fraction, weights=data_fraction_weights)
-    y_red = y[idx]
+    y_red = y_prior[idx, sample_idx]
     x_red = x[idx]
-    kernel = kernel + ConstantKernel(constant_value=global_mean)
+    kernel = kernel + ConstantKernel(constant_value=np.mean(y_prior))
     gpm = GPModel(kernel=kernel, normalize_y=False, meas_noise=meas_noise)
     gpm.fit_model(x_red, y_red)
-    y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=4)
-    plot_gpr_samples(ax[1, 0], x, y_post, y_post_mean, np.diag(y_post_cov))
-    ax[1, 0].scatter(x_red, y_red, color="red", zorder=10, label="Observations")
+    y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=1)
+    plot_gpr_samples(ax[1, 0], x, y_post_mean, np.diag(y_post_cov), y=None)
+    if y_true is not None:
+        ax[1, 0].plot(x, y_true[:, sample_idx], "r:")
+    ax[1, 0].scatter(x_red, y_red, color="red", zorder=5, label="Observations")
     ax[1, 0].set_title("Samples from posterior distribution")
     plot_kernel_function(ax[1, 1], x, gpm.gp.kernel_)
     # ax[1, 0].legend(loc="lower left")
     return fig
 
 
-if __name__ == "__main__":
-    setup_logging()
+def mean_fun_const(x):
     # 110 to 130 (healthy range)
     # physiological:  60 to 300
-    long_term_trend_kernel = 100 * RBF(length_scale=50.0)
-
-    def mean_fun_const(x):
-        return 120
+    return 120
 
 
-    for data_fraction in np.linspace(0.1, 1, 6):
+if __name__ == "__main__":
+    setup_logging()
 
-        kernel_ar1 = 1 * Matern(nu=0.5, length_scale=1)
-        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const, kernel=kernel_ar1)
-        # fig.savefig(PLOT_PATH / f"sim_fit_plot_const_{data_fraction:.2f}.pdf")
-        #
-        # kernel_dot = kernel_ar1 + DotProduct(sigma_0=1)
-        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
-        #                       kernel=kernel_dot)
-        # fig.savefig(PLOT_PATH / f"sim_fit_plot_dot_{data_fraction:.2f}.pdf")
-        #
-        # kernel_rbf = kernel_ar1 + long_term_trend_kernel
-        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
-        #                       kernel=kernel_rbf)
-        # fig.savefig(PLOT_PATH / f"sim_fit_plot_rbf_{data_fraction:.2f}.pdf")
-        #
-        # kernel_sin = kernel_ar1 + 10.0 * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds=(2,4))
-        # fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
-        #                       kernel=kernel_sin)
-        # fig.savefig(PLOT_PATH / f"sim_fit_plot_sin_{data_fraction:.2f}.pdf")
-        #
-        kernel_sinrbf = kernel_ar1 + 4 * RBF(length_scale=10) * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds="fixed")
-        fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
-                              kernel=kernel_sinrbf)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_sinrbf_{data_fraction:.2f}.pdf")
+    # measuring time in hours
+    n_days = 3
+    samples_per_hour = 10
+    period_day = 24
+    period_week = 7 * period_day
+    x = np.linspace(0, period_day * n_days, period_day * n_days * samples_per_hour)
 
-        kernel_sinsinrbf = kernel_ar1 + 4 * RBF(
-            length_scale=10) * ExpSineSquared(length_scale=1.0, periodicity=3.0,
-                                              periodicity_bounds="fixed") + RBF(
-            length_scale=100) * ExpSineSquared(length_scale=7, periodicity=7*3,
-                                               periodicity_bounds="fixed")
-        fig = sim_fit_plot_gp(data_fraction=data_fraction, mean_f=mean_fun_const,
-                              kernel=kernel_sinsinrbf)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_sinsinrbf_{data_fraction:.2f}.pdf")
+    # Simple Kernels
+    ar1_kernel = 1 * Matern(nu=0.5, length_scale=3, length_scale_bounds="fixed")
+    long_term_trend_kernel = 4 * RBF(length_scale=50, length_scale_bounds="fixed")
+    short_term_trend_kernel = 4 * RBF(length_scale=3, length_scale_bounds="fixed")
+    short_cycle_kernel = 10 * ExpSineSquared(length_scale=3, periodicity=period_day, periodicity_bounds="fixed",
+                                             length_scale_bounds="fixed")
+    long_cycle_kernel = 10 * ExpSineSquared(length_scale=3, periodicity=period_week, periodicity_bounds="fixed",
+                                            length_scale_bounds="fixed")
+    kernel_dot = DotProduct(sigma_0=1, sigma_0_bounds="fixed")
 
-    #
-    # fig, ax = plt.subplots()
-    # plot_gpr_samples(gpr_model=gpm.gp, n_samples=10, ax=ax)
-    # plt.show()
-    logger.info("Finished")
+    kernels = {"ar1": ar1_kernel, "dot": ar1_kernel + kernel_dot, "rbf": ar1_kernel + long_term_trend_kernel,
+               "sin": ar1_kernel + short_cycle_kernel,
+               "sinrbf": ar1_kernel + short_cycle_kernel * long_term_trend_kernel}
+
+    base_config = dict(
+        x=x,
+        meas_noise=0,
+        mean_f=mean_fun_const
+    )
+
+    for k_name, k in kernels.items():
+        sim_fit_plot_gp(kernel=k, figname=f"sim_fit_gp_{k_name}", **base_config)
+
 
 
 
