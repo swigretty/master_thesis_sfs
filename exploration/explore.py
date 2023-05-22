@@ -96,7 +96,7 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     idx_train = get_red_idx(len(ts1.t), data_fraction=data_fraction)
     x_train = ts1.t[idx_train]
     y_train = ts1.sum()[x_train]
-    gpm.fit_model(x_train.reshape(-1, 1), y_train)
+    gpm.fit(x_train.reshape(-1, 1), y_train)
     mean_post, cov_post = gpm.predict(ts1.t.reshape(-1, 1), return_cov=True)
     std_post = np.sqrt(np.diag(cov_post))
 

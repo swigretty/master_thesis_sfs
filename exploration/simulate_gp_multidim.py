@@ -58,7 +58,7 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
 
     # kernel = kernel + ConstantKernel(constant_value=global_mean)
     gpm = GPModel(kernel=kernel, normalize_y=False)
-    gpm.fit_model(x_red, y_red)
+    gpm.fit(x_red, y_red)
     y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=4)
     plot_gpr_samples(ax[1, 0], x, y_post, y_post_mean, np.diag(y_post_cov))
     ax[1, 0].scatter(x_red[:, 1], y_red, color="red", zorder=10, label="Observations")

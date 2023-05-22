@@ -686,10 +686,6 @@ $b= \sigma_w \sqrt{\Delta t}$
 
 
 
-
-
-
-
 More generally a continuous AR(p) process has Matérn covariance function with $\nu = p - 1/2$.
 
 TODO: different kernels, stationary kernels, link to power spectral density, with plots
@@ -705,7 +701,7 @@ Hyperparameters $\theta$
 Use marginal likelihood (or evidence):
 \begin{gather}
     log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
-    \frac{1}{2} log \det{K_XX(\theta)} - \frac{n}{2} \log 2 \pi
+    \frac{1}{2} log \det{K_{XX}(\theta)} - \frac{n}{2} \log 2 \pi
 \end{gather}
 
 

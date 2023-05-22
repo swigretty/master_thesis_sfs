@@ -27,6 +27,14 @@ def plot_kernel_function(ax, x, kernel):
     ax.set_title(title)
 
 
+def plot_posterior(ax, x, y_post_mean, y_post_std, x_red, y_red, y_true):
+    plot_gpr_samples(ax, x, y_post_mean, y_post_std, y=None)
+    if y_true is not None:
+        ax.plot(x, y_true, "r:")
+    ax.scatter(x_red, y_red, color="red", zorder=5, label="Observations")
+    ax.set_title("Samples from posterior distribution")
+
+
 def plot_gpr_samples(ax, x, y_mean, y_std, y=None, ylim=None):
     """Plot samples drawn from the Gaussian process model.
 
@@ -93,15 +101,20 @@ class GPModel(object):
         self.rng = rng
         self.kernel_approx_method = partial(Nystroem, n_components=200, random_state=1)
         self.meas_noise = meas_noise
-        self.gp = partial(GaussianProcessRegressor, n_restarts_optimizer=5, normalize_y=normalize_y,
-                          random_state=0, alpha=meas_noise)
+        self.normalize_y = normalize_y
+        self.kernel_approx = kernel_approx
 
-        if not kernel_approx:
-            self.gp = self.gp(kernel=self.kernel)
-            self.kernel_approx = None
+        self.gp = self._get_gp()
+
+    def _get_gp(self):
+        gp = partial(GaussianProcessRegressor, n_restarts_optimizer=5, normalize_y=self.normalize_y,
+                     random_state=0, alpha=self.meas_noise)
+        if not self.kernel_approx:
+            gp = gp(kernel=self.kernel)
         else:
-            self.gp = self.gp()
+            gp = gp()
             self.kernel_approx = self.kernel_approx_method(kernel=self.kernel, n_components=300)
+        return gp
 
     def predict(self, x: np.ndarray, return_std=False, return_cov=False):
         if self.kernel_approx is not None:
@@ -109,7 +122,7 @@ class GPModel(object):
         gp_mean, gp_unc = self.gp.predict(x, return_std=return_std, return_cov=return_cov)
         return gp_mean, gp_unc
 
-    def fit_model(self, train_x: np.ndarray, train_y: np.ndarray):
+    def fit(self, train_x: np.ndarray, train_y: np.ndarray):
         if train_x.ndim == 1:
             train_x = train_x.reshape(-1, 1)
         if self.kernel_approx is not None:
@@ -147,6 +160,13 @@ class GPModel(object):
         if not hasattr(self.gp, "X_train_"):  # Unfitted;predict based on GP prior
             raise "GP has not been fitted yet, cannot sample from posterior"
         return self.sample_y(x, n_samples)
+
+    def fit_with_offset(self, x, y, offset=0):
+        kernel_orig = self.kernel
+        self.kernel = kernel_orig + ConstantKernel(constant_value=offset ** 2, constant_value_bounds="fixed")
+        self.gpm = self._get_gp()
+        self.fit(x, y)
+        return self
 
 
 def fit_gp(X, y, period):
