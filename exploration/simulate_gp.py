@@ -21,19 +21,20 @@ logger = getLogger(__name__)
 
 mpl.style.use('seaborn-v0_8')
 
+
 @dataclass
 class GPData():
-    x : np.array
-    y : np.array
-    n : int
-    y_mean : np.array = None
-    y_cov : np.array = None
+    x: np.array
+    y: np.array
+    n: int
+    y_mean: np.array = None
+    y_cov: np.array = None
 
 
 class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
-                 meas_noise=0, kernel_fit=None):
+                 meas_noise=0, kernel_fit=None, normalize_y=False):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
@@ -46,11 +47,13 @@ class GPSimulator():
         self.offset = mean_f(0)
 
         if kernel_fit is None:
-            kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
+            kernel_fit = kernel_sim
+            if not normalize_y:
+                kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
         self.gpm_sim = GPModel(kernel=self.kernel_sim, normalize_y=False)
-        self.gpm_fit = GPModel(kernel=self.kernel_fit, normalize_y=False)
+        self.gpm_fit = GPModel(kernel=self.kernel_fit, normalize_y=normalize_y)
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
@@ -153,12 +156,17 @@ class GPSimulator():
 
 if __name__ == "__main__":
     setup_logging()
-    kernels = {k: v for k,v in ou_kernels_fixed.items() if k in ["dot"]}
-    for k_name, k in kernels.items():
-        gps = GPSimulator(kernel_sim=k, **base_config)
-        gps.sim_fit_plot(figname=f"gp_{k_name}_fixed")
-        gps.test_ci(data_fraction=0.3)
+    # kernels = ou_kernels_fixed
+    # for k_name, k in kernels.items():
+    #     gps = GPSimulator(kernel_sim=k, **base_config)
+    #     gps.sim_fit_plot(figname=f"gp_{k_name}_fixed")
+    #     gps.test_ci(data_fraction=0.3)
 
+    kernels = ou_kernels
+    for k_name, k in kernels.items():
+        gps = GPSimulator(kernel_sim=k, normalize_y=True, **base_config)
+        gps.sim_fit_plot(figname=f"gp_{k_name}")
+        gps.test_ci(data_fraction=0.3)
 
 
 
