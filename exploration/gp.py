@@ -117,7 +117,7 @@ class GPModel(object):
         return gp
 
     def predict(self, x: np.ndarray, return_std=False, return_cov=False):
-        if self.kernel_approx is not None:
+        if self.kernel_approx:
             x = self.kernel_approx.transform(x)
         gp_mean, gp_unc = self.gp.predict(x, return_std=return_std, return_cov=return_cov)
         return gp_mean, gp_unc
@@ -125,7 +125,7 @@ class GPModel(object):
     def fit(self, train_x: np.ndarray, train_y: np.ndarray):
         if train_x.ndim == 1:
             train_x = train_x.reshape(-1, 1)
-        if self.kernel_approx is not None:
+        if self.kernel_approx:
             train_x = self.kernel_approx.fit_transform(train_x)
         self.gp.fit(train_x, train_y)
         pass
