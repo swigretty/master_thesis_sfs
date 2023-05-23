@@ -1,5 +1,3 @@
-from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
-    Matern, ConstantKernel, DotProduct
 from dataclasses import dataclass
 from functools import lru_cache
 from copy import copy
@@ -10,10 +8,13 @@ from logging import getLogger
 from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 from scipy.stats import norm
+from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
+    Matern, ConstantKernel, DotProduct
 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import PLOT_PATH
 from exploration.explore import get_red_idx
+from exploration.simulate_gp_config import base_config, ou_kernels_fixed, ou_kernels
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -65,22 +66,22 @@ class GPSimulator():
         # if self.meas_noise:
         #     y_prior = y_prior + self.meas_noise * np.random.standard_normal((y_prior.shape))
         #     y_prior_cov[np.diag_indices_from(y_prior_cov)] += meas_noise
-        return GPData(x=self.x, y=y_prior, y_mean=y_prior_mean, y_cov=y_prior_cov, n=len(x))
+        return GPData(x=self.x, y=y_prior, y_mean=y_prior_mean, y_cov=y_prior_cov, n=len(self.x))
 
     def subsample_data_sim(self, data_sim, data_fraction=0.3, data_fraction_weights=None):
         idx = get_red_idx(data_sim.n, data_fraction=data_fraction, weights=data_fraction_weights)
         y_red = data_sim.y[idx, ]
         x_red = data_sim.x[idx]
 
-        data_sim_sub = GPData(x=x_red, y=y_red, n=len(x))
+        data_sim_sub = GPData(x=x_red, y=y_red, n=len(x_red))
         return data_sim_sub
 
     def plot_prior(self, ax, data_prior):
         plot_lim = 30
         y_prior_std = np.diag(data_prior.y_cov)
         ylim = None
-        if any(y_prior_std) > plot_lim:
-            ylim = [np.mean(data_prior.y) - plot_lim, np.mean(data_prior.y) + plot_lim]
+        if max(y_prior_std) > plot_lim:
+            ylim = [np.min(data_prior.y[0, :]) - plot_lim, np.max(data_prior.y[0, :]) + plot_lim]
         plot_gpr_samples(ax, data_prior.x, data_prior.y_mean, y_prior_std, y=data_prior.y, ylim=ylim)
         ax.set_title("Samples from prior distribution")
 
@@ -134,64 +135,29 @@ class GPSimulator():
         """
         data_prior = self.sim_gp(n_samples=n_samples)
         n_ci_coverage = 0
+        ci_array = np.zeros((n_samples, 2))
         for sample_index in range(n_samples):
             data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
             data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
             self.fit(data)
             y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
             ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
+            ci_array[sample_index, :] = ci
             if ci[0] < np.mean(data_true.y) < ci[1]:
                 n_ci_coverage += 1
+
         ci_coverage = n_ci_coverage/n_samples
-        logger.info(f"{ci_coverage=} with {data_fraction=}")
-
-
-def mean_fun_const(x):
-    # 110 to 130 (healthy range)
-    # physiological:  60 to 300
-    return 120
-
+        mean_ci_width = np.mean(np.diff(ci_array, axis=1))
+        logger.info(f"{ci_coverage=} with {data_fraction=} and {mean_ci_width=}")
 
 
 if __name__ == "__main__":
     setup_logging()
-
-    # measuring time in hours
-    n_days = 3
-    samples_per_hour = 10
-    period_day = 24
-    period_week = 7 * period_day
-    x = np.linspace(0, period_day * n_days, period_day * n_days * samples_per_hour)
-
-    # Simple Kernels
-    constant_kernel = ConstantKernel(constant_value=0, constant_value_bounds="fixed")
-    ar1_kernel = ConstantKernel(constant_value=1, constant_value_bounds="fixed") * Matern(
-        nu=0.5, length_scale=3, length_scale_bounds="fixed")
-    long_term_trend_kernel = ConstantKernel(constant_value=4, constant_value_bounds="fixed") * RBF(
-        length_scale=50, length_scale_bounds="fixed")
-    short_term_trend_kernel = ConstantKernel(constant_value=4, constant_value_bounds="fixed") * RBF(
-        length_scale=3, length_scale_bounds="fixed")
-    short_cycle_kernel = ConstantKernel(constant_value=10, constant_value_bounds="fixed") * ExpSineSquared(
-        length_scale=3, periodicity=period_day, periodicity_bounds="fixed", length_scale_bounds="fixed")
-    long_cycle_kernel = ConstantKernel(constant_value=10, constant_value_bounds="fixed") * ExpSineSquared(
-        length_scale=3, periodicity=period_week, periodicity_bounds="fixed", length_scale_bounds="fixed")
-    kernel_dot = DotProduct(sigma_0=1, sigma_0_bounds="fixed")
-
-    kernels = {"white": WhiteKernel(noise_level=1, noise_level_bounds="fixed"),
-        "ar1": ar1_kernel, "dot": ar1_kernel + kernel_dot, "rbf": ar1_kernel + long_term_trend_kernel,
-               "sin": ar1_kernel + short_cycle_kernel,
-               "sinrbf": ar1_kernel + short_cycle_kernel * long_term_trend_kernel}
-
-    base_config = dict(
-        x=x,
-        meas_noise=0,
-        mean_f=mean_fun_const
-    )
-
+    kernels = {k: v for k,v in ou_kernels_fixed.items() if k in ["dot"]}
     for k_name, k in kernels.items():
         gps = GPSimulator(kernel_sim=k, **base_config)
-        # gps.sim_fit_plot(figname=f"sim_fit_gp_{k_name}")
-        gps.test_ci(data_fraction=0.8)
+        gps.sim_fit_plot(figname=f"gp_{k_name}_fixed")
+        gps.test_ci(data_fraction=0.3)
 
 
 
