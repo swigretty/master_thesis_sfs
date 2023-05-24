@@ -65,6 +65,7 @@ for mode in ["fixed", "bounded", "unbounded"]:
 
     if mode == "unbounded":
         _simple_kernels = {k: ConstantKernel(constant_value=v["scale"]) * v["kernel"](
+            **{param: "fixed" for param in v["kernel"]().get_params().keys() if param == "periodicity_bounds"},
             **v["params"]) for k, v in simple_kernel_config.items()}
     if mode == "bounded":
         # Kernels with bounds defined in simple_kernel_config
