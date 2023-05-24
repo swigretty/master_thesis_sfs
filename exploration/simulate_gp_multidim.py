@@ -8,7 +8,7 @@ from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function
-from exploration.constants import PLOT_PATH
+from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
 from log_setup import setup_logging
 
@@ -75,15 +75,15 @@ if __name__ == "__main__":
     for data_fraction in np.linspace(0.1, 1, 6):
         kernel_ar1 = 1 * Matern(nu=0.5, length_scale=1)
         fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_ar1)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_const_{data_fraction:.2f}.pdf")
+        fig.savefig(OUTPUT_PATH / f"sim_fit_plot_const_{data_fraction:.2f}.pdf")
 
         kernel_dot = kernel_ar1 + DotProduct(sigma_0=1)
         fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_dot)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_dot_{data_fraction:.2f}.pdf")
+        fig.savefig(OUTPUT_PATH / f"sim_fit_plot_dot_{data_fraction:.2f}.pdf")
 
         kernel_sin = kernel_ar1 + 10.0 * ExpSineSquared(length_scale=1.0, periodicity=3.0, periodicity_bounds=(2,4))
         fig = sim_fit_plot_gp(data_fraction=data_fraction, global_mean=120, kernel=kernel_sin)
-        fig.savefig(PLOT_PATH / f"sim_fit_plot_sin_{data_fraction:.2f}.pdf")
+        fig.savefig(OUTPUT_PATH / f"sim_fit_plot_sin_{data_fraction:.2f}.pdf")
 
 
     #

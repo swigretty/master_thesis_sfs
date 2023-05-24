@@ -1,6 +1,7 @@
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern
-from exploration.constants import PLOT_PATH
+from pathlib import Path
+from exploration.constants import OUTPUT_PATH
 import matplotlib.pyplot as plt
 import numpy as np
 from log_setup import setup_logging
@@ -16,7 +17,7 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None):
     mpl.style.use('seaborn-v0_8')
     first_kernel = kernels[0]
 
-    plot_path = PLOT_PATH / "kernels"
+    plot_path = OUTPUT_PATH
     if plot_file is None:
         plot_file = plot_path / f"{first_kernel.__class__.__name__}_{len(kernels)}.pdf"
     else:
@@ -53,7 +54,6 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None):
         ax[1].plot(t, np.transpose(np.random.multivariate_normal(mean=mu, cov=K_t, size=1)))
     ax[0].legend()
     fig.savefig(plot_file)
-    plt.show()
 
 
 if __name__ == "__main__":

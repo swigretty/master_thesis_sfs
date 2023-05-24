@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import lru_cache
 from copy import copy
+import pandas as pd
 from logging import getLogger
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,7 @@ from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, 
     Matern, ConstantKernel, DotProduct
 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
-from exploration.constants import PLOT_PATH
+from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
 from exploration.simulate_gp_config import base_config, ou_kernels_fixed, ou_kernels
 from log_setup import setup_logging
@@ -34,10 +35,11 @@ class GPData():
 class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
-                 meas_noise=0, kernel_fit=None, normalize_y=False):
+                 meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
+        self.output_path = output_path
 
         self.x = x
         self.kernel_sim = kernel_sim
@@ -116,9 +118,11 @@ class GPSimulator():
             self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
 
             plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.gp.kernel_)
+            fig.tight_layout()
 
             if figname is not None:
-                fig.savefig(PLOT_PATH / f"{figname}_{data_fraction:.2f}.pdf")
+                self.output_path.mkdir(parents=True, exist_ok=True)
+                fig.savefig(self.output_path / f"{figname}_{data_fraction:.2f}.pdf")
             fig_list.append(fig)
         return fig
 
@@ -151,26 +155,29 @@ class GPSimulator():
 
         ci_coverage = n_ci_coverage/n_samples
         mean_ci_width = np.mean(np.diff(ci_array, axis=1))
-        logger.info(f"{ci_coverage=} with {data_fraction=} and {mean_ci_width=}")
+        return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
+                "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim,
+                "kernel_fit": self.kernel_fit}
 
 
 if __name__ == "__main__":
     setup_logging()
-    # kernels = ou_kernels_fixed
-    # for k_name, k in kernels.items():
-    #     gps = GPSimulator(kernel_sim=k, **base_config)
-    #     gps.sim_fit_plot(figname=f"gp_{k_name}_fixed")
-    #     gps.test_ci(data_fraction=0.3)
 
-    kernels = ou_kernels
-    for k_name, k in kernels.items():
-        gps = GPSimulator(kernel_sim=k, normalize_y=True, **base_config)
-        gps.sim_fit_plot(figname=f"gp_{k_name}")
-        gps.test_ci(data_fraction=0.3)
+    OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
+    modes = {"ou_fixed": {"kernels": ou_kernels_fixed,
+                          "config": {"normalize_y": False, **base_config}},
+             "ou": {"kernels": ou_kernels,
+                    "config": {"normalize_y": True, **base_config}} }
+    ci_info = []
 
+    for mode_name, mode_config in modes:
+        for k_name, k in mode_config["kernels"].items():
+            gps = GPSimulator(kernel_sim=k, **mode_config["config"])
+            gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
+            ci_info.append(gps.test_ci(data_fraction=0.3))
 
-
-
+        ci_info_df = pd.DataFrame(ci_info)
+        ci_info_df.to_csv(OUTPUT_PATH / f"ci_info_{mode_name}.csv")
 
 

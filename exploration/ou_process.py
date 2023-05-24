@@ -9,7 +9,7 @@ from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.stattools import acovf
 import matplotlib.pyplot as plt
 from sklearn.gaussian_process.kernels import Matern
-from exploration.constants import PLOT_PATH
+from exploration.constants import OUTPUT_PATH
 import matplotlib as mpl
 
 logger = getLogger(__name__)
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     ax.plot(t[:50], cov_matern[0, :50], "b--",  label="matern", )
     ax.plot(t[:50], cov_ou[:50], "y*", label="cov_ou")
     ax.legend()
-    fig.savefig(PLOT_PATH / "covariance_ar_ou_matern.pdf")
+    fig.savefig(OUTPUT_PATH / "covariance_ar_ou_matern.pdf")
     plt.show()
 
 

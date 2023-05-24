@@ -1,9 +1,17 @@
 from pathlib import Path
+from datetime import datetime
 
-REPO_PATH = Path.home() / "repositories/master_thesis_sfs"
+# REPO_PATH = Path.home() / "repositories/master_thesis_sfs"
 
-# PLOT_PATH = REPO_PATH / "exploration/plots"
+OUTPUT_PATH_BASE = Path.home() / "Insync/OneDrive/master_thesis/repo_output"
 
-PLOT_PATH = REPO_PATH / "master_thesis_latex/MasterThesisSfS/Pictures"
+now = datetime.utcnow()
 
+OUTPUT_FOLDER = f"{Path(__file__).name.replace('.py', '')}_{now.month}{now.day}"
+
+OUTPUT_PATH = OUTPUT_PATH_BASE / OUTPUT_FOLDER
+
+if __name__ == "__main__":
+    print(OUTPUT_PATH)
+    print(OUTPUT_PATH)
 
