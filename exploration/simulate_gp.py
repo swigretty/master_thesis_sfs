@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 from functools import lru_cache
 from copy import copy
@@ -15,7 +16,7 @@ from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
-from exploration.simulate_gp_config import base_config, ou_kernels_fixed, ou_kernels
+from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -102,12 +103,13 @@ class GPSimulator():
         y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1)
         plot_posterior(ax, self.x, y_post_mean, np.diag(y_post_cov), data.x, data.y, y_true=y_true)
 
-    def sim_fit_plot(self, data_fraction_list=np.logspace(-2, 0, 5), figname=None):
+    def sim_fit_plot(self, data_fraction_list=np.logspace(-1.5, 0, 4), figname=None):
         data_prior = self.sim_gp()
         data_true = self.choose_sample_from_prior(data_prior, data_index=0)
 
         fig_list = []
         for data_fraction in data_fraction_list:
+            logger.info(f"Simulation with {data_fraction=}")
             fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 15))
             self.plot_prior(ax[0, 0], data_prior)
             plot_kernel_function(ax[0, 1], data_true.x, self.kernel_sim)
@@ -147,6 +149,7 @@ class GPSimulator():
             data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
             data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
             self.fit(data)
+
             y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
             ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
             ci_array[sample_index, :] = ci
@@ -165,19 +168,43 @@ if __name__ == "__main__":
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
-    modes = {"ou_fixed": {"kernels": ou_kernels_fixed,
-                          "config": {"normalize_y": False, **base_config}},
-             "ou": {"kernels": ou_kernels,
-                    "config": {"normalize_y": True, **base_config}} }
-    ci_info = []
+    kernels_limited = ["ou", "sin_day"]
 
-    for mode_name, mode_config in modes:
+    modes = {"ou_fixed": {"kernels": OU_KERNELS["fixed"],
+                          "config": {"normalize_y": False, **base_config}},
+             "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
+                    "config": {"normalize_y": True, **base_config}},
+             "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
+                           "config": {"normalize_y": False, **base_config}},
+             "ou_unbounded":
+                 {"kernels": OU_KERNELS["unbounded"],
+                  "config": {"normalize_y": True, **base_config}},
+
+             "bounded_nonorm": {"kernels": KERNELS["bounded"],
+                                "config": {"normalize_y": False, **base_config}},
+             "bounded": {"kernels": KERNELS["bounded"],
+                         "config": {"normalize_y": True, **base_config}}
+             }
+
+    for mode_name, mode_config in modes.items():
+        ci_info = []
         for k_name, k in mode_config["kernels"].items():
+            if k_name not in kernels_limited:
+                continue
+            start = datetime.datetime.utcnow()
+            logger.info(f"Simulation started for {mode_name}: {k_name}")
+
             gps = GPSimulator(kernel_sim=k, **mode_config["config"])
             gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
-            ci_info.append(gps.test_ci(data_fraction=0.3))
+
+            output_dict = gps.test_ci(data_fraction=0.3)
+            ci_info.append({**output_dict, **mode_config["config"]})
+
+            logger.info(f"Simulation ended for {mode_name}: {k_name}. "
+                        f"Duration: {(datetime.datetime.utcnow()-start).total_seconds()} sec")
 
         ci_info_df = pd.DataFrame(ci_info)
+        ci_info_df = ci_info_df[[col for col in ci_info_df.columns if col not in ["x", 'mean_f']]]
         ci_info_df.to_csv(OUTPUT_PATH / f"ci_info_{mode_name}.csv")
 
 
