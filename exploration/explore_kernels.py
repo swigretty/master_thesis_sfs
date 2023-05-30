@@ -50,20 +50,37 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None):
         # im1 = ax[i, 1].imshow(K_t, cmap=cmap)
         #
         # fig.colorbar(im1)
-
-        ax[1].plot(t, np.transpose(np.random.multivariate_normal(mean=mu, cov=K_t, size=1)))
+        y_sim = np.transpose(np.random.multivariate_normal(mean=mu, cov=K_t, size=1))
+        ax[1].plot(t, y_sim, label=f"{np.var(y_sim)}")
     ax[0].legend()
+    ax[1].legend()
+
     fig.savefig(plot_file)
 
 
 if __name__ == "__main__":
     setup_logging()
+    days = 3
+    h_per_day = 24
+    samples_per_hour = 20
+    t = np.linspace(0, days * h_per_day, days * h_per_day * samples_per_hour)
 
-    kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
-    plot_kernels(kernels)
 
-    kernels = [ExpSineSquared(length_scale=sc) for sc in [0.1, 1, 10]]
-    plot_kernels(kernels)
+    # kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
+    # plot_kernels(kernels)
+    #
+    kernels = [ExpSineSquared(length_scale=sc, periodicity=h_per_day) for sc in [0.1, 1, 10]]
+    plot_kernels(kernels, plot_file="sin_len.pdf", t=t)
+    #
+    kernels = [ExpSineSquared(length_scale=1, periodicity=h_per_day) * RBF(length_scale=ls) for ls in [0.1, 1, 10,
+                                                                                                        100]]
+    plot_kernels(kernels, plot_file="sinrbf_len.pdf", t=t)
+    #
+    kernels = [c * RBF(length_scale=1) for c in [0.1, 1, 10, 100]]
+    plot_kernels(kernels, plot_file="RBF_scale.pdf", t=t)
 
-    kernels = [ExpSineSquared(length_scale=ls) * RBF(length_scale=ls) for ls in [0.1, 1, 10]]
-    plot_kernels(kernels, plot_file="sinrbf.pdf")
+    kernels = [c * Matern(length_scale=1, nu=0.5) for c in [0.1, 1, 10, 100]]
+    plot_kernels(kernels, plot_file="OU_scale.pdf", t=t)
+
+    kernels = [c * ExpSineSquared(length_scale=3, periodicity=h_per_day) for c in [0.1, 1, 10, 100]]
+    plot_kernels(kernels, plot_file="sin_scale.pdf", t=t)

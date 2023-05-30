@@ -16,7 +16,7 @@ from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
-from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS
+from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -51,12 +51,13 @@ class GPSimulator():
 
         if kernel_fit is None:
             kernel_fit = kernel_sim
-            if not normalize_y:
-                kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
+            # TODO only allow for centered input
+            # if not normalize_y:
+            #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
         self.gpm_sim = GPModel(kernel=self.kernel_sim, normalize_y=False)
-        self.gpm_fit = GPModel(kernel=self.kernel_fit, normalize_y=normalize_y)
+        self.gpm_fit = GPModel(kernel=self.kernel_fit, normalize_y=normalize_y, meas_noise=self.meas_noise)
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
@@ -65,13 +66,16 @@ class GPSimulator():
     # def data_prior(self):
     #     return self.sim_gp()
     #
+
     def sim_gp(self, n_samples=5):
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
             self.x, n_samples=n_samples, mean_f=self.mean_f)
 
-        # if self.meas_noise:
-        #     y_prior = y_prior + self.meas_noise * np.random.standard_normal((y_prior.shape))
-        #     y_prior_cov[np.diag_indices_from(y_prior_cov)] += meas_noise
+        if self.meas_noise:
+            # TODO should this be scaled as well ?
+            # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
+            y_prior = y_prior + self.meas_noise * np.random.standard_normal((y_prior.shape))
+            y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
         return GPData(x=self.x, y=y_prior, y_mean=y_prior_mean, y_cov=y_prior_cov, n=len(self.x))
 
     def subsample_data_sim(self, data_sim, data_fraction=0.3, data_fraction_weights=None):
@@ -136,6 +140,31 @@ class GPSimulator():
     def se_avg(y_post_cov):
         return 1 / y_post_cov.shape[0] * np.sqrt(np.sum(y_post_cov))
 
+    @staticmethod
+    def extract_params_from_kernel(kernel):
+        return {k: v for k, v in kernel.get_params().items() if ("__" in k) and ("bounds" not in k) and any(
+            [pn in k for pn in PARAM_NAMES])}
+
+    @classmethod
+    def get_normalized_kernel(cls, kernel):
+        kernel_ = copy(kernel)
+        std_range = (0.95, 1.05)
+        i = 0
+        scale = 1
+        y_std = 2
+        while (std_range[0] > y_std) or (std_range[1] < y_std):
+            gps = cls(kernel_fit=kernel_)
+            data_sim = gps.sim_gp(n_samples=100)
+            y_std = np.std(data_sim.y)
+            # logger.info(y_std)
+            scale *= y_std
+            kernel_ = ConstantKernel(constant_value=1/scale, constant_value_bounds="fixed") * kernel
+            i += 1
+            if i > 20:
+                break
+        logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
+        return kernel_
+
     def test_ci(self, n_samples=100, data_fraction=0.3):
         """
         simulate from the prior,
@@ -145,6 +174,11 @@ class GPSimulator():
         data_prior = self.sim_gp(n_samples=n_samples)
         n_ci_coverage = 0
         ci_array = np.zeros((n_samples, 2))
+
+        param_fit_list = []
+        param_sim = self.extract_params_from_kernel(self.kernel_sim)
+        true_mean_list = []
+
         for sample_index in range(n_samples):
             data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
             data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
@@ -153,14 +187,28 @@ class GPSimulator():
             y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
             ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
             ci_array[sample_index, :] = ci
-            if ci[0] < np.mean(data_true.y) < ci[1]:
-                n_ci_coverage += 1
 
+            kernel_fit = self.gpm_fit.gp.kernel_
+            param_fit_list.append(self.extract_params_from_kernel(kernel_fit))
+
+            true_mean = np.mean(data_true.y)
+            true_mean_list.append(true_mean)
+
+            if ci[0] < true_mean < ci[1]:
+                n_ci_coverage += 1
+            else:
+                logger.info(f"true mean {np.mean(data_true.y)} not covered by confidence intervals {ci} \n "
+                            f"{kernel_fit=} vs. {self.kernel_sim=}")
+
+        param_fit_df = pd.DataFrame(param_fit_list)
+        param_fit_mean = param_fit_df.mean(axis=0).to_dict()
+        param_rel_error = {k: (v-param_sim[k])/abs(param_sim[k]) for k, v in param_fit_mean.items()}
+        param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.0001}
         ci_coverage = n_ci_coverage/n_samples
         mean_ci_width = np.mean(np.diff(ci_array, axis=1))
         return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
-                "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim,
-                "kernel_fit": self.kernel_fit}
+                "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim, "param_rel_error": param_rel_error,
+                "true_mean_mean": np.mean(true_mean_list), "true_mean_std": np.std(true_mean_list)}
 
 
 if __name__ == "__main__":
@@ -168,22 +216,23 @@ if __name__ == "__main__":
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
-    kernels_limited = ["ou", "sin_day"]
+    kernels_limited = list(OU_KERNELS["bounded"].keys())
 
-    modes = {"ou_fixed": {"kernels": OU_KERNELS["fixed"],
-                          "config": {"normalize_y": False, **base_config}},
-             "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
-                    "config": {"normalize_y": True, **base_config}},
-             "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
-                           "config": {"normalize_y": False, **base_config}},
-             "ou_unbounded":
-                 {"kernels": OU_KERNELS["unbounded"],
-                  "config": {"normalize_y": True, **base_config}},
-
-             "bounded_nonorm": {"kernels": KERNELS["bounded"],
-                                "config": {"normalize_y": False, **base_config}},
-             "bounded": {"kernels": KERNELS["bounded"],
-                         "config": {"normalize_y": True, **base_config}}
+    modes = {
+        # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
+        #                   "config": {"normalize_y": False, **base_config}},
+             "ou_bounded_normk2": {"kernels":  OU_KERNELS["bounded"],
+                            "config": {"normalize_y": False, **base_config}},
+        #      "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
+        #                    "config": {"normalize_y": False, **base_config}},
+        # #      "ou_unbounded":
+        # #          {"kernels": OU_KERNELS["unbounded"],
+        # #           "config": {"normalize_y": True, **base_config}},
+        #
+        #      "bounded_nonorm": {"kernels": KERNELS["bounded"],
+        #                         "config": {"normalize_y": False, **base_config}},
+             # "bounded": {"kernels": KERNELS["bounded"],
+             #             "config": {"normalize_y": True, **base_config}}
              }
 
     for mode_name, mode_config in modes.items():
@@ -193,10 +242,9 @@ if __name__ == "__main__":
                 continue
             start = datetime.datetime.utcnow()
             logger.info(f"Simulation started for {mode_name}: {k_name}")
-
-            gps = GPSimulator(kernel_sim=k, **mode_config["config"])
+            k_norm = GPSimulator.get_normalized_kernel(k)
+            gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
             gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
-
             output_dict = gps.test_ci(data_fraction=0.3)
             ci_info.append({**output_dict, **mode_config["config"]})
 

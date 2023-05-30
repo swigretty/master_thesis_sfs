@@ -16,7 +16,7 @@ PERIOD_WEEK = 7 * PERIOD_DAY
 def mean_fun_const(x):
     # 110 to 130 (healthy range)
     # physiological:  60 to 300
-    return 120
+    return 0
 
 
 # measuring time in hours
@@ -26,7 +26,7 @@ class GPSimulatorConfig():
     n_days: int = 3
     samples_per_hour: int = 10
 
-    meas_noise: int = 1e-3
+    meas_noise: int = 0.0001
     mean_f: callable = mean_fun_const
 
     simulation_config_keys = ["meas_noise", "mean_f", "x"]
@@ -38,6 +38,8 @@ class GPSimulatorConfig():
     def to_dict(self):
         return {k: getattr(self, k) for k in self.simulation_config_keys}
 
+
+PARAM_NAMES = ["noise_level", "length_scale", "constant_value", "periodicity", "sigma_0", "nu"]
 
 # Simple Kernels
 simple_kernel_config = {
@@ -54,7 +56,7 @@ simple_kernel_config = {
     # "sin_week": {"kernel": ExpSineSquared, "params": {
     #            "length_scale": 3, "periodicity": PERIOD_WEEK}, "bound_params": {"periodicity_bounds": "fixed"},
     #              "scale": 5},
-    "dot": {"kernel": DotProduct, "params": {"sigma_0": 0}, "bound_params": {"sigma_0_bounds": (0.1, 1)},
+    "dot": {"kernel": DotProduct, "params": {"sigma_0": 0.001}, "bound_params": {"sigma_0_bounds": (0.0001, 0.01)},
             "scale": 0.01, "scale_bounds": (0.001, 1)}
            }
 

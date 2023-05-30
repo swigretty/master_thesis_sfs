@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.utils import check_random_state
 import re
+from functools import partial
+from sklearn.gaussian_process import GaussianProcessRegressor
+import scipy.optimize
 
 
 def plot_kernel_function(ax, x, kernel):
@@ -92,48 +95,23 @@ class ARKernel(Matern):
         self.order = order
 
 
-
-# from functools import partial
-# from sklearn.gaussian_process import GaussianProcessRegressor
-# import scipy.optimize
-#
 class MyGPR(GaussianProcessRegressor):
     def __init__(self, *args, max_iter=15000, **kwargs):
         super().__init__(*args, **kwargs)
         self._max_iter = max_iter
 
-
-    # def _constrained_optimization(self, obj_func, initial_theta, bounds):
-    #     if self.optimizer == "fmin_l_bfgs_b":
-    #         opt_res = scipy.optimize.minimize(
-    #             obj_func,
-    #             initial_theta,
-    #             method="L-BFGS-B",
-    #             jac=True,
-    #             bounds=bounds,
-    #         )
-    #         _check_optimize_result("lbfgs", opt_res)
-    #         theta_opt, func_min = opt_res.x, opt_res.fun
-    #     elif callable(self.optimizer):
-    #         theta_opt, func_min = self.optimizer(obj_func, initial_theta, bounds=bounds)
-    #     else:
-    #         raise ValueError(f"Unknown optimizer {self.optimizer}.")
-    #
-    #     return theta_opt, func_min
-
-    # def _constrained_optimization(self, obj_func, initial_theta, bounds):
-    #     def new_optimizer(obj_func, initial_theta, bounds):
-    #         return scipy.optimize.minimize(
-    #             obj_func,
-    #             initial_theta,
-    #             method="L-BFGS-B",
-    #             jac=True,
-    #             bounds=bounds,
-    #             max_iter=self._max_iter,
-    #         )
-    #     self.optimizer = new_optimizer
-    #     return super()._constrained_optimization(obj_func, initial_theta, bounds)
-
+    def _constrained_optimization(self, obj_func, initial_theta, bounds):
+        def new_optimizer(obj_func, initial_theta, bounds):
+            return scipy.optimize.minimize(
+                obj_func,
+                initial_theta,
+                method="L-BFGS-B",
+                jac=True,
+                bounds=bounds,
+                max_iter=self._max_iter,
+            )
+        self.optimizer = new_optimizer
+        return super()._constrained_optimization(obj_func, initial_theta, bounds)
 
 
 class GPModel(object):
@@ -151,7 +129,7 @@ class GPModel(object):
         self.gp = self._get_gp()
 
     def _get_gp(self):
-        gp = partial(GaussianProcessRegressor, n_restarts_optimizer=5, normalize_y=self.normalize_y,
+        gp = partial(GaussianProcessRegressor, n_restarts_optimizer=0, normalize_y=self.normalize_y,
                      random_state=0, alpha=self.meas_noise)
         if not self.kernel_approx:
             gp = gp(kernel=self.kernel)
@@ -198,6 +176,7 @@ class GPModel(object):
         mean_f_val = np.array([mean_f(val) for val in x])
         mean_f_val_full = np.vstack([mean_f_val for i in range(n_samples)]).T
         y_samples, y_mean, y_cov = self.sample_y(x, n_samples)
+        # TODO test this
         return y_samples + mean_f_val_full, y_mean + np.mean(mean_f_val_full, axis=1), y_cov
 
     def sample_from_posterior(self, x, n_samples):
