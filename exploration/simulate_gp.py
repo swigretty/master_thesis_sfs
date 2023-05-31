@@ -133,6 +133,9 @@ class GPSimulator():
             data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
 
             self.fit(data)
+
+            decomposed_dict = self.gpm_fit.gp.predict_mean_decomposed(self.x)
+
             self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
 
             plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.gp.kernel_)
@@ -264,6 +267,7 @@ if __name__ == "__main__":
             logger.info(f"Simulation started for {mode_name}: {k_name}")
             k_norm = GPSimulator.get_normalized_kernel(k)
             gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
+
             gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
             output_dict = gps.test_ci(data_fraction=0.3)
             ci_info.append({**output_dict, **mode_config["config"]})

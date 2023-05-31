@@ -1,4 +1,5 @@
-from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, Matern
+from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared,\
+    ConstantKernel, RationalQuadratic, Matern, Product, Sum
 from sklearn.gaussian_process import GaussianProcessRegressor
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +12,9 @@ import re
 from functools import partial
 from sklearn.gaussian_process import GaussianProcessRegressor
 import scipy.optimize
+from logging import getLogger
 
+logger = getLogger(__name__)
 
 def plot_kernel_function(ax, x, kernel):
     if x.ndim == 1:
@@ -95,26 +98,67 @@ class ARKernel(Matern):
         self.order = order
 
 
-class MyGPR(GaussianProcessRegressor):
+class GPR(GaussianProcessRegressor):
     """
     https://stackoverflow.com/questions/62376164/how-to-change-max-iter-in-optimize-function-used-by-sklearn-gaussian-process-reg
     """
-    def __init__(self, *args, max_iter=15000, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._max_iter = max_iter
+    # def __init__(self, *args, max_iter=15000, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self._max_iter = max_iter
 
-    def _constrained_optimization(self, obj_func, initial_theta, bounds):
-        def new_optimizer(obj_func, initial_theta, bounds):
-            return scipy.optimize.minimize(
-                obj_func,
-                initial_theta,
-                method="L-BFGS-B",
-                jac=True,
-                bounds=bounds,
-                max_iter=self._max_iter,
-            )
-        self.optimizer = new_optimizer
-        return super()._constrained_optimization(obj_func, initial_theta, bounds)
+    # def _constrained_optimization(self, obj_func, initial_theta, bounds):
+    #     def new_optimizer(obj_func, initial_theta, bounds):
+    #         return scipy.optimize.minimize(
+    #             obj_func,
+    #             initial_theta,
+    #             method="L-BFGS-B",
+    #             jac=True,
+    #             bounds=bounds,
+    #             max_iter=self._max_iter,
+    #         )
+    #     self.optimizer = new_optimizer
+    #     return super()._constrained_optimization(obj_func, initial_theta, bounds)
+
+    def predict_mean_decomposed(self, X):
+
+        decompose_dict = {}
+
+        if not hasattr(self, "X_train_"):
+            logger.warning("The model has not been fitted")
+            return
+
+        scale_kernel = ConstantKernel(constant_value=1, constant_value_bounds="fixed")
+
+        if isinstance(self.kernel_, Product) and isinstance(self.kernel_.k1, ConstantKernel):
+            scale_kernel = self.kernel_.k1
+
+        def decompose_additive_kernel(k, k_list=None):
+            if k_list is None:
+                k_list = []
+            if isinstance(k, Sum):
+                k_list = decompose_additive_kernel(k.k1, k_list)
+                k_list = decompose_additive_kernel(k.k2, k_list)
+            else:
+                k_list.append(k)
+            return k_list
+
+
+
+
+        for kernel in self.kernel_:
+            K_trans = kernel(X, self.X_train_)
+            y_mean = K_trans @ self.alpha_
+
+            # undo normalisation
+            y_mean = self._y_train_std * y_mean + self._y_train_mean
+
+            # if y_mean has shape (n_samples, 1), reshape to (n_samples,)
+            if y_mean.ndim > 1 and y_mean.shape[1] == 1:
+                y_mean = np.squeeze(y_mean, axis=1)
+
+        decompose_dict[f"{kernel}"] = y_mean
+
+        return decompose_dict
 
 
 class GPModel(object):
@@ -132,7 +176,7 @@ class GPModel(object):
         self.gp = self._get_gp()
 
     def _get_gp(self):
-        gp = partial(GaussianProcessRegressor, n_restarts_optimizer=0, normalize_y=self.normalize_y,
+        gp = partial(GPR, n_restarts_optimizer=0, normalize_y=self.normalize_y,
                      random_state=0, alpha=self.meas_noise)
         if not self.kernel_approx:
             gp = gp(kernel=self.kernel)
