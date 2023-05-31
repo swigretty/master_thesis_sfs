@@ -1,4 +1,4 @@
-\usepackage{amsmath}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
@@ -143,9 +143,11 @@ Given our observations $\mathbf{Y}$  we can use Bayes' theorem to calculate the 
 One approach is to just plug in the expressions for
 $p(\mathbf{Y}|X,\beta)$ and $p(\beta|\mathbf{Y}, X)$ from above, with the marginal likelihood:
 
-\begin{gather*}
+\begin{gather}\label{eq:marginal-likelihood}
     p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
-\end{gather*}
+\end{gather}
+
+The term marginal likelihood arises from the marginalization over the parameter values $\beta$.
 
 Or it can be helpful to combine the coefficients and the observations into a single random vector with
 multivariate normal distribution:
@@ -379,7 +381,7 @@ unobserved time point given our observations.
 Hence, we are not interested in the posterior distribution of $f^{\ast}$ only, but also of
 $Y^{\ast} := Y(x^{\ast}) = f(x^{\ast}) + E(x^{\ast})$.
 
-Recall the expression for the marginal likelihood $p(\mathbf{Y}| X)$:
+Recall the expression for the marginal likelihood $p(\mathbf{Y}| X)$ from \ref{eq:marginal-likelihood}:
 \begin{gather*}
     \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_e) \\
 \end{gather*}
@@ -468,6 +470,14 @@ The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by
         \end{bmatrix}
         \right)
     = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+\end{gather}
+
+
+The posterior distribution over $f^{\ast}$ can then again be derived by conditioning:
+\begin{gather}\label{eq:posterior-gp}
+    p(f^{\ast}| \mathbf{Y}, X) = \N(
+K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
+K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 \end{gather}
 
 
@@ -683,27 +693,129 @@ $b= \sigma_w \sqrt{\Delta t}$
 
 
 
-
-
-
 More generally a continuous AR(p) process has Matérn covariance function with $\nu = p - 1/2$.
-
 TODO: different kernels, stationary kernels, link to power spectral density, with plots
-
 A more detailed description of covariance functions and their property can be found
 in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
-\section{Model Selection - Choosing Hyperparameters}
+
+
+\section{Model Selection}
 \citeauthor{rasmussen_gaussian_2006} p.113.
 
-Hyperparameters $\theta$
+Model Selection for Gaussian process regression boils down to finding the optimal
+covariance function with optimal hyperparameters.
+There are many options on how to solve the model selection problem. The most common approaches
+are either based on the probability of the model given the data or on the estimation of the
+generalization error by cross validation.
 
-Use marginal likelihood (or evidence):
-\begin{gather}
+The approach involving the calculation of the model probability given the data is called
+Bayesian model selection.
+One can use a hierarchical specification of the model.
+Assuming a parametric model one has
+the parameters $\beta$ at the lowest level. In the non parametric setting
+one directly models the distribution over the function $f$ instead.
+On the next levels are the hyperparameters $theta$ which control the distribution of the
+parameters $\beta$ or in the non-parametric setting of the function $f$.
+At the highst level is the set of possible model structures $\mathbb{H}_i$.
+
+At the lowest level the posterior over the parameters $\beta$ is given by Bayes rule:
+
+\begin{gather*}
+    p(w | \mathbf{Y}, X, \theta, \mathbb{H}_i) = \frac{p( \mathbf{Y}| X, \beta,
+        \mathbb{H}_i)p(\beta|\theta, \mathbb{H}_i)}{p(\mathbf{Y}|X, \theta, \mathbb{H}_i)}
+\end{gather*}
+
+We call $p(\mathbf{Y}| X, \beta, \mathbb{H}_i)$ likelihood,
+$p(\beta|\theta, \mathbb{H}_i)$ the prior
+and $p(\mathbf{Y}|X, \theta, \mathbb{H}_i)$ the marginal likelihood.
+
+Similarly, in the non-parametric world of gaussian processes we can
+assume a posterior over the function value
+$f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ with $f_X = f(X)$:
+\begin{gather*}
+    p(f^{\ast} | \mathbf{Y}, X, \theta, \mathbb{H}_i) = \frac{p( \mathbf{Y}| f_X,
+        \mathbb{H}_i)p(f| \theta, \mathbb{H}_i)}{p(\mathbf{Y}|X, \theta, \mathbb{H}_i)}
+\end{gather*}
+
+Revisit equation \ref{eq:posterior-gp} on how to derive the posterior distribution
+over the function values $f^{\ast}$ for some general covariance function of the prior.
+
+If we additionally assume a prior distribution over the hyperparameters $\theta$
+there is a similar expresson for the posterior over the hyperparameters:
+\begin{gather*}
+    p(\theta | \mathbf{Y}, X, \mathbb{H}_i) = \frac{p( \mathbf{Y}| X,\mathbb{H}_i, \theta)
+        p(\theta| \mathbb{H}_i)}{p(\mathbf{Y}|X, \mathbb{H}_i)}
+\end{gather*}
+
+Maximising $p(\theta | \mathbf{Y}, X, \mathbb{H}_i)$ then yields the
+optimal hyperparameters. However, when assuming non gaussian priors on $\theta$,
+evaluating $p(\theta | \mathbf{Y}, X, \mathbb{H}_i)$ might
+be difficult and instead one often just maximizes the marginal likelihood
+$p(\mathbf{Y}|X, \theta, \mathbb{H}_i)$ with respect to the hyperparamters $\theta$.
+
+
+\subsubsection{Marginal Likelihood}
+
+Recall the expression for the marginal likelihood from subsection \ref{subsec:bayesian-linear-regression}
+assuming Bayesian linear regression with prior $p(\beta) = \N(0, \Sigma_p)$ and likelihood
+$p(\mathbf{Y} | X, \beta) = \N(X \beta, \Sigma_e)$:
+
+\begin{gather}\label{eq:marginal-likelihood2}
+    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
+\end{gather}
+
+In section \ref{sec:gaussian-process-regression} we have seen how this can also be expressed
+as a distribution over the function $Y(x)$:
+\begin{gather*}
+    Y(x) \sim GP(0, k(x, x'))
+\end{gather*}
+With kernel function $k(x,x')$ such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$.
+
+As by the definition of a Gaussian process $\mathbf{Y}|X$ has multivariate normal distribution
+with covariance matrix $K_{XX}(\theta)$, which is itself a function of its hyperparameters $theta$.
+The log marginal likelihood is hence given by:
+\begin{gather}\label{eq:gaussian-marginal-likelihood}
     log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
     \frac{1}{2} log \det{K_{XX}(\theta)} - \frac{n}{2} \log 2 \pi
 \end{gather}
 
+These expressions are obtained by marginalization over $\beta$ or the latent function $f$
+for the Bayesian linear regression and the more general Gaussian process case respectively.
+
+Since marginal likelihood already incorporates a trade-off between model fit and
+model complexity it is a good candidate for solving the model selection problem.
+The first term, $- \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y}$,
+accounts for a good data-fit. The second term, $\frac{1}{2} log \det{K_{XX}(\theta)}$,
+penalizes more complex models and only depends on the inputs $X$ and the covariance function. The
+last term $\frac{n}{2} \log 2 \pi$ is a normalization constant.
+
+
+
+
+%
+%Although there are endless variations in the
+%suggestions for model selection in the literature three general principles cover
+%most: (1) compute the probability of the model given the data, using marignal likelihood.
+%
+%(2) estimate
+%the generalization error and (3) bound the generalization error. We use the
+%term generalization error to mean the average error on unseen test examples
+%(from the same distribution as the training cases). Note that the training error
+%is usually a poor proxy for the generalization error, since the model may fit
+%the noise in the training set (over-fit), leading to low training error but poor
+%generalization performance.
+%
+%
+%
+%Hyperparameters $\theta$
+%
+%Use marginal likelihood (or evidence):
+%\begin{gather}
+%    log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
+%    \frac{1}{2} log \det{K_{XX}(\theta)} - \frac{n}{2} \log 2 \pi
+%\end{gather}
+%
 
 
 %This enforces the kernel function to be symmetric and positive definite.
@@ -717,20 +829,6 @@ Use marginal likelihood (or evidence):
 %    \item postive definite
 %\end{itemize}
 %
-
-Additionally one can combine valid covariance functions, $k1$ and $k2$ into new covariance functions based on the following rules:
-\begin{itemize}
-    \item
-\end{itemize}
-
-
-
-TODO
-One could hence also assume additional measurement noise:
-\begin{align*}
-    Z(x) = Y(x) + \epsilon = f(x) + E(x) + \epsilon  && \epsilon \sim \N(0, \sigma_n^{2})
-\end{align*}
-
 
 
 
