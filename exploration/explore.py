@@ -23,8 +23,8 @@ def get_red_idx(n, data_fraction=0.3, weights=None):
     return sorted(np.random.choice(range(n), size=k, replace=False, p=weights))
 
 
-def get_sesonal_weights(n, period, phase=np.pi):
-    weights = cosinus_seasonal(range(n), period, phase=phase)
+def get_sesonal_weights(x, period, phase=np.pi, seas_ampl=1):
+    weights = cosinus_seasonal(x, period, phase=phase, seas_ampl=seas_ampl)
     return weights - min(weights)
 
 

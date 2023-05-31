@@ -96,6 +96,9 @@ class ARKernel(Matern):
 
 
 class MyGPR(GaussianProcessRegressor):
+    """
+    https://stackoverflow.com/questions/62376164/how-to-change-max-iter-in-optimize-function-used-by-sklearn-gaussian-process-reg
+    """
     def __init__(self, *args, max_iter=15000, **kwargs):
         super().__init__(*args, **kwargs)
         self._max_iter = max_iter

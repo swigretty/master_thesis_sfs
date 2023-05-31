@@ -65,9 +65,8 @@ if __name__ == "__main__":
     samples_per_hour = 20
     t = np.linspace(0, days * h_per_day, days * h_per_day * samples_per_hour)
 
-
-    # kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
-    # plot_kernels(kernels)
+    kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
+    plot_kernels(kernels)
     #
     kernels = [ExpSineSquared(length_scale=sc, periodicity=h_per_day) for sc in [0.1, 1, 10]]
     plot_kernels(kernels, plot_file="sin_len.pdf", t=t)

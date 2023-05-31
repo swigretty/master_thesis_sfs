@@ -15,8 +15,8 @@ from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, 
 
 from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
-from exploration.explore import get_red_idx
-from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES
+from exploration.explore import get_red_idx, get_sesonal_weights
+from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES, PERIOD_DAY
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -33,10 +33,15 @@ class GPData():
     y_cov: np.array = None
 
 
+def weights_func_value(y):
+    return y - np.min(y)
+
+
 class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
-                 meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH):
+                 meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH,
+                 data_fraction_weights=None):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
@@ -48,6 +53,8 @@ class GPSimulator():
         self.mean_f = mean_f
         self.meas_noise = meas_noise
         self.offset = mean_f(0)
+
+        self.data_fraction_weights = data_fraction_weights
 
         if kernel_fit is None:
             kernel_fit = kernel_sim
@@ -78,8 +85,13 @@ class GPSimulator():
             y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
         return GPData(x=self.x, y=y_prior, y_mean=y_prior_mean, y_cov=y_prior_cov, n=len(self.x))
 
-    def subsample_data_sim(self, data_sim, data_fraction=0.3, data_fraction_weights=None):
-        idx = get_red_idx(data_sim.n, data_fraction=data_fraction, weights=data_fraction_weights)
+    def subsample_data_sim(self, data_sim, data_fraction=0.3):
+        if callable(self.data_fraction_weights):
+            weights = self.data_fraction_weights(data_sim.y)
+        else:
+            weights = self.data_fraction_weights
+
+        idx = get_red_idx(data_sim.n, data_fraction=data_fraction, weights=weights)
         y_red = data_sim.y[idx, ]
         x_red = data_sim.x[idx]
 
@@ -203,7 +215,7 @@ class GPSimulator():
         param_fit_df = pd.DataFrame(param_fit_list)
         param_fit_mean = param_fit_df.mean(axis=0).to_dict()
         param_rel_error = {k: (v-param_sim[k])/abs(param_sim[k]) for k, v in param_fit_mean.items()}
-        param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.0001}
+        param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.000001}
         ci_coverage = n_ci_coverage/n_samples
         mean_ci_width = np.mean(np.diff(ci_array, axis=1))
         return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
@@ -218,11 +230,19 @@ if __name__ == "__main__":
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
 
+    data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
+
     modes = {
         # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
         #                   "config": {"normalize_y": False, **base_config}},
-             "ou_bounded_normk2": {"kernels":  OU_KERNELS["bounded"],
-                            "config": {"normalize_y": False, **base_config}},
+        #      "ou_bounded_normk2": {"kernels":  OU_KERNELS["bounded"],
+        #                     "config": {"normalize_y": False, **base_config}},
+        #     "ou_bounded_normk_non_uniform": {"kernels": OU_KERNELS["bounded"],
+        #                       "config": {"normalize_y": False, "data_fraction_weights": weights_func_value,
+        #                                  **base_config}},
+            "ou_bounded_normk_cycl": {"kernels": OU_KERNELS["bounded"], "config": {
+                "normalize_y": False, "data_fraction_weights": data_fraction_weights,
+                **base_config}}
         #      "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
         #                    "config": {"normalize_y": False, **base_config}},
         # #      "ou_unbounded":
