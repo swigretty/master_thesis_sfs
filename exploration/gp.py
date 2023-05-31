@@ -127,10 +127,12 @@ class GPR(GaussianProcessRegressor):
             logger.warning("The model has not been fitted")
             return
 
+        kernel = self.kernel_
         scale_kernel = ConstantKernel(constant_value=1, constant_value_bounds="fixed")
 
         if isinstance(self.kernel_, Product) and isinstance(self.kernel_.k1, ConstantKernel):
             scale_kernel = self.kernel_.k1
+            kernel = self.kernel_.k2
 
         def decompose_additive_kernel(k, k_list=None):
             if k_list is None:
@@ -142,10 +144,10 @@ class GPR(GaussianProcessRegressor):
                 k_list.append(k)
             return k_list
 
+        kernel_list = decompose_additive_kernel(kernel)
 
-
-
-        for kernel in self.kernel_:
+        for kernel in kernel_list:
+            kernel = kernel * scale_kernel
             K_trans = kernel(X, self.X_train_)
             y_mean = K_trans @ self.alpha_
 
