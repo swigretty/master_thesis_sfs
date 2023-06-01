@@ -33,15 +33,17 @@ def plot_kernel_function(ax, x, kernel):
     ax.set_title(title)
 
 
-def plot_posterior(ax, x, y_post_mean, y_post_std, x_red, y_red, y_true):
+def plot_posterior(ax, x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
+                   y_true=None):
     plot_gpr_samples(ax, x, y_post_mean, y_post_std, y=None)
     if y_true is not None:
         ax.plot(x, y_true, "r:")
-    ax.scatter(x_red, y_red, color="red", zorder=5, label="Observations")
+    if (x_red is not None) and (y_red is not None):
+        ax.scatter(x_red, y_red, color="red", zorder=5, label="Observations")
     ax.set_title("Samples from posterior distribution")
 
 
-def plot_gpr_samples(ax, x, y_mean, y_std, y=None, ylim=None):
+def plot_gpr_samples(ax, x, y_mean, y_std=None, y=None, ylim=None):
     """Plot samples drawn from the Gaussian process model.
 
     If the Gaussian process model is not trained then the drawn samples are
@@ -77,14 +79,15 @@ def plot_gpr_samples(ax, x, y_mean, y_std, y=None, ylim=None):
             )
 
     ax.plot(x, y_mean, color="black", label="Mean")
-    ax.fill_between(
-        x,
-        y_mean - y_std,
-        y_mean + y_std,
-        alpha=0.1,
-        color="black",
-        label=r"$\pm$ 1 std. dev.",
-    )
+    if y_std is not None:
+        ax.fill_between(
+            x,
+            y_mean - y_std,
+            y_mean + y_std,
+            alpha=0.1,
+            color="black",
+            label=r"$\pm$ 1 std. dev.",
+        )
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     if ylim:
@@ -119,6 +122,16 @@ class GPR(GaussianProcessRegressor):
     #     self.optimizer = new_optimizer
     #     return super()._constrained_optimization(obj_func, initial_theta, bounds)
 
+    @classmethod
+    def decompose_additive_kernel(cls, k):
+        if isinstance(k, Sum):
+            k1_list = cls.decompose_additive_kernel(k.k1)
+            k2_list = cls.decompose_additive_kernel(k.k2)
+            k_list = k1_list + k2_list
+        else:
+            k_list = [k]
+        return k_list
+
     def predict_mean_decomposed(self, X):
 
         decompose_dict = {}
@@ -134,17 +147,7 @@ class GPR(GaussianProcessRegressor):
             scale_kernel = self.kernel_.k1
             kernel = self.kernel_.k2
 
-        def decompose_additive_kernel(k, k_list=None):
-            if k_list is None:
-                k_list = []
-            if isinstance(k, Sum):
-                k_list = decompose_additive_kernel(k.k1, k_list)
-                k_list = decompose_additive_kernel(k.k2, k_list)
-            else:
-                k_list.append(k)
-            return k_list
-
-        kernel_list = decompose_additive_kernel(kernel)
+        kernel_list = self.decompose_additive_kernel(kernel)
 
         for kernel in kernel_list:
             kernel = kernel * scale_kernel
@@ -158,7 +161,7 @@ class GPR(GaussianProcessRegressor):
             if y_mean.ndim > 1 and y_mean.shape[1] == 1:
                 y_mean = np.squeeze(y_mean, axis=1)
 
-        decompose_dict[f"{kernel}"] = y_mean
+            decompose_dict[f"{kernel}"] = y_mean
 
         return decompose_dict
 

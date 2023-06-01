@@ -123,10 +123,9 @@ class GPSimulator():
         data_prior = self.sim_gp()
         data_true = self.choose_sample_from_prior(data_prior, data_index=0)
 
-        fig_list = []
         for data_fraction in data_fraction_list:
             logger.info(f"Simulation with {data_fraction=}")
-            fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 15))
+            fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(30, 15))
             self.plot_prior(ax[0, 0], data_prior)
             plot_kernel_function(ax[0, 1], data_true.x, self.kernel_sim)
 
@@ -137,15 +136,16 @@ class GPSimulator():
             decomposed_dict = self.gpm_fit.gp.predict_mean_decomposed(self.x)
 
             self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
-
             plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.gp.kernel_)
+
+            for k, v in decomposed_dict.items():
+                ax[2, 0].plot(self.x, v, label=k)
             fig.tight_layout()
 
             if figname is not None:
                 self.output_path.mkdir(parents=True, exist_ok=True)
                 fig.savefig(self.output_path / f"{figname}_{data_fraction:.2f}.pdf")
-            fig_list.append(fig)
-        return fig
+
 
     @staticmethod
     def calculate_ci(se, mean, alpha=0.05, dist=norm):
@@ -232,20 +232,20 @@ if __name__ == "__main__":
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
-
+    kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
     data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
         # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
         #                   "config": {"normalize_y": False, **base_config}},
-        #      "ou_bounded_normk2": {"kernels":  OU_KERNELS["bounded"],
-        #                     "config": {"normalize_y": False, **base_config}},
+             "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
+                            "config": {"normalize_y": False, **base_config}},
         #     "ou_bounded_normk_non_uniform": {"kernels": OU_KERNELS["bounded"],
         #                       "config": {"normalize_y": False, "data_fraction_weights": weights_func_value,
         #                                  **base_config}},
-            "ou_bounded_normk_cycl": {"kernels": OU_KERNELS["bounded"], "config": {
-                "normalize_y": False, "data_fraction_weights": data_fraction_weights,
-                **base_config}}
+        #     "ou_bounded_normk_cycl": {"kernels": OU_KERNELS["bounded"], "config": {
+        #         "normalize_y": False, "data_fraction_weights": data_fraction_weights,
+        #         **base_config}}
         #      "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
         #                    "config": {"normalize_y": False, **base_config}},
         # #      "ou_unbounded":
