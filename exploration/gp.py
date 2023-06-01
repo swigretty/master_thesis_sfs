@@ -166,6 +166,8 @@ class GPR(GaussianProcessRegressor):
         return decompose_dict
 
 
+# TODO merge GPMOdel with GPR
+
 class GPModel(object):
     def __init__(self, kernel, rng=None, meas_noise=0, kernel_approx=False, normalize_y=True):
         if rng is None:
