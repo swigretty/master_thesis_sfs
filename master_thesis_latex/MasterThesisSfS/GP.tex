@@ -757,11 +757,21 @@ be difficult and instead one often just maximizes the marginal likelihood
 $p(\mathbf{Y}|X, \theta, M_i)$ with respect to the hyperparameters $\theta$. This approach
 will be presented in the next subsection.
 
+
 Note, that the scheme form above can be extended to maximising the posterior over the model structures $M_i$
-to find the optimal model structure. In Gaussain process regression
-this can be viewed as finding the optimal kernel function type, which is often not done
-through evaluation of the posterior but through cross validation after having found
-the optimal set of hyperparameters $\theta$ for all the candidate kernels.
+to find the optimal model structure.
+In Gaussian process regression this can be viewed as finding the optimal kernel function type,
+which is often not done through evaluation of the posterior but
+by simultaneous optimization of the marginal likelihood with respect to the model
+structure $M_i$ and its hyperparameters $\theta$.
+
+%The posterior distribution over the model $M_i$ is given by:
+%\begin{gather*}
+%    p(M_i | \mathbf{Y}, X) = \frac{p( \mathbf{Y}| X)
+%        p(M_i)}{p(\mathbf{Y}|X)}
+%\end{gather*}
+%where $p(\mathbf{Y}|X) = \sum_i p(\mathbf{Y}|X, M_i)p(M_i)$
+
 
 \subsubsection{Marginal Likelihood}
 
@@ -800,6 +810,7 @@ last term $\frac{n}{2} \log 2 \pi$ is a normalization constant.
 
 
 \subsection{Cross Validation}
+
 
 
 
