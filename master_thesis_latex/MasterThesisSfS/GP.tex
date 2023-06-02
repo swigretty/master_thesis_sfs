@@ -450,8 +450,6 @@ Analogously we can write:
     f(x) \sim GP(0, k(x, x')),
 \end{gather*}
 with $k(x,x')$ such that for an input $X = [x_1 \dots x_n]^{\top}$ we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$.
-Similarly $Y(x) \sim GP(0, k(x, x') + \delta_{x,x'}\sigma_n)$,
-where $\delta_{x,x'}$ is the Kronecker delta which is one if $x = x'$ and zero otherwise.
 
 The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by:
 \begin{gather}
@@ -473,12 +471,42 @@ The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by
 \end{gather}
 
 
-The posterior distribution over $f^{\ast}$ can then again be derived by conditioning:
+The posterior (or predictive) distribution over $f^{\ast}$ can then again be derived by conditioning:
 \begin{gather}\label{eq:posterior-gp}
     p(f^{\ast}| \mathbf{Y}, X) = \N(
 K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
 K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 \end{gather}
+
+If we are interested in predicting $Y(X)$, i.e. the iid gaussian noise term $\epsilon$
+should be included in the prediction. We choose $k(x,x')$ such that
+$K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e + \sigma_n^2 I$.
+The predictive distribution over
+$Y^{\ast} := Y(x^{\ast})$ is then simply:
+\begin{gather}\label{eq:posterior-gp-noise}
+    p(Y^{\ast}| \mathbf{Y}, X) = \N(
+K_{x^{\ast}X} K_{XX}^{-1} \mathbf{Y},
+K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}})
+\end{gather}
+
+
+%Similarly if we are interested in predicting $Y(X)$, i.e. the iid gaussian noise term $\epsilon$
+%should be included in the prediction, we can write:
+%
+%\begin{gather*}
+%    Y(x) \sim GP(0, k(x, x') + \delta_{x,x'}\sigma_n)),
+%\end{gather*}
+%where $k(x,x')$ is the same as above with $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$ and $\delta_{x,x'}$ is the Kronecker delta which
+%is one if $x = x'$ and zero otherwise.
+%We define a new kernel function $\tilde{k}(x,x') := k(x, x') + \delta_{x,x'}\sigma_n$, then
+%$\tilde{K}_{XX} =  X \Sigma_p X^{\top} + \Sigma_e + \sigma_n^2 I$ and the predictive distribution over
+%$Y^{\ast} := Y(x^{\ast})$ is then:
+%\begin{gather}\label{eq:posterior-gp-noise}
+%    p(Y^{\ast}| \mathbf{Y}, X) = \N(
+%\tilde{K}_{x^{\ast}X} \tilde{K}_{XX}^{-1} \mathbf{Y},
+%\tilde{K}_{x^{\ast}x^{\ast}} - \tilde{K}_{x^{\ast}X} \tilde{K}_{XX}^{-1} \tilde{K}_{Xx^{\ast}})
+%\end{gather}
+
 
 
 Also note how until now we have still assumed $\Sigma_e$, the covariance matrix of $\mathbf{E}$, to be known.
@@ -698,7 +726,29 @@ TODO: different kernels, stationary kernels, link to power spectral density, wit
 A more detailed description of covariance functions and their property can be found
 in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
+\section{Performance Assessment}\label{sec:performance-assessment}
+As we have seen in section \ref{sec:gaussian-process-regression}, predictions
+in with Gaussian processes always provides a whole predictive distribution not only a point
+estimate.
+An expression for the predictive (posterior) distribution over $Y^{\ast}:= Y(x^{\ast})$
+for some arbitrary input $x^{\ast}$ has been provided in equation \ref{eq:posterior-gp-noise}.
+This allows to calculate the probability of the observed value $y^{\ast}$ at an input $x^{\ast}$
+under the predictive distribution.
 
+From expression of the predictive distribution in \ref{eq:posterior-gp-noise} we know:
+
+\begin{gather}\label{eq:predictive-dist}
+    \log p(Y^{\ast} = y^{\ast}| \mathbf{Y}, X) =
+    - \frac{1}{2} \log \bar{\sigma}^2 -
+\frac{(y^{\ast} - \bar{\mu})^2}{2 \bar{\sigma}^2} - \frac{1}{2} \log 2 \pi
+\end{gather}
+where
+$\bar{\sigma}^2 = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}}$
+and $\bar{\mu} = K_{x^{\ast}X} K_{XX}^{-1} \mathbf{Y}$.
+
+In contrast, computing the squared error between the true value $y^{\ast}$
+and the predictive mean $\bar{\mu}$ does completely ignore the predictive variance
+$\bar{\sigma}^2$.
 
 \section{Model Selection}
 \citeauthor{rasmussen_gaussian_2006} p.113.
@@ -706,13 +756,18 @@ in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 Model Selection for Gaussian process regression boils down to finding the optimal
 covariance function with optimal hyperparameters.
 There are many options on how to solve the model selection problem.
-The most common approaches are Bayesian model selection and cross validation.
-While Cross validation estimates the generalization error,
-Bayesian model selection is based on finding the most probable model given some prior believe and the data.
+The most common approaches are Bayesian model selection and estimation of the
+generalization error using cross validation.
+
+A suitable loss function to be used for cross validation is based on the performance metric
+defined in section
+\ref{sec:performance-assessment}.
+The rest of this section is dedicated to bayesian model selection, which is probably less known.
 
 \subsection{Bayesian Model Selection}
-
-Bayesian model selection starts with a hierarchical specification of the model.
+Bayesian model selection looks for the most probable model given the data and some prior believe on the data
+generating process. A hierarchical specification of the model will help to understand at what level
+inference can occur.
 Assuming a parametric model, the lowest level consists of the parameters $\beta$.
 On the next level are the hyperparameters $\theta$ which control the distribution of the
 parameters $\beta$.
@@ -808,8 +863,6 @@ accounts for a good data-fit. The second term, $\frac{1}{2} log \det{K_{XX}(\the
 penalizes more complex models and only depends on the inputs $X$ and the covariance function. The
 last term $\frac{n}{2} \log 2 \pi$ is a normalization constant.
 
-
-\subsection{Cross Validation}
 
 
 
