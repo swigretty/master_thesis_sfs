@@ -4,7 +4,7 @@ from simulation.simulate_bp import BPTimseSeriesSimulator, random_cosinus_season
 from functools import partial
 from exploration.blr import blr_corr, plot_blr_output, blr_simple
 import matplotlib.pyplot as plt
-from exploration.gp import GPModel, ARKernel
+from exploration.gp import GPR, ARKernel
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.arima_process import arma_acovf
@@ -91,7 +91,7 @@ def simulate_plot_ar(ar, wn_scale, data_fraction=0.1):
     kernel = cov_true[0] * kernel_(length_scale=length_scale)
     cov_prior = kernel(s1.t.reshape(-1, 1))
     std_prior = np.sqrt(np.diag(cov_prior))
-    gpm = GPModel(kernel=kernel, normalize_y=False, meas_noise=0)
+    gpm = GPR(kernel=kernel, normalize_y=False, meas_noise=0)
 
     idx_train = get_red_idx(len(ts1.t), data_fraction=data_fraction)
     x_train = ts1.t[idx_train]

@@ -10,11 +10,11 @@ import numpy as np
 from sklearn.utils import check_random_state
 import re
 from functools import partial
-from sklearn.gaussian_process import GaussianProcessRegressor
 import scipy.optimize
 from logging import getLogger
 
 logger = getLogger(__name__)
+
 
 def plot_kernel_function(ax, x, kernel):
     if x.ndim == 1:
@@ -122,6 +122,20 @@ class GPR(GaussianProcessRegressor):
     #     self.optimizer = new_optimizer
     #     return super()._constrained_optimization(obj_func, initial_theta, bounds)
 
+    def __init__(self, kernel, rng=None, kernel_approx=False, **kwargs):
+
+        if rng is None:
+            rng = np.random.default_rng()
+        self.kernel_orig = kernel
+        self.rng = rng
+        self.kernel_approx = kernel_approx
+        self.kernel_approx_method = partial(Nystroem, n_components=200, random_state=1)
+        if self.kernel_approx:
+            self.kernel_approx = self.kernel_approx_method(kernel, n_components=300)
+            kernel = None
+
+        super().__init__(kernel=kernel, random_state=rng.integers(0, 10), **kwargs)
+
     @classmethod
     def decompose_additive_kernel(cls, k):
         if isinstance(k, Sum):
@@ -165,51 +179,17 @@ class GPR(GaussianProcessRegressor):
 
         return decompose_dict
 
-
-# TODO merge GPMOdel with GPR
-
-class GPModel(object):
-    def __init__(self, kernel, rng=None, meas_noise=0, kernel_approx=False, normalize_y=True):
-        if rng is None:
-            rng = np.random.default_rng()
-
-        self.kernel = kernel
-        self.rng = rng
-        self.kernel_approx_method = partial(Nystroem, n_components=200, random_state=1)
-        self.meas_noise = meas_noise
-        self.normalize_y = normalize_y
-        self.kernel_approx = kernel_approx
-
-        self.gp = self._get_gp()
-
-    def _get_gp(self):
-        gp = partial(GPR, n_restarts_optimizer=0, normalize_y=self.normalize_y,
-                     random_state=0, alpha=self.meas_noise)
-        if not self.kernel_approx:
-            gp = gp(kernel=self.kernel)
-        else:
-            gp = gp()
-            self.kernel_approx = self.kernel_approx_method(kernel=self.kernel, n_components=300)
-        return gp
-
     def predict(self, x: np.ndarray, return_std=False, return_cov=False):
         if self.kernel_approx:
             x = self.kernel_approx.transform(x)
-        gp_mean, gp_unc = self.gp.predict(x, return_std=return_std, return_cov=return_cov)
-        return gp_mean, gp_unc
+        return super().predict(x, return_std=return_std, return_cov=return_cov)
 
     def fit(self, train_x: np.ndarray, train_y: np.ndarray):
-        if train_x.ndim == 1:
-            train_x = train_x.reshape(-1, 1)
         if self.kernel_approx:
             train_x = self.kernel_approx.fit_transform(train_x)
-        self.gp.fit(train_x, train_y)
-        pass
+        super().fit(train_x, train_y)
 
-    def sample_y(self, x, n_samples):
-        if x.ndim == 1:
-            x = x.reshape(-1, 1)
-
+    def sample_y(self, x, n_samples=1):
         y_mean, y_cov = self.predict(x, return_cov=True)
         if y_mean.ndim == 1:
             y_samples = self.rng.multivariate_normal(y_mean, y_cov, n_samples).T
@@ -224,58 +204,12 @@ class GPModel(object):
         return y_samples, y_mean, y_cov
 
     def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0):
-        if x.ndim == 1:
-            x = x.reshape(-1, 1)
-
         mean_f_val = np.array([mean_f(val) for val in x])
         mean_f_val_full = np.vstack([mean_f_val for i in range(n_samples)]).T
         y_samples, y_mean, y_cov = self.sample_y(x, n_samples)
-        # TODO test this
         return y_samples + mean_f_val_full, y_mean + np.mean(mean_f_val_full, axis=1), y_cov
 
     def sample_from_posterior(self, x, n_samples):
-        if not hasattr(self.gp, "X_train_"):  # Unfitted;predict based on GP prior
+        if not hasattr(self, "X_train_"):  # Unfitted;predict based on GP prior
             raise "GP has not been fitted yet, cannot sample from posterior"
         return self.sample_y(x, n_samples)
-
-    def fit_with_offset(self, x, y, offset=0):
-        kernel_orig = self.kernel
-        self.kernel = kernel_orig + ConstantKernel(constant_value=offset ** 2, constant_value_bounds="fixed")
-        self.gpm = self._get_gp()
-        self.fit(x, y)
-        return self
-
-
-def fit_gp(X, y, period):
-    # long_term_trend_kernel = 50.0 ** 2 * RBF(length_scale=50.0)
-
-    k0 = WhiteKernel()
-
-    k1 = RBF(length_scale=int(period/10)) * ExpSineSquared(length_scale=1.0, periodicity=period)
-
-    k2 = RBF(length_scale=int(period/10))
-
-    kernel = k0 + k2 + k1
-
-    # FINAL_KERNEL = RBF(length_scale=1) * ExpSineSquared(length_scale=1, periodicity=1) + RBF(
-    #     length_scale=1) * RationalQuadratic(alpha=1, length_scale=1) * DotProduct(sigma_0=1) + RBF(
-    #     length_scale=1) * RationalQuadratic(alpha=1, length_scale=1) + RationalQuadratic(alpha=1, length_scale=1)
-
-    gp1 = GaussianProcessRegressor(
-        kernel=kernel,
-        n_restarts_optimizer=10,
-        normalize_y=True,
-        alpha=0.0
-    )
-
-    # # Plot prior
-    # gp1_prior_samples = gp1.sample_y(X=X, n_samples=100)
-    # fig, ax = plt.subplots()
-    # ax.plot(X[:, 1], y, color="black", linestyle="dashed", label="Observations")
-    # ax.plot(X[:, 1], gp1_prior_samples, color="tab:blue", alpha=0.4, label="prior samples")
-    # plt.legend()
-
-    gp_fitted = gp1.fit(X, y)
-
-    return gp_fitted, gp1
-

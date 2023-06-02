@@ -13,7 +13,7 @@ from scipy.stats import norm
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
 
-from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function, plot_posterior
+from exploration.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx, get_sesonal_weights
 from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES, PERIOD_DAY
@@ -63,16 +63,10 @@ class GPSimulator():
             #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
-        self.gpm_sim = GPModel(kernel=self.kernel_sim, normalize_y=False)
-        self.gpm_fit = GPModel(kernel=self.kernel_fit, normalize_y=normalize_y, meas_noise=self.meas_noise)
+        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None)
+        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise)
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
-
-    # @lru_cache()
-    # @property
-    # def data_prior(self):
-    #     return self.sim_gp()
-    #
 
     def sim_gp(self, n_samples=5):
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
@@ -133,10 +127,10 @@ class GPSimulator():
 
             self.fit(data)
 
-            decomposed_dict = self.gpm_fit.gp.predict_mean_decomposed(self.x)
+            decomposed_dict = self.gpm_fit.predict_mean_decomposed(self.x)
 
             self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
-            plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.gp.kernel_)
+            plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.kernel_)
 
             for k, v in decomposed_dict.items():
                 ax[2, 0].plot(self.x, v, label=k)
@@ -203,7 +197,7 @@ class GPSimulator():
             ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
             ci_array[sample_index, :] = ci
 
-            kernel_fit = self.gpm_fit.gp.kernel_
+            kernel_fit = self.gpm_fit.kernel_
             param_fit_list.append(self.extract_params_from_kernel(kernel_fit))
 
             true_mean = np.mean(data_true.y)
