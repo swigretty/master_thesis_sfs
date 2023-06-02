@@ -753,21 +753,29 @@ $\bar{\sigma}^2$.
 \section{Model Selection}
 \citeauthor{rasmussen_gaussian_2006} p.113.
 
-Model Selection for Gaussian process regression boils down to finding the optimal
+Model selection for Gaussian process regression boils down to finding the optimal
 covariance function with optimal hyperparameters.
-There are many options on how to solve the model selection problem.
-The most common approaches are Bayesian model selection and estimation of the
-generalization error using cross validation.
-
-A suitable loss function to be used for cross validation is based on the performance metric
-defined in section
+The most common approaches to solve this problem are Bayesian model selection and
+estimation of the generalization error using cross validation.
+A suitable loss function to be used
+for cross validation is based on the predictive probablity
+of your observations as desribed in section
 \ref{sec:performance-assessment}.
-The rest of this section is dedicated to bayesian model selection, which is probably less known.
+Bayesian model selection on the other hand looks for the most probable model given the data.
+The rest of this section is dedicated to this approach, which is probably less known.
+
+%Bayesian model selection will be presented in the following subsection.
+%Specifically when leaving out training case $i$:
+%\begin{gather}\label{eq:loocv}
+%    \log p(Y^{\ast} = y^{\ast}| \mathbf{Y}, X) =
+%    - \frac{1}{2} \log \bar{\sigma}^2 -
+%\frac{(y^{\ast} - \bar{\mu})^2}{2 \bar{\sigma}^2} - \frac{1}{2} \log 2 \pi
+%\end{gather}
+
 
 \subsection{Bayesian Model Selection}
-Bayesian model selection looks for the most probable model given the data and some prior believe on the data
-generating process. A hierarchical specification of the model will help to understand at what level
-inference can occur.
+A hierarchical specification of the model helps to assess the probability of
+certain model configurations, given the data.
 Assuming a parametric model, the lowest level consists of the parameters $\beta$.
 On the next level are the hyperparameters $\theta$ which control the distribution of the
 parameters $\beta$.
@@ -809,8 +817,10 @@ Maximising $p(\theta | \mathbf{Y}, X, M_i)$ then yields the
 optimal hyperparameters. However, when assuming non gaussian priors on $\theta$,
 evaluating $p(\theta | \mathbf{Y}, X, M_i)$ might
 be difficult and instead one often just maximizes the marginal likelihood
-$p(\mathbf{Y}|X, \theta, M_i)$ with respect to the hyperparameters $\theta$. This approach
-will be presented in the next subsection.
+$p(\mathbf{Y}|X, \theta, M_i)$ with respect to the hyperparameters $\theta$.
+This approach is equal to assuming uniform distributions over the hyperparameters.
+The next subsection will provide more details on chow to calculate and maximize the
+marginal likelihood for Gaussian process regression.
 
 
 Note, that the scheme form above can be extended to maximising the posterior over the model structures $M_i$
