@@ -117,6 +117,9 @@ class GPSimulator():
         data_prior = self.sim_gp()
         data_true = self.choose_sample_from_prior(data_prior, data_index=0)
 
+        self.gpm_sim.fit(data_true.x, data_true.y)
+        decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
+
         for data_fraction in data_fraction_list:
             logger.info(f"Simulation with {data_fraction=}")
             fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(30, 15))
@@ -132,10 +135,13 @@ class GPSimulator():
             self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
             plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.kernel_)
 
-            for k, v in decomposed_dict.items():
+            for k, v in decomposed_dict_sim.items():
                 ax[2, 0].plot(self.x, v, label=k)
-            fig.tight_layout()
 
+            for k, v in decomposed_dict.items():
+                ax[2, 1].plot(self.x, v, label=k)
+
+            fig.tight_layout()
             if figname is not None:
                 self.output_path.mkdir(parents=True, exist_ok=True)
                 fig.savefig(self.output_path / f"{figname}_{data_fraction:.2f}.pdf")
@@ -226,7 +232,7 @@ if __name__ == "__main__":
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
-    kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
+    kernels_limited = [k for k in kernels_limited if k in ["sin_day"]]
     data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
@@ -263,14 +269,14 @@ if __name__ == "__main__":
             gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
 
             gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
-            output_dict = gps.test_ci(data_fraction=0.3)
-            ci_info.append({**output_dict, **mode_config["config"]})
-
-            logger.info(f"Simulation ended for {mode_name}: {k_name}. "
-                        f"Duration: {(datetime.datetime.utcnow()-start).total_seconds()} sec")
-
-        ci_info_df = pd.DataFrame(ci_info)
-        ci_info_df = ci_info_df[[col for col in ci_info_df.columns if col not in ["x", 'mean_f']]]
-        ci_info_df.to_csv(OUTPUT_PATH / f"ci_info_{mode_name}.csv")
+        #     output_dict = gps.test_ci(data_fraction=0.3)
+        #     ci_info.append({**output_dict, **mode_config["config"]})
+        #
+        #     logger.info(f"Simulation ended for {mode_name}: {k_name}. "
+        #                 f"Duration: {(datetime.datetime.utcnow()-start).total_seconds()} sec")
+        #
+        # ci_info_df = pd.DataFrame(ci_info)
+        # ci_info_df = ci_info_df[[col for col in ci_info_df.columns if col not in ["x", 'mean_f']]]
+        # ci_info_df.to_csv(OUTPUT_PATH / f"ci_info_{mode_name}.csv")
 
 
