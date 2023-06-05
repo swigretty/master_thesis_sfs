@@ -1,16 +1,16 @@
-\usepackage{amsfonts}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+The objective of regression is generally to establish a mapping between the input variable $x$ and
+its corresponding output $f(x)$.
+In order to solve such a problem one usually needs some additional constraints on $f(x)$.
+In chapter \ref{ch:time-series-decomposition-and-regression} we restricted ourselves to the class of linear functions.
+However, an alternative approach is to assign prior probabilities to all possible functions,
+giving higher probabilities to those considered more plausible. In this Bayesian framework,
+inference revolves around the posterior distribution of these functions,
+given some potentially noisy observations of $f(x)$.
 
-We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
-In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
-In \ref{ch:time-series-decomposition-and-regression} we restricted ourselves to the class of linear functions.
-Another approach is to assign a prior probability to every possible function, where higher
-probabilities are assigned to functions that are assumed to be more likely.
-Inference in this Bayesian setting is then based on the posterior distribution of these
-functions given some potentially noisy observations of $f(x)$.
-
-This chapter first provides a definition of a Gaussian Process and then describes how it
-can be used to solve a regression problem.
-The argument presented in this chapter is based on the textbook of \citeauthor{rasmussen_gaussian_2006}.
+This chapter begins by providing a formal definition of a Gaussian Process and subsequently explores its application
+in solving regression problems.
+The arguments presented in this chapter are based on the textbook of \citeauthor{rasmussen_gaussian_2006}.
 
 \section{Gaussian Process Definition}\label{sec:gaussian-process-definition}
 
