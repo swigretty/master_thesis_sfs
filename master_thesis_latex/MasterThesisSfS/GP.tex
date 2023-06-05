@@ -727,10 +727,8 @@ A more detailed description of covariance functions and their property can be fo
 in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
 \section{Performance Assessment}\label{sec:performance-assessment}
-
-Gaussian process regression offers more than just inferring the posterior (predictive) mean
-of the response variable; it also provides insights into its posterior (predictive) distribution.
-To evaluate how effectively the predictive distribution explains the observed values,
+Inference, in the case of Gaussian process regression, revolves around the posterior (predictive) distribution
+of the response variable. To evaluate how effectively the predictive distribution explains the observed values,
 it is common practice to calculate the probability of these values based on the predictive distribution.
 Equation \ref{eq:posterior-gp-noise} presents an expression for the predictive distribution of
 $\mathbf{Y^{\ast}}:= Y(x^{\ast})$ at an arbitrary input $x^{\ast} \in \mathbb{R}^{n}$.
@@ -751,12 +749,11 @@ the predictive covariance matrix $\bar{\Sigma}$ is entirely disregarded.
 
 
 \section{Model Selection}
-\subsection{Bayesian Model Selection}
 
 Model selection in Gaussian process regression involves identifying the optimal covariance function
 along with the optimal hyperparameters.
-Two common approaches for model selection are cross-validation, which utilizes a performance-based loss
-function discussed in Section \ref{sec:performance-assessment}, and Bayesian model selection,
+Two common approaches for model selection are cross-validation, using a performance-based loss
+function as discussed in Section \ref{sec:performance-assessment}, and Bayesian model selection,
 which will be explored in the subsequent subsections.
 The concepts and ideas discussed in this section are primarily derived from Chapter 5 of
 the textbook from \citeauthor{rasmussen_gaussian_2006}.
@@ -771,7 +768,7 @@ The highest level encompasses the set of possible model structures $M_i$.
 
 The posterior distribution over the parameters $\beta$ is determined using Bayes' rule:
 \begin{gather*}
-    p(w | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| X, \beta,
+    p(\beta | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| X, \beta,
         M_i)p(\beta|\theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
 \end{gather*}
 
@@ -781,16 +778,16 @@ and $p(\mathbf{Y} | X, \theta, M_i)$ represents the marginal likelihood.
 
 However, in the non-parametric setting of Gaussian processes, the parameter $\beta$ does not exist and is
 replaced by the function $f$ itself.
-Consequently, at the lowest level, the distribution over the function $f$ is modeled using a Gaussian process.
-Similarly to the parametric setting, the posterior distribution over the function value
-$f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ with $f_X = f(X)$ is given by:
+Consequently, at the lowest level, the distribution over the function $f$ is modeled using a Gaussian process,
+parametrized by $\theta$.
+Similarly to the parametric setting, the posterior distribution over the function values
+$f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ is given by:
 \begin{gather*}
-    p(f^{\ast} | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| f_X,
-        M_i)p(f| \theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
+    p(f^{\ast} | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| f^{\ast}, M_i)p(f^{\ast} | \theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
 \end{gather*}
 
 Please refer to Equation \ref{eq:posterior-gp} for the derivation of the posterior distribution over the
-function values $f^{\ast}$ for a general covariance function of the prior.
+function values $f^{\ast}$ when assuming $f \sim GP(0, k(x,x'))$.
 
 
 By assuming a prior distribution over the hyperparameters $\theta$, a similar expression can be obtained for
