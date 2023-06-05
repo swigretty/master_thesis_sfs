@@ -1,4 +1,4 @@
-\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\usepackage{amsfonts}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 
 We again consider a regression problem of mapping the input $x$ to an output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on the $f(x)$.
@@ -727,75 +727,61 @@ A more detailed description of covariance functions and their property can be fo
 in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
 \section{Performance Assessment}\label{sec:performance-assessment}
-As we have seen in section \ref{sec:gaussian-process-regression}, predictions
-in with Gaussian processes always provides a whole predictive distribution not only a point
-estimate.
-An expression for the predictive (posterior) distribution over $Y^{\ast}:= Y(x^{\ast})$
-for some arbitrary input $x^{\ast}$ has been provided in equation \ref{eq:posterior-gp-noise}.
-This allows to calculate the probability of the observed value $y^{\ast}$ at an input $x^{\ast}$
-under the predictive distribution.
 
-From expression of the predictive distribution in \ref{eq:posterior-gp-noise} we know:
+Gaussian process regression offers more than just inferring the posterior (predictive) mean
+of the response variable; it also provides insights into its posterior (predictive) distribution.
+To evaluate how effectively the predictive distribution explains the observed values,
+it is common practice to calculate the probability of these values based on the predictive distribution.
+Equation \ref{eq:posterior-gp-noise} presents an expression for the predictive distribution of
+$\mathbf{Y^{\ast}}:= Y(x^{\ast})$ at an arbitrary input $x^{\ast} \in \mathbb{R}^{n}$.
+Expanding the expression from \ref{eq:posterior-gp-noise} we obtain:
 
 \begin{gather}\label{eq:predictive-dist}
-    \log p(Y^{\ast} = y^{\ast}| \mathbf{Y}, X) =
-    - \frac{1}{2} \log \bar{\sigma}^2 -
-\frac{(y^{\ast} - \bar{\mu})^2}{2 \bar{\sigma}^2} - \frac{1}{2} \log 2 \pi
+    \log p(\mathbf{Y^{\ast}} = y^{\ast}| \mathbf{Y}, X) =
+    -\frac{n}{2} \log 2 \pi - \frac{1}{2} \log|\Sigma| -
+        \frac{1}{2}(x^{\ast} - \bar{\mu})^{\top} \Sigma^{-1} (x^{\ast} - \bar{\mu})
 \end{gather}
 where
-$\bar{\sigma}^2 = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}}$
+$\bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}}$
 and $\bar{\mu} = K_{x^{\ast}X} K_{XX}^{-1} \mathbf{Y}$.
 
-In contrast, computing the squared error between the true value $y^{\ast}$
-and the predictive mean $\bar{\mu}$ does completely ignore the predictive variance
-$\bar{\sigma}^2$.
+In contrast, when computing the sum of squared errors between the true values $y^{\ast}$ and the predictive mean $\bar{\mu}$,
+the predictive covariance matrix $\bar{\Sigma}$ is entirely disregarded.
+
+
 
 \section{Model Selection}
-\citeauthor{rasmussen_gaussian_2006} p.113.
+\subsection{Bayesian Model Selection}
 
-Model selection for Gaussian process regression boils down to finding the optimal
-covariance function with optimal hyperparameters.
-The most common approaches to solve this problem are Bayesian model selection and
-estimation of the generalization error using cross validation.
-A suitable loss function to be used
-for cross validation is based on the predictive probablity
-of your observations as desribed in section
-\ref{sec:performance-assessment}.
-Bayesian model selection on the other hand looks for the most probable model given the data.
-The rest of this section is dedicated to this approach, which is probably less known.
-
-%Bayesian model selection will be presented in the following subsection.
-%Specifically when leaving out training case $i$:
-%\begin{gather}\label{eq:loocv}
-%    \log p(Y^{\ast} = y^{\ast}| \mathbf{Y}, X) =
-%    - \frac{1}{2} \log \bar{\sigma}^2 -
-%\frac{(y^{\ast} - \bar{\mu})^2}{2 \bar{\sigma}^2} - \frac{1}{2} \log 2 \pi
-%\end{gather}
-
+Model selection in Gaussian process regression involves identifying the optimal covariance function
+along with the optimal hyperparameters.
+Two common approaches for model selection are cross-validation, which utilizes a performance-based loss
+function discussed in Section \ref{sec:performance-assessment}, and Bayesian model selection,
+which will be explored in the subsequent subsections.
+The concepts and ideas discussed in this section are primarily derived from Chapter 5 of
+the textbook from \citeauthor{rasmussen_gaussian_2006}.
 
 \subsection{Bayesian Model Selection}
-A hierarchical specification of the model helps to assess the probability of
-certain model configurations, given the data.
-Assuming a parametric model, the lowest level consists of the parameters $\beta$.
-On the next level are the hyperparameters $\theta$ which control the distribution of the
-parameters $\beta$.
-At the highest level is the set of possible model structures $M_i$.
 
-The posterior over the parameters $\beta$ is given by Bayes' rule:
+Bayesian model selection aims to find the most probable model given the available data
+using a hierarchical specification of the model.
+In a parametric model setting, the lowest level consists of the parameters $\beta$,
+followed by the hyperparameters $\theta$, which control the parameter distribution.
+The highest level encompasses the set of possible model structures $M_i$.
 
+The posterior distribution over the parameters $\beta$ is determined using Bayes' rule:
 \begin{gather*}
     p(w | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| X, \beta,
         M_i)p(\beta|\theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
 \end{gather*}
 
-We call $p(\mathbf{Y}| X, \beta, M_i)$ likelihood,
-$p(\beta|\theta, M_i)$ the prior
-and $p(\mathbf{Y}|X, \theta, M_i)$ the marginal likelihood.
+Here, $p(\mathbf{Y} | X, \beta, M_i)$ represents the likelihood, $p(\beta | \theta, M_i)$ denotes the prior,
+and $p(\mathbf{Y} | X, \theta, M_i)$ represents the marginal likelihood.
 
 
-However, in the non-parametric setting of Gaussian processes, the parameter $\beta$ do not exist and get replaced by
-the function $f$ itself.
-Hence, at the lowest level one models the distribution over the function $f$ using a Gaussian process.
+However, in the non-parametric setting of Gaussian processes, the parameter $\beta$ does not exist and is
+replaced by the function $f$ itself.
+Consequently, at the lowest level, the distribution over the function $f$ is modeled using a Gaussian process.
 Similarly to the parametric setting, the posterior distribution over the function value
 $f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ with $f_X = f(X)$ is given by:
 \begin{gather*}
@@ -803,32 +789,34 @@ $f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ with $f_X = f(X)$ is
         M_i)p(f| \theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
 \end{gather*}
 
-Revisit equation \ref{eq:posterior-gp} on how to derive the posterior distribution
-over the function values $f^{\ast}$ for some general covariance function of the prior.
+Please refer to Equation \ref{eq:posterior-gp} for the derivation of the posterior distribution over the
+function values $f^{\ast}$ for a general covariance function of the prior.
 
-If we additionally assume a prior distribution over the hyperparameters $\theta$,
-there is again a similar expression for the posterior over the hyperparameters:
+
+By assuming a prior distribution over the hyperparameters $\theta$, a similar expression can be obtained for
+the posterior distribution over the hyperparameters:
 \begin{gather*}
     p(\theta | \mathbf{Y}, X, M_i) = \frac{p( \mathbf{Y}| X,M_i, \theta)
         p(\theta| M_i)}{p(\mathbf{Y}|X, M_i)}
 \end{gather*}
-
-Maximising $p(\theta | \mathbf{Y}, X, M_i)$ then yields the
-optimal hyperparameters. However, when assuming non gaussian priors on $\theta$,
-evaluating $p(\theta | \mathbf{Y}, X, M_i)$ might
-be difficult and instead one often just maximizes the marginal likelihood
-$p(\mathbf{Y}|X, \theta, M_i)$ with respect to the hyperparameters $\theta$.
-This approach is equal to assuming uniform distributions over the hyperparameters.
-The next subsection will provide more details on chow to calculate and maximize the
+Maximizing $p(\theta | \mathbf{Y}, X, M_i)$ yields the optimal hyperparameters.
+However, when non-Gaussian priors are assumed for $\theta$, evaluating $p(\theta | \mathbf{Y}, X, M_i)$
+can be challenging.
+In such cases, it is common to maximize the marginal likelihood $p(\mathbf{Y} | X, \theta, M_i)$
+with respect to the hyperparameters $\theta$.
+This approach is equivalent to assuming uniform distributions over the hyperparameters.
+The next subsection will provide more details on how to calculate and maximize the
 marginal likelihood for Gaussian process regression.
 
+Note that the scheme mentioned above can be extended to maximize the posterior over the model structures
+$M_i$ in order to determine the optimal model structure.
+In Gaussian process regression, this corresponds to finding the optimal kernel function type.
+However, instead of directly evaluating the posterior, it is often achieved through simultaneous optimization of
+the marginal likelihood with respect to the model structure $M_i$ and its hyperparameters $\theta$.
+By jointly optimizing these components, we can effectively identify the most suitable kernel function for
+the given problem.
 
-Note, that the scheme form above can be extended to maximising the posterior over the model structures $M_i$
-to find the optimal model structure.
-In Gaussian process regression this can be viewed as finding the optimal kernel function type,
-which is often not done through evaluation of the posterior but
-by simultaneous optimization of the marginal likelihood with respect to the model
-structure $M_i$ and its hyperparameters $\theta$.
+
 
 %The posterior distribution over the model $M_i$ is given by:
 %\begin{gather*}
@@ -840,38 +828,39 @@ structure $M_i$ and its hyperparameters $\theta$.
 
 \subsubsection{Marginal Likelihood}
 
-Recall the expression for the marginal likelihood from subsection \ref{subsec:bayesian-linear-regression}
-assuming Bayesian linear regression with prior $p(\beta) = \N(0, \Sigma_p)$ and likelihood
-$p(\mathbf{Y} | X, \beta) = \N(X \beta, \Sigma_e)$:
+In the context of Bayesian linear regression, the marginal likelihood expression was previously
+introduced in subsection \ref{subsec:bayesian-linear-regression},
+assuming a prior distribution of $p(\beta) = \mathcal{N}(0, \Sigma_p)$ and a likelihood function of
+$p(\mathbf{Y} | X, \beta) = \mathcal{N}(X \beta, \Sigma_e)$.
+The following expression for the marginal likelihood is obtained by marginalizing over $\beta$:
 
 \begin{gather}\label{eq:marginal-likelihood2}
     p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
 \end{gather}
 
-In section \ref{sec:gaussian-process-regression} we have seen how this can also be expressed
-as a distribution over the function $Y(x)$:
+Furthermore, as discussed in section \ref{sec:gaussian-process-regression},
+the marginal likelihood can also be represented as a distribution over the function $Y(x)$:
 \begin{gather*}
     Y(x) \sim GP(0, k(x, x'))
 \end{gather*}
-With kernel function $k(x,x')$ such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$.
+Here, the kernel function $k(x, x')$ is chosen such that for an index set $X$,
+we obtain $K_{XX} = X \Sigma_p X^{\top} + \Sigma_e$.
 
-As by the definition of a Gaussian process $\mathbf{Y}|X$ has multivariate normal distribution
-with covariance matrix $K_{XX}(\theta)$, which is itself a function of its hyperparameters $theta$.
+By the definition of a Gaussian process, $\mathbf{Y}|X$ follows a multivariate normal distribution
+with a covariance matrix of $K_{XX}(\theta)$, which is a function of the hyperparameters $\theta$.
 The log marginal likelihood is hence given by:
 \begin{gather}\label{eq:gaussian-marginal-likelihood}
-    log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
-    \frac{1}{2} log \det{K_{XX}(\theta)} - \frac{n}{2} \log 2 \pi
+    \log p(\mathbf{Y} | X, \theta) = - \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y} -
+    \frac{1}{2} \log |K_{XX}(\theta)| - \frac{n}{2} \log 2 \pi
 \end{gather}
 
-These expressions are obtained by marginalization over $\beta$ or the function $f$
-for the Bayesian linear regression and the more general Gaussian process case respectively.
-
-Since marginal likelihood already incorporates a trade-off between model fit and
-model complexity it is a good candidate for solving the model selection problem.
+Since the marginal likelihood already incorporates a trade-off between model fit and
+model complexity, it is a suitable candidate for solving the model selection problem.
 The first term, $- \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y}$,
-accounts for a good data-fit. The second term, $\frac{1}{2} log \det{K_{XX}(\theta)}$,
-penalizes more complex models and only depends on the inputs $X$ and the covariance function. The
-last term $\frac{n}{2} \log 2 \pi$ is a normalization constant.
+represents a measure of the data fit. The second term, $\frac{1}{2} \log |K_{XX}(\theta)|$,
+penalizes more complex models. The last term $\frac{n}{2} \log 2 \pi$ serves as a normalization constant.
+
+
 
 
 
