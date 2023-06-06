@@ -1,4 +1,4 @@
-\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\usepackage{amsmath}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 The objective of regression is generally to establish a mapping between the input variable $x$ and
 its corresponding output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on $f(x)$.
@@ -726,6 +726,46 @@ TODO: different kernels, stationary kernels, link to power spectral density, wit
 A more detailed description of covariance functions and their property can be found
 in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
+
+
+\subsection{Additive Kernels and Decomposition of Predictive Mean}
+
+Additivity of the kernel implies additivity of the predictive mean.
+For instance if we choose $Y(x) \sim GP(0, k(x,x'))$ with $k(x,x') = k_1(x, x') + k_2(x,x')$, then
+the predictive (posterior) mean $\bar{\mu}(x^{\ast})$
+is given by:
+\begin{align*}
+    \bar{\mu}(x^{\ast}) &= (K_{1, x^{\ast}X} + K_{2, x^{\ast}X}) (K_{XX})^{-1} \mathbf{Y}
+    = K_{1, x^{\ast}X} (K_{XX})^{-1} \mathbf{Y} + K_{2, x^{\ast}X}) (K_{XX})^{-1} \mathbf{Y} \\
+    &= \bar{\mu}_1(x^{\ast}) + \bar{\mu}_2(x^{\ast})
+\end{align*}
+
+where:
+\begin{gather*}
+    K_{1, x^{\ast}X} =
+    \begin{bmatrix}
+        k_1(x_1, x^{\ast}) & \dots & k_1(x_n,  x^{\ast})
+    \end{bmatrix}, \\
+    K_{2, x^{\ast}X} =
+    \begin{bmatrix}
+        k_2(x_1, x^{\ast}) & \dots & k_2(x_n,  x^{\ast})
+    \end{bmatrix},
+\end{gather*}
+and
+\begin{gather*}
+        K_{XX} =
+    \begin{bmatrix}
+        k(x_1, x_1) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots \\
+        k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix}
+\end{gather*}
+
+This decomposition allows us to study
+the contribution of the different (additive) kernel components on the predictive mean function.
+
+
+
 \section{Performance Assessment}\label{sec:performance-assessment}
 Inference, in the case of Gaussian process regression, revolves around the posterior (predictive) distribution
 of the response variable.
@@ -859,5 +899,18 @@ model complexity, it is a suitable candidate for solving the model selection pro
 The first term, $- \frac{1}{2} \mathbf{Y}^{\top} K_{XX}^{-1}(\theta) \mathbf{Y}$,
 represents a measure of the data fit. The second term, $\frac{1}{2} \log |K_{XX}(\theta)|$,
 penalizes more complex models. The last term $\frac{n}{2} \log 2 \pi$ serves as a normalization constant.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
