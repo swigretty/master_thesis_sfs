@@ -84,7 +84,9 @@ for mode in ["fixed", "bounded", "unbounded"]:
 
     _combination_kernels = {"sinrbf": _simple_kernels["sin_day"] * _simple_kernels["rbf_long"],
                             "sinrbf_rbf":  _simple_kernels["sin_day"] * _simple_kernels["rbf_medium"] +
-                                           _simple_kernels["rbf_long"]}
+                                           _simple_kernels["rbf_long"],
+                            "sin_rbf": _simple_kernels["sin_day"] + _simple_kernels["rbf_long"]
+                            }
     _kernels = {**_simple_kernels, **_combination_kernels}
 
     ou_kernels = {k: (_kernels["ou"] + v if k != "ou" else v) for k, v in _kernels.items()}

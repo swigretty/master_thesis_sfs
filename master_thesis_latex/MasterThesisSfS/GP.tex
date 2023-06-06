@@ -728,25 +728,29 @@ in \citeauthor{rasmussen_gaussian_2006} (chapter 4).
 
 \section{Performance Assessment}\label{sec:performance-assessment}
 Inference, in the case of Gaussian process regression, revolves around the posterior (predictive) distribution
-of the response variable. To evaluate how effectively the predictive distribution explains the observed values,
+of the response variable.
+To evaluate how effectively the predictive distribution explains the observed values
+$\mathbf{y^{\ast}}$,
 it is common practice to calculate the probability of these values based on the predictive distribution.
 Equation \ref{eq:posterior-gp-noise} presents an expression for the predictive distribution of
-$\mathbf{Y^{\ast}}:= Y(x^{\ast})$ at an arbitrary input $x^{\ast} \in \mathbb{R}^{n}$.
+$\mathbf{Y^{\ast}}:= [Y(x_1^{\ast}), \dots, Y(x_k^{\ast})]^{\top}$ at arbitrary inputs
+$X^{\ast} = [x_1^{\ast}, \dots, x_k^{\ast}]$.
 Expanding the expression from \ref{eq:posterior-gp-noise} we obtain:
 
 \begin{gather}\label{eq:predictive-dist}
-    \log p(\mathbf{Y^{\ast}} = y^{\ast}| \mathbf{Y}, X) =
-    -\frac{n}{2} \log 2 \pi - \frac{1}{2} \log|\Sigma| -
-        \frac{1}{2}(x^{\ast} - \bar{\mu})^{\top} \Sigma^{-1} (x^{\ast} - \bar{\mu})
+    \log p(\mathbf{Y^{\ast}} = \mathbf{y^{\ast}}| \mathbf{Y}, X) =
+    -\frac{k}{2} \log 2 \pi - \frac{1}{2} \log|\bar{\Sigma}| -
+        \frac{1}{2}(\mathbf{y^{\ast}} - \bar{\mu})^{\top} \bar{\Sigma}^{-1} (\mathbf{y^{\ast}} - \bar{\mu})
 \end{gather}
 where
-$\bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}}$
-and $\bar{\mu} = K_{x^{\ast}X} K_{XX}^{-1} \mathbf{Y}$.
+$\bar{\Sigma} = K_{X^{\ast}X^{\ast}} - K_{X^{\ast}X} K_{XX}^{-1} K_{XX^{\ast}}$
+and $\bar{\mu} = K_{X^{\ast}X} K_{XX}^{-1} \mathbf{Y}$.
 
-In contrast, when computing the sum of squared errors between the true values $y^{\ast}$ and the predictive mean $\bar{\mu}$,
-the predictive covariance matrix $\bar{\Sigma}$ is entirely disregarded.
-
-
+The higher the log probability, the better the fit to the data.
+In contract to other performance metrics it accounts for the complete predictive
+distribution rather than just a point estimate.
+For instance, when employing the sum of squared errors between the true values $y^{\ast}$ and the predictive mean
+$\bar{\mu}$, the predictive covariance matrix $\bar{\Sigma}$ is completely ignored.
 
 \section{Model Selection}
 

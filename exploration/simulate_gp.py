@@ -141,6 +141,7 @@ class GPSimulator():
             for k, v in decomposed_dict.items():
                 ax[2, 1].plot(self.x, v, label=k)
 
+            ax[2, 0].legend()
             fig.tight_layout()
             if figname is not None:
                 self.output_path.mkdir(parents=True, exist_ok=True)
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
-    kernels_limited = [k for k in kernels_limited if k in ["sin_day"]]
+    kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
     data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
