@@ -782,17 +782,16 @@ and $p(\mathbf{Y} | X, \theta, M_i)$ represents the marginal likelihood.
 
 However, in the non-parametric setting of Gaussian processes, the parameter $\beta$ does not exist and is
 replaced by the function $f$ itself.
-Consequently, at the lowest level, the distribution over the function $f$ is modeled using a Gaussian process,
-parametrized by $\theta$.
+Consequently, at the lowest level, the distribution over the function $f$ is modeled using a Gaussian process.
 Similarly to the parametric setting, the posterior distribution over the function values
 $f^{\ast} = f(x^{\ast})$ at some arbitrary input $x^{\ast}$ is given by:
 \begin{gather*}
     p(f^{\ast} | \mathbf{Y}, X, \theta, M_i) = \frac{p( \mathbf{Y}| f^{\ast}, M_i)p(f^{\ast} | \theta, M_i)}{p(\mathbf{Y}|X, \theta, M_i)}
 \end{gather*}
 
-Please refer to Equation \ref{eq:posterior-gp} for the derivation of the posterior distribution over the
-function values $f^{\ast}$ when assuming $f \sim GP(0, k(x,x'))$.
-
+This is equivalent to the expression in \ref{eq:posterior-gp} for the posterior distribution over the
+function values $f^{\ast}$ when assuming a Gaussian process prior $f \sim GP(0, k(x,x'))$.
+However, in the equation above, $k(x,x')$ is expressed through $\theta$ and $M_i$.
 
 By assuming a prior distribution over the hyperparameters $\theta$, a similar expression can be obtained for
 the posterior distribution over the hyperparameters:
