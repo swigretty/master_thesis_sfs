@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from functools import lru_cache
 from copy import copy
 import pandas as pd
@@ -26,11 +26,19 @@ mpl.style.use('seaborn-v0_8')
 
 @dataclass
 class GPData():
+    """
+    gp1 = GPData(x=np.array([1]), y = np.array([2]))
+    """
     x: np.array
     y: np.array
-    n: int
     y_mean: np.array = None
     y_cov: np.array = None
+
+    def __len__(self):
+        return len(self.x)
+
+    def to_df(self):
+        return pd.DataFrame(asdict(self))
 
 
 def weights_func_value(y):
@@ -41,7 +49,7 @@ class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH,
-                 data_fraction_weights=None):
+                 data_fraction_weights=None, data_fraction=0.3, data_true=None):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
@@ -55,6 +63,8 @@ class GPSimulator():
         self.offset = mean_f(0)
 
         self.data_fraction_weights = data_fraction_weights
+        self.data_fraction = data_fraction
+        self.data_true = data_true
 
         if kernel_fit is None:
             kernel_fit = kernel_sim
@@ -72,81 +82,98 @@ class GPSimulator():
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
             self.x, n_samples=n_samples, mean_f=self.mean_f)
 
+        # if n_samples == 1:
+        #     y_prior = y_prior.reshape(-1)
+        #     y_prior_mean = y_prior_mean.reshape(-1)
+
         if self.meas_noise:
             # TODO should this be scaled as well ?
             # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
             y_prior = y_prior + self.meas_noise * np.random.standard_normal((y_prior.shape))
             y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
-        return GPData(x=self.x, y=y_prior, y_mean=y_prior_mean, y_cov=y_prior_cov, n=len(self.x))
 
-    def subsample_data_sim(self, data_sim, data_fraction=0.3):
-        if callable(self.data_fraction_weights):
-            weights = self.data_fraction_weights(data_sim.y)
-        else:
-            weights = self.data_fraction_weights
+        data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean[:, idx], y_cov=y_prior_cov) for idx in
+                range(n_samples)]
 
-        idx = get_red_idx(data_sim.n, data_fraction=data_fraction, weights=weights)
-        y_red = data_sim.y[idx, ]
-        x_red = data_sim.x[idx]
+        return data
 
-        data_sim_sub = GPData(x=x_red, y=y_red, n=len(x_red))
-        return data_sim_sub
+    @property
+    def data_true(self):
+        return self._data_true
 
-    def plot_prior(self, ax, data_prior):
-        plot_lim = 30
-        y_prior_std = np.diag(data_prior.y_cov)
-        ylim = None
-        if max(y_prior_std) > plot_lim:
-            ylim = [np.min(data_prior.y[0, :]) - plot_lim, np.max(data_prior.y[0, :]) + plot_lim]
-        plot_gpr_samples(ax, data_prior.x, data_prior.y_mean, y_prior_std, y=data_prior.y, ylim=ylim)
-        ax.set_title("Samples from prior distribution")
+    @data_true.setter
+    def data_true(self, data=None):
+        self._data_true = data
+        if data is None:
+            self._data_true = self.sim_gp(n_samples=1)[0]
 
-    def choose_sample_from_prior(self, data_prior, data_index: int = 0):
-        data_single = copy(data_prior)
-        data_single.y = data_prior.y[:, data_index]
-        return data_single
+    @property
+    @lru_cache()
+    def data(self):
+        return self.subsample_data(self.data_true, self.data_fraction, data_fraction_weights=self.data_fraction_weights)
 
-    def fit(self, data):
-        self.gpm_fit.fit(data.x, data.y)
+    @property
+    def data_prior(self):
+        if hasattr(self, "_data_prior"):
+            return self._data_prior
+        self.data_prior = self.sim_gp(n_samples=5)
+        return self._data_prior
 
-    def plot_posterior(self, ax, data, y_true=None):
+    @data_prior.setter
+    def data_prior(self, data):
+        data.y = np.hstack(self.data_true.y, data.y)
+        self._data_prior = data
+
+    @property
+    def pram_sim(self):
+        return self.extract_params_from_kernel(self.kernel_sim)
+
+    @property
+    def param_fit(self):
+        if not hasattr(self.gpm_fit, "X_train_"):
+            raise "GP has not been fitted yet"
+        return self.extract_params_from_kernel(self.gpm_fit.kernel_)
+
+    @property
+    @lru_cache()
+    def data_post(self):
         y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1)
-        plot_posterior(ax, self.x, y_post_mean, np.diag(y_post_cov), data.x, data.y, y_true=y_true)
+        return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
 
-    def sim_fit_plot(self, data_fraction_list=np.logspace(-1.5, 0, 4), figname=None):
-        data_prior = self.sim_gp()
-        data_true = self.choose_sample_from_prior(data_prior, data_index=0)
+    @property
+    def test_idx(self):
+        x = np.setdiff1d(self.data_post.x, self.data, assume_unique=True)
+        return self.x == x
 
-        self.gpm_sim.fit(data_true.x, data_true.y)
-        decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
+    @property
+    def train_idx(self):
+        return self.x == self.data.x
 
-        for data_fraction in data_fraction_list:
-            logger.info(f"Simulation with {data_fraction=}")
-            fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(30, 15))
-            self.plot_prior(ax[0, 0], data_prior)
-            plot_kernel_function(ax[0, 1], data_true.x, self.kernel_sim)
+    @property
+    def data_post_test(self):
+        idx = self.test_idx
+        return GPData(x=self.data_post.x[idx], y=self.data_post.y[idx], y_mean=self.data_post.y_mean[idx],
+                      y_cov=self.data_post.y_cov[idx, idx])
 
-            data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
+    @property
+    def data_post_train(self):
+        idx = self.train_idx
+        return GPData(x=self.data_post.x[idx], y=self.data_post.y[idx], y_mean=self.data_post.y_mean[idx],
+                      y_cov=self.data_post.y_cov[idx, idx])
 
-            self.fit(data)
+    @staticmethod
+    def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None):
+        if callable(data_fraction_weights):
+            weights = data_fraction_weights(data.y)
+        else:
+            weights = data_fraction_weights
 
-            decomposed_dict = self.gpm_fit.predict_mean_decomposed(self.x)
+        idx = get_red_idx(len(data), data_fraction=data_fraction, weights=weights)
+        y_red = data.y[idx]
+        x_red = data.x[idx]
 
-            self.plot_posterior(ax[1, 0], data, y_true=data_true.y)
-            plot_kernel_function(ax[1, 1], data_true.x, self.gpm_fit.kernel_)
-
-            for k, v in decomposed_dict_sim.items():
-                ax[2, 0].plot(self.x, v, label=k)
-
-            for k, v in decomposed_dict.items():
-                ax[2, 1].plot(self.x, v, label=k)
-
-            ax[2, 0].legend()
-            fig.tight_layout()
-            if figname is not None:
-                self.output_path.mkdir(parents=True, exist_ok=True)
-                fig.savefig(self.output_path / f"{figname}_{data_fraction:.2f}.pdf")
-
+        data_sim_sub = GPData(x=x_red, y=y_red)
+        return data_sim_sub
 
     @staticmethod
     def calculate_ci(se, mean, alpha=0.05, dist=norm):
@@ -181,7 +208,83 @@ class GPSimulator():
         logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
         return kernel_
 
-    def test_ci(self, n_samples=100, data_fraction=0.3):
+    def choose_sample_from_prior(self, data_index: int = 0):
+        data_single = copy(self.data_prior)
+        data_single.y = self.data_prior.y[:, data_index]
+        return data_single
+
+    def fit(self):
+        self.gpm_fit.fit(self.data.x, self.data.y)
+
+    def plot_prior(self, ax):
+        plot_lim = 30
+
+        if isinstance(self.data_prior, list):
+            y = np.vstack(data.y for data in self.data_prior)
+
+        data0 = self.data_prior[0]
+
+        y_prior_std = np.diag(data0.y_cov)
+        ylim = None
+        if max(y_prior_std) > plot_lim:
+            ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
+        plot_gpr_samples(ax, data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim)
+        ax.set_title("Samples from Prior Distribution")
+
+    def plot_posterior(self, ax):
+        plot_posterior(ax, self.data_post.x, self.data_post.y_mean, np.diag(self.data_post.y_cov), self.data.x,
+                       self.data.y, y_true=self.data_true.y)
+        ax.set_title("Predictive Distribution")
+
+    def plot(self, figname=None):
+        nrows = 3
+        ncols = 2
+
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+
+        self.plot_prior(ax[0,0])
+        plot_kernel_function(ax[0, 1], self.x, self.kernel_sim)
+
+        self.plot_posterior(ax[1, 0])
+        plot_kernel_function(ax[1, 1], self.x, self.gpm_fit.kernel_)
+
+        for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
+            ax[2, 0].plot(self.x, v, label=k)
+        ax[2, 0].legend()
+
+        for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
+            ax[2, 1].plot(self.x, v, label=k)
+
+        fig.tight_layout()
+
+        if figname is not None:
+            self.output_path.mkdir(parents=True, exist_ok=True)
+            fig.savefig(self.output_path / f"{figname}_{self.data_fraction:.2f}.pdf")
+
+    def evaluate_ci_for_overall_mean(self):
+        covered = False
+        ci = self.calculate_ci(self.se_avg(self.data_post.y_cov), np.mean(self.data_post.y_mean))
+        if ci[0] < np.mean(self.data_true.y) < ci[1]:
+            covered = True
+        return {"ci": ci, "covered": covered, "ci_width": ci[1]-ci[0]}
+
+    def evaluate(self):
+        ci_overall_mean = self.evaluate_ci_for_overall_mean()
+        param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
+
+        return
+
+    def get_predictive_probability_fit(self, x, y):
+        mean, std = self.gpm_fit.predict(x, return_std=True)
+        return norm.pdf((y-mean)/std)
+
+    def get_predictive_probability_test(self):
+        idx = self.x == self.data_post_test.x
+        y = self.data_true.y[idx]
+        mean = self.data_post_test
+        return norm.pdf((y-mean)/std)
+
+    def sim_and_assess_performance(self, n_samples=100, data_fraction=0.3):
         """
         simulate from the prior,
         then simulate from the model using those values from the prior, and
@@ -226,9 +329,46 @@ class GPSimulator():
                 "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim, "param_rel_error": param_rel_error,
                 "true_mean_mean": np.mean(true_mean_list), "true_mean_std": np.std(true_mean_list)}
 
+    def mean_decomposition_plot(self, figname=None):
+        data = self.sim_gp(n_samples=1)
+        self.gpm_sim.fit(data.x, data.y)
+
+        y_post, y_post_mean, y_post_cov = self.gpm_sim.sample_from_posterior(self.x, n_samples=1)
+        decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
+
+        nrows = 1
+        ncols = 1
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+
+        ax.plot(data.x, data.y)
+
+        sum_of_v = np.zeros(len(self.x))
+        for k, v in decomposed_dict_sim.items():
+            ax.plot(self.x, v, label=k, linestyle="dashed")
+            sum_of_v += v
+
+        assert np.all(sum_of_v - y_post_mean < 0.00000001)
+        assert np.all(y_post_mean - data.y < 0.00000001)
+        # ax.plot(data.x, sum_of_v, label="sum")
+        # ax.plot(data.x, y_post_mean, label="post_mean")
+        ax.legend()
+
+        fig.tight_layout()
+
+        if figname is not None:
+            self.output_path.mkdir(parents=True, exist_ok=True)
+            fig.savefig(self.output_path / f"{figname}_mean_dec.pdf")
+
+
+def plot_mean_decompose(kernel="sin_rbf"):
+    gpm = GPSimulator(kernel_sim=OU_KERNELS["fixed"][kernel], **base_config)
+    gpm.mean_decomposition_plot(figname=kernel)
+
 
 if __name__ == "__main__":
     setup_logging()
+
+    plot_mean_decompose()
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
