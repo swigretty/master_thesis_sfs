@@ -9,10 +9,10 @@ import numpy as np
 from logging import getLogger
 from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
-
+from itertools import permutations
 from exploration.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx, get_sesonal_weights
@@ -23,6 +23,7 @@ logger = getLogger(__name__)
 
 mpl.style.use('seaborn-v0_8')
 
+permutations(iterable, r=None)¶
 
 @dataclass
 class GPData():
@@ -40,6 +41,15 @@ class GPData():
     def to_df(self):
         return pd.DataFrame(asdict(self))
 
+    @classmethod
+    def from_df(cls, df):
+        return cls(**df.to_dict())
+
+    def __getitem__(self, idx):
+        new_data = self.__class__(
+            **{k: (np.array([[v[io, ii] for ii in idx] for io in idx]) if v.ndim == 2 else v[idx])
+               for k, v in asdict(self).items() if v is not None})
+        return new_data
 
 def weights_func_value(y):
     return y - np.min(y)
@@ -149,31 +159,14 @@ class GPSimulator():
     def train_idx(self):
         return self.x == self.data.x
 
-    @property
-    def data_post_test(self):
-        idx = self.test_idx
-        return GPData(x=self.data_post.x[idx], y=self.data_post.y[idx], y_mean=self.data_post.y_mean[idx],
-                      y_cov=self.data_post.y_cov[idx, idx])
-
-    @property
-    def data_post_train(self):
-        idx = self.train_idx
-        return GPData(x=self.data_post.x[idx], y=self.data_post.y[idx], y_mean=self.data_post.y_mean[idx],
-                      y_cov=self.data_post.y_cov[idx, idx])
-
     @staticmethod
     def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None):
         if callable(data_fraction_weights):
             weights = data_fraction_weights(data.y)
         else:
             weights = data_fraction_weights
-
         idx = get_red_idx(len(data), data_fraction=data_fraction, weights=weights)
-        y_red = data.y[idx]
-        x_red = data.x[idx]
-
-        data_sim_sub = GPData(x=x_red, y=y_red)
-        return data_sim_sub
+        return data[idx]
 
     @staticmethod
     def calculate_ci(se, mean, alpha=0.05, dist=norm):
@@ -272,17 +265,12 @@ class GPSimulator():
         ci_overall_mean = self.evaluate_ci_for_overall_mean()
         param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
 
+        pred_prob_test = self.get_predictive_probability_fit(self.data_post[self.test_idx],
+                                                             self.data_true.y[self.test_idx])
         return
 
-    def get_predictive_probability_fit(self, x, y):
-        mean, std = self.gpm_fit.predict(x, return_std=True)
-        return norm.pdf((y-mean)/std)
-
-    def get_predictive_probability_test(self):
-        idx = self.x == self.data_post_test.x
-        y = self.data_true.y[idx]
-        mean = self.data_post_test
-        return norm.pdf((y-mean)/std)
+    def get_predictive_probability_fit(self, data_predict: GPData, y):
+        return multivariate_normal.pdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
 
     def sim_and_assess_performance(self, n_samples=100, data_fraction=0.3):
         """
