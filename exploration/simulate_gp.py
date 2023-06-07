@@ -23,7 +23,6 @@ logger = getLogger(__name__)
 
 mpl.style.use('seaborn-v0_8')
 
-permutations(iterable, r=None)¶
 
 @dataclass
 class GPData():
@@ -46,10 +45,16 @@ class GPData():
         return cls(**df.to_dict())
 
     def __getitem__(self, idx):
+        try:
+            iter(idx)
+        except TypeError:
+            idx = [idx]
+
         new_data = self.__class__(
             **{k: (np.array([[v[io, ii] for ii in idx] for io in idx]) if v.ndim == 2 else v[idx])
                for k, v in asdict(self).items() if v is not None})
         return new_data
+
 
 def weights_func_value(y):
     return y - np.min(y)
@@ -80,7 +85,8 @@ class GPSimulator():
             kernel_fit = kernel_sim
             # TODO only allow for centered input
             # if not normalize_y:
-            #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2, constant_value_bounds="fixed")
+            #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2,
+            #     constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None)
@@ -152,12 +158,18 @@ class GPSimulator():
 
     @property
     def test_idx(self):
-        x = np.setdiff1d(self.data_post.x, self.data, assume_unique=True)
-        return self.x == x
+        """
+        or
+        x = np.setdiff1d(self.data_post.x, self.data.x, assume_unique=True)
+        return np.arange(len(self.x))[np.isin(self.x, x)]
+
+        """
+        return [idx for idx in range(len(self.x)) if self.x[idx] not in
+                self.data.x]
 
     @property
     def train_idx(self):
-        return self.x == self.data.x
+        return np.arange(len(self.x))[np.isin(self.x, self.data.x)]
 
     @staticmethod
     def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None):
@@ -235,7 +247,7 @@ class GPSimulator():
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
 
-        self.plot_prior(ax[0,0])
+        self.plot_prior(ax[0, 0])
         plot_kernel_function(ax[0, 1], self.x, self.kernel_sim)
 
         self.plot_posterior(ax[1, 0])
@@ -269,53 +281,54 @@ class GPSimulator():
                                                              self.data_true.y[self.test_idx])
         return
 
-    def get_predictive_probability_fit(self, data_predict: GPData, y):
+    @staticmethod
+    def get_predictive_probability_fit(data_predict: GPData, y: np.typing.ArrayLike):
         return multivariate_normal.pdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
 
-    def sim_and_assess_performance(self, n_samples=100, data_fraction=0.3):
-        """
-        simulate from the prior,
-        then simulate from the model using those values from the prior, and
-        estimate the parameters using the same prior.
-        """
-        data_prior = self.sim_gp(n_samples=n_samples)
-        n_ci_coverage = 0
-        ci_array = np.zeros((n_samples, 2))
-
-        param_fit_list = []
-        param_sim = self.extract_params_from_kernel(self.kernel_sim)
-        true_mean_list = []
-
-        for sample_index in range(n_samples):
-            data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
-            data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
-            self.fit(data)
-
-            y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
-            ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
-            ci_array[sample_index, :] = ci
-
-            kernel_fit = self.gpm_fit.kernel_
-            param_fit_list.append(self.extract_params_from_kernel(kernel_fit))
-
-            true_mean = np.mean(data_true.y)
-            true_mean_list.append(true_mean)
-
-            if ci[0] < true_mean < ci[1]:
-                n_ci_coverage += 1
-            else:
-                logger.info(f"true mean {np.mean(data_true.y)} not covered by confidence intervals {ci} \n "
-                            f"{kernel_fit=} vs. {self.kernel_sim=}")
-
-        param_fit_df = pd.DataFrame(param_fit_list)
-        param_fit_mean = param_fit_df.mean(axis=0).to_dict()
-        param_rel_error = {k: (v-param_sim[k])/abs(param_sim[k]) for k, v in param_fit_mean.items()}
-        param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.000001}
-        ci_coverage = n_ci_coverage/n_samples
-        mean_ci_width = np.mean(np.diff(ci_array, axis=1))
-        return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
-                "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim, "param_rel_error": param_rel_error,
-                "true_mean_mean": np.mean(true_mean_list), "true_mean_std": np.std(true_mean_list)}
+    # def sim_and_assess_performance(self, n_samples=100, data_fraction=0.3):
+    #     """
+    #     simulate from the prior,
+    #     then simulate from the model using those values from the prior, and
+    #     estimate the parameters using the same prior.
+    #     """
+    #     data_prior = self.sim_gp(n_samples=n_samples)
+    #     n_ci_coverage = 0
+    #     ci_array = np.zeros((n_samples, 2))
+    #
+    #     param_fit_list = []
+    #     param_sim = self.extract_params_from_kernel(self.kernel_sim)
+    #     true_mean_list = []
+    #
+    #     for sample_index in range(n_samples):
+    #         data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
+    #         data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
+    #         self.fit(data)
+    #
+    #         y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
+    #         ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
+    #         ci_array[sample_index, :] = ci
+    #
+    #         kernel_fit = self.gpm_fit.kernel_
+    #         param_fit_list.append(self.extract_params_from_kernel(kernel_fit))
+    #
+    #         true_mean = np.mean(data_true.y)
+    #         true_mean_list.append(true_mean)
+    #
+    #         if ci[0] < true_mean < ci[1]:
+    #             n_ci_coverage += 1
+    #         else:
+    #             logger.info(f"true mean {np.mean(data_true.y)} not covered by confidence intervals {ci} \n "
+    #                         f"{kernel_fit=} vs. {self.kernel_sim=}")
+    #
+    #     param_fit_df = pd.DataFrame(param_fit_list)
+    #     param_fit_mean = param_fit_df.mean(axis=0).to_dict()
+    #     param_rel_error = {k: (v-param_sim[k])/abs(param_sim[k]) for k, v in param_fit_mean.items()}
+    #     param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.000001}
+    #     ci_coverage = n_ci_coverage/n_samples
+    #     mean_ci_width = np.mean(np.diff(ci_array, axis=1))
+    #     return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
+    #             "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim, "param_rel_error": param_rel_error,
+    #             "true_mean_mean": np.mean(true_mean_list), "true_mean_std": np.std(true_mean_list)}
 
     def mean_decomposition_plot(self, figname=None):
         data = self.sim_gp(n_samples=1)
