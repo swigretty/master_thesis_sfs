@@ -3,7 +3,6 @@ from dataclasses import dataclass, asdict
 from functools import lru_cache
 from copy import copy
 import pandas as pd
-from logging import getLogger
 import matplotlib.pyplot as plt
 import numpy as np
 from logging import getLogger
@@ -12,7 +11,6 @@ import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
-from itertools import permutations
 from exploration.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
 from exploration.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx, get_sesonal_weights
@@ -50,9 +48,9 @@ class GPData():
         except TypeError:
             idx = [idx]
 
-        new_data = self.__class__(
-            **{k: (np.array([[v[io, ii] for ii in idx] for io in idx]) if v.ndim == 2 else v[idx])
-               for k, v in asdict(self).items() if v is not None})
+        y_cov_new = np.array([[self.y_cov[io, ii] for ii in idx] for io in idx])
+        kwargs1D = {k: v[idx] for k, v in asdict(self).items() if (v is not None) and (k != "y_cov")}
+        new_data = self.__class__(**{"y_cov": y_cov_new, **kwargs1D})
         return new_data
 
 
@@ -79,7 +77,6 @@ class GPSimulator():
 
         self.data_fraction_weights = data_fraction_weights
         self.data_fraction = data_fraction
-        self.data_true = data_true
 
         if kernel_fit is None:
             kernel_fit = kernel_sim
@@ -91,6 +88,8 @@ class GPSimulator():
 
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise)
+
+        self.data_true = data_true
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
@@ -108,7 +107,7 @@ class GPSimulator():
             y_prior = y_prior + self.meas_noise * np.random.standard_normal((y_prior.shape))
             y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
 
-        data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean[:, idx], y_cov=y_prior_cov) for idx in
+        data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov) for idx in
                 range(n_samples)]
 
         return data
@@ -136,8 +135,8 @@ class GPSimulator():
         return self._data_prior
 
     @data_prior.setter
-    def data_prior(self, data):
-        data.y = np.hstack(self.data_true.y, data.y)
+    def data_prior(self, data: list):
+        data = data + [self.data_true]
         self._data_prior = data
 
     @property
@@ -203,7 +202,7 @@ class GPSimulator():
         while (std_range[0] > y_std) or (std_range[1] < y_std):
             gps = cls(kernel_fit=kernel_)
             data_sim = gps.sim_gp(n_samples=100)
-            y_std = np.std(data_sim.y)
+            y_std = np.mean([np.std(d.y) for d in data_sim])
             # logger.info(y_std)
             scale *= y_std
             kernel_ = ConstantKernel(constant_value=1/scale, constant_value_bounds="fixed") * kernel
@@ -218,14 +217,15 @@ class GPSimulator():
         data_single.y = self.data_prior.y[:, data_index]
         return data_single
 
-    def fit(self):
-        self.gpm_fit.fit(self.data.x, self.data.y)
+    def fit(self, refit=False):
+        if (not hasattr(self.gpm_fit, "X_train_")) or refit:
+            self.gpm_fit.fit(self.data.x, self.data.y)
 
     def plot_prior(self, ax):
         plot_lim = 30
 
         if isinstance(self.data_prior, list):
-            y = np.vstack(data.y for data in self.data_prior)
+            y = np.vstack([data.y for data in self.data_prior])
 
         data0 = self.data_prior[0]
 
@@ -245,10 +245,13 @@ class GPSimulator():
         nrows = 3
         ncols = 2
 
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
 
         self.plot_prior(ax[0, 0])
         plot_kernel_function(ax[0, 1], self.x, self.kernel_sim)
+
+        self.fit()
+        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
 
         self.plot_posterior(ax[1, 0])
         plot_kernel_function(ax[1, 1], self.x, self.gpm_fit.kernel_)
@@ -369,8 +372,6 @@ def plot_mean_decompose(kernel="sin_rbf"):
 if __name__ == "__main__":
     setup_logging()
 
-    plot_mean_decompose()
-
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
@@ -410,7 +411,7 @@ if __name__ == "__main__":
             k_norm = GPSimulator.get_normalized_kernel(k)
             gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
 
-            gps.sim_fit_plot(figname=f"gp_{k_name}_{mode_name}")
+            gps.plot(figname=f"gp_{k_name}_{mode_name}")
         #     output_dict = gps.test_ci(data_fraction=0.3)
         #     ci_info.append({**output_dict, **mode_config["config"]})
         #

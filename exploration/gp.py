@@ -44,21 +44,8 @@ def plot_posterior(ax, x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
 
 
 def plot_gpr_samples(ax, x, y_mean, y_std=None, y=None, ylim=None):
-    """Plot samples drawn from the Gaussian process model.
-
-    If the Gaussian process model is not trained then the drawn samples are
-    drawn from the prior distribution. Otherwise, the samples are drawn from
-    the posterior distribution. Be aware that a sample here corresponds to a
-    function.
-
-    Parameters
-    ----------
-    gpr_model : `GaussianProcessRegressor`
-        A :class:`~sklearn.gaussian_process.GaussianProcessRegressor` model.
-    n_samples : int
-        The number of samples to draw from the Gaussian process distribution.
-    ax : matplotlib axis
-        The matplotlib axis where to plot the samples.
+    """
+    y has shape (n_prior_samples, n_samples_per_prior)
     """
 
     if x.ndim > 1:
@@ -69,7 +56,7 @@ def plot_gpr_samples(ax, x, y_mean, y_std=None, y=None, ylim=None):
     if y_std.ndim > 1:
         raise ValueError(f"y_std must have 1 dimension not {y_std.ndim}")
     if y is not None:
-        for idx, single_prior in enumerate(y.T):
+        for idx, single_prior in enumerate(y):
             ax.plot(
                 x,
                 single_prior,
@@ -211,5 +198,5 @@ class GPR(GaussianProcessRegressor):
 
     def sample_from_posterior(self, x, n_samples):
         if not hasattr(self, "X_train_"):  # Unfitted;predict based on GP prior
-            raise "GP has not been fitted yet, cannot sample from posterior"
+            raise Exception("GP has not been fitted yet, cannot sample from posterior")
         return self.sample_y(x, n_samples)
