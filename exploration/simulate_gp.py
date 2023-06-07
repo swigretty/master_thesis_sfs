@@ -4,6 +4,7 @@ from functools import lru_cache
 from copy import copy
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
 import numpy as np
 from logging import getLogger
 from matplotlib.colors import CSS4_COLORS
@@ -140,7 +141,7 @@ class GPSimulator():
         self._data_prior = data
 
     @property
-    def pram_sim(self):
+    def param_sim(self):
         return self.extract_params_from_kernel(self.kernel_sim)
 
     @property
@@ -185,7 +186,16 @@ class GPSimulator():
 
     @staticmethod
     def se_avg(y_post_cov):
+        """
+        Var(A+B) = Var(A) + Var(B) + 2Cov(A,B)
+        Var(c * A) = c^2 * A
+        """
         return 1 / y_post_cov.shape[0] * np.sqrt(np.sum(y_post_cov))
+
+    @staticmethod
+    def get_predictive_prob(data_predict: GPData, y: np.typing.ArrayLike):
+        return multivariate_normal.pdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
+
 
     @staticmethod
     def extract_params_from_kernel(kernel):
@@ -264,74 +274,50 @@ class GPSimulator():
             ax[2, 1].plot(self.x, v, label=k)
 
         fig.tight_layout()
+        eval_dict = self.evaluate()
 
         if figname is not None:
             self.output_path.mkdir(parents=True, exist_ok=True)
-            fig.savefig(self.output_path / f"{figname}_{self.data_fraction:.2f}.pdf")
+            figfile = self.output_path / f"{figname}_{self.data_fraction:.2f}"
+            fig.savefig(f"{figfile}.pdf")
 
-    def evaluate_ci_for_overall_mean(self):
+            # write JSON files:
+            with figfile.open("w", encoding="UTF-8") as target:
+                json.dump(eval_dict, target)
+
+    def evaluate_overall_mean(self):
         covered = False
-        ci = self.calculate_ci(self.se_avg(self.data_post.y_cov), np.mean(self.data_post.y_mean))
+        se_avg = self.se_avg(self.data_post.y_cov)
+        ci = self.calculate_ci(se_avg, np.mean(self.data_post.y_mean))
         if ci[0] < np.mean(self.data_true.y) < ci[1]:
             covered = True
-        return {"ci": ci, "covered": covered, "ci_width": ci[1]-ci[0]}
+
+        pred_prob = norm.pdf((np.mean(self.data_true.y) - np.mean(self.data_post.y_mean))/se_avg)
+        return {"ci_overall_mean": ci, "overall_mean_covered": covered, "ci_overall_width": ci[1]-ci[0],
+                "pred_prob_overall_mean": pred_prob}
 
     def evaluate(self):
-        ci_overall_mean = self.evaluate_ci_for_overall_mean()
+        overall_mean = self.evaluate_overall_mean()
         param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
 
-        pred_prob_test = self.get_predictive_probability_fit(self.data_post[self.test_idx],
+        pred_prob_test = self.get_predictive_prob(self.data_post[self.test_idx],
                                                              self.data_true.y[self.test_idx])
-        return
+        return {"pred_prob_test": pred_prob_test, **overall_mean, **param_error}
 
-    @staticmethod
-    def get_predictive_probability_fit(data_predict: GPData, y: np.typing.ArrayLike):
-        return multivariate_normal.pdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
+    def evaluate_multisample(self, n_samples=100):
+        gps = copy(self)
+        samples = gps.sim_gp(n_samples)
+        eval_list = []
 
-    # def sim_and_assess_performance(self, n_samples=100, data_fraction=0.3):
-    #     """
-    #     simulate from the prior,
-    #     then simulate from the model using those values from the prior, and
-    #     estimate the parameters using the same prior.
-    #     """
-    #     data_prior = self.sim_gp(n_samples=n_samples)
-    #     n_ci_coverage = 0
-    #     ci_array = np.zeros((n_samples, 2))
-    #
-    #     param_fit_list = []
-    #     param_sim = self.extract_params_from_kernel(self.kernel_sim)
-    #     true_mean_list = []
-    #
-    #     for sample_index in range(n_samples):
-    #         data_true = self.choose_sample_from_prior(data_prior, data_index=sample_index)
-    #         data = self.subsample_data_sim(data_true, data_fraction=data_fraction)
-    #         self.fit(data)
-    #
-    #         y_post_mean, y_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
-    #         ci = self.calculate_ci(self.se_avg(y_post_cov), np.mean(y_post_mean))
-    #         ci_array[sample_index, :] = ci
-    #
-    #         kernel_fit = self.gpm_fit.kernel_
-    #         param_fit_list.append(self.extract_params_from_kernel(kernel_fit))
-    #
-    #         true_mean = np.mean(data_true.y)
-    #         true_mean_list.append(true_mean)
-    #
-    #         if ci[0] < true_mean < ci[1]:
-    #             n_ci_coverage += 1
-    #         else:
-    #             logger.info(f"true mean {np.mean(data_true.y)} not covered by confidence intervals {ci} \n "
-    #                         f"{kernel_fit=} vs. {self.kernel_sim=}")
-    #
-    #     param_fit_df = pd.DataFrame(param_fit_list)
-    #     param_fit_mean = param_fit_df.mean(axis=0).to_dict()
-    #     param_rel_error = {k: (v-param_sim[k])/abs(param_sim[k]) for k, v in param_fit_mean.items()}
-    #     param_rel_error = {k: v for k, v in param_rel_error.items() if v > 0.000001}
-    #     ci_coverage = n_ci_coverage/n_samples
-    #     mean_ci_width = np.mean(np.diff(ci_array, axis=1))
-    #     return {"data_fraction": data_fraction, "ci_coverage": ci_coverage,
-    #             "mean_ci_width": mean_ci_width, "kernel_sim": self.kernel_sim, "param_rel_error": param_rel_error,
-    #             "true_mean_mean": np.mean(true_mean_list), "true_mean_std": np.std(true_mean_list)}
+        for sample in samples:
+            gps.data_true = sample
+            gps.fit(refit=True)
+            eval_list.append(gps.evaluate())
+
+        df = pd.DataFrame(eval_list).mean(axis=0)
+        df["data_fraction"] = gps.data_fraction
+        df["kernel_sim"] = gps.kernel_sim
+        return df
 
     def mean_decomposition_plot(self, figname=None):
         data = self.sim_gp(n_samples=1)
@@ -410,8 +396,10 @@ if __name__ == "__main__":
             logger.info(f"Simulation started for {mode_name}: {k_name}")
             k_norm = GPSimulator.get_normalized_kernel(k)
             gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
-
             gps.plot(figname=f"gp_{k_name}_{mode_name}")
+
+            df = gps.evaluate_multisample(n_samples=100)
+
         #     output_dict = gps.test_ci(data_fraction=0.3)
         #     ci_info.append({**output_dict, **mode_config["config"]})
         #
