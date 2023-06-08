@@ -23,7 +23,7 @@ def mean_fun_const(x):
 @dataclass()
 class GPSimulatorConfig():
 
-    n_days: int = 3
+    n_days: int = 7
     samples_per_hour: int = 10
 
     meas_noise: int = 0.0001

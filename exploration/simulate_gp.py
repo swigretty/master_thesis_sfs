@@ -278,22 +278,24 @@ class GPSimulator():
 
         if figname is not None:
             self.output_path.mkdir(parents=True, exist_ok=True)
-            figfile = self.output_path / f"{figname}_{self.data_fraction:.2f}"
-            fig.savefig(f"{figfile}.pdf")
+            figfile = f"{figname}_{self.data_fraction:.2f}"
+            fig.savefig(self.output_path / f"{figfile}.pdf")
 
-            # write JSON files:
-            with figfile.open("w", encoding="UTF-8") as target:
-                json.dump(eval_dict, target)
+            pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
+            # # write JSON files:
+            # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
+            #     json.dump(eval_dict, target)
 
     def evaluate_overall_mean(self):
-        covered = False
+        covered = 0
         se_avg = self.se_avg(self.data_post.y_cov)
         ci = self.calculate_ci(se_avg, np.mean(self.data_post.y_mean))
         if ci[0] < np.mean(self.data_true.y) < ci[1]:
-            covered = True
+            covered = 1
 
         pred_prob = norm.pdf((np.mean(self.data_true.y) - np.mean(self.data_post.y_mean))/se_avg)
-        return {"ci_overall_mean": ci, "overall_mean_covered": covered, "ci_overall_width": ci[1]-ci[0],
+        return {"ci_overall_mean_lb": ci[0], "ci_overall_mean_ub": ci[1],
+                "overall_mean_covered": covered, "ci_overall_width": ci[1]-ci[0],
                 "pred_prob_overall_mean": pred_prob}
 
     def evaluate(self):
@@ -311,13 +313,17 @@ class GPSimulator():
 
         for sample in samples:
             gps.data_true = sample
-            gps.fit(refit=True)
+            try:
+                gps.fit(refit=True)
+            except Exception as e:
+                logger.warning("Could not fit GP")
             eval_list.append(gps.evaluate())
-
-        df = pd.DataFrame(eval_list).mean(axis=0)
-        df["data_fraction"] = gps.data_fraction
-        df["kernel_sim"] = gps.kernel_sim
-        return df
+        df = pd.DataFrame(eval_list)
+        summary_dict = df.mean(axis=0).to_dict()
+        summary_dict["data_fraction"] = gps.data_fraction
+        summary_dict["kernel_sim"] = gps.kernel_sim
+        summary_dict["n_samples"] = n_samples
+        return summary_dict
 
     def mean_decomposition_plot(self, figname=None):
         data = self.sim_gp(n_samples=1)
@@ -359,10 +365,11 @@ if __name__ == "__main__":
     setup_logging()
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+    data_fraction = 0.1
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
-    kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
-    data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
+    # kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
+    # data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
         # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
@@ -388,17 +395,20 @@ if __name__ == "__main__":
              }
 
     for mode_name, mode_config in modes.items():
-        ci_info = []
+        performance_summary = []
         for k_name, k in mode_config["kernels"].items():
             if k_name not in kernels_limited:
                 continue
             start = datetime.datetime.utcnow()
             logger.info(f"Simulation started for {mode_name}: {k_name}")
             k_norm = GPSimulator.get_normalized_kernel(k)
-            gps = GPSimulator(kernel_sim=k_norm, **mode_config["config"])
-            gps.plot(figname=f"gp_{k_name}_{mode_name}")
 
-            df = gps.evaluate_multisample(n_samples=100)
+            gps = GPSimulator(kernel_sim=k_norm, data_fraction=data_fraction, **mode_config["config"])
+            gps.plot(figname=f"gp_{k_name}_{mode_name}")
+            performance_summary.append(gps.evaluate_multisample(n_samples=100))
+
+    df = pd.DataFrame(performance_summary)
+    df.to_csv(OUTPUT_PATH / f"perfomrance_sum_{mode_name}.csv")
 
         #     output_dict = gps.test_ci(data_fraction=0.3)
         #     ci_info.append({**output_dict, **mode_config["config"]})
