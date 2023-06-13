@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 from logging import getLogger
+import scipy
 from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
@@ -35,6 +36,7 @@ class GPData():
 
     def __post_init__(self):
         self.index = 0
+        self.check_dimensions()
 
     def check_dimensions(self):
         if self.x.ndim == 1:
@@ -51,7 +53,14 @@ class GPData():
         return len(self.x)
 
     def to_df(self):
-        return pd.DataFrame(asdict(self))
+        df = pd.DataFrame({k: v for k, v in asdict(self).items() if k not in ["y_cov", "x"]})
+        df["y_var"] = np.diag(self.y_cov)
+        if self.x.shape[1] > 1:
+            for i in self.x.shape[1]:
+                df[f"x{i}"] = self.x[:, i]
+        else:
+            df["x"] = self.x.reshape(-1)
+        return df
 
     @classmethod
     def from_df(cls, df):
@@ -226,6 +235,31 @@ class GPSimulator():
         return prob2
 
     @staticmethod
+    def kl_mvn(to, fr):
+        """Calculate `KL(to||fr)`, where `to` and `fr` are pairs of means and covariance matrices
+
+         simple interpretation of the KL divergence of "to" from "fr" is the expected excess surprise from using
+          "fr" as a model when the actual distribution is "to".
+        """
+        m_to, S_to = to
+        m_fr, S_fr = fr
+
+        d = m_fr - m_to
+
+        c, lower = scipy.linalg.cho_factor(S_fr)
+
+        def solve(B):
+            return scipy.linalg.cho_solve((c, lower), B)
+
+        def logdet(S):
+            return np.linalg.slogdet(S)[1]
+
+        term1 = np.trace(solve(S_to))
+        term2 = logdet(S_fr) - logdet(S_to)
+        term3 = d.T @ solve(d)
+        return (term1 + term2 + term3 - len(d)) / 2.
+
+    @staticmethod
     def extract_params_from_kernel(kernel):
         return {k: v for k, v in kernel.get_params().items() if ("__" in k) and ("bounds" not in k) and any(
             [pn in k for pn in PARAM_NAMES])}
@@ -314,16 +348,25 @@ class GPSimulator():
             # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
             #     json.dump(eval_dict, target)
 
-    def evaluate_mean_fun(self):
+    def evaluate_fun(self):
         covered = 0
-        for dp, dt in zip(self.data_post, self.data_true):
-            ci = self.calculate_ci(dp.y_cov, dp.y_mean)
-            if ci[0] < dt.y < ci[1]:
-                covered += 1
 
-        covered_fraction = covered/len(self.data_true)
+        def calculate_ci_row(row):
+            return self.calculate_ci(row["y_var"], row["y_mean"])
 
-        return covered_fraction
+        df = self.data_post.to_df()
+        df[["ci_lb", "ci_ub"]] = df.apply(lambda row: calculate_ci_row(row), axis=1).to_list()
+        df["ci_covered"] = (df["ci_lb"] < self.data_true.y) & (self.data_true.y < df["ci_ub"])
+
+        # for dp, dt in zip(self.data_post, self.data_true):
+        #     ci = self.calculate_ci(dp.y_cov, dp.y_mean)
+        #     if ci[0] < dt.y < ci[1]:
+        #         covered += 1
+
+        # covered_fraction = covered/len(self.data_true)
+        covered_fraction = np.mean(df["ci_covered"])
+        kl_fn = self.kl_mvn((self.data_true.y_mean, self.data_true.y_cov), (self.data_post.y_mean, self.data_post.y_cov))
+        return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn}
 
     def evaluate_overall_mean(self):
         covered = 0
@@ -339,7 +382,7 @@ class GPSimulator():
 
     def evaluate(self):
 
-        covered_fraction = self.evaluate_mean_fun()
+        eval_fun_dict = self.evaluate_fun()
 
         overall_mean = self.evaluate_overall_mean()
         param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
@@ -351,8 +394,7 @@ class GPSimulator():
                                                       self.data_true.y[self.train_idx])
         pred_logprob_test_train = self.get_predictive_logprob(self.data_post, self.data_true.y)
         return {"pred_logprob_test": pred_logprob_test, "pred_logprob_train": pred_logprob_train,
-                "pred_logprob_test_train": pred_logprob_test_train, **overall_mean,
-                "covered_fraction": covered_fraction,
+                "pred_logprob_test_train": pred_logprob_test_train, **overall_mean, **eval_fun_dict,
                 **param_error}
 
     def evaluate_multisample(self, n_samples=100):
