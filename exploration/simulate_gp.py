@@ -487,7 +487,7 @@ if __name__ == "__main__":
 
     for mode_name, mode_config in modes.items():
         performance_summary = []
-        for k_name, k in mode_config["kernels"].items():
+        for i, (k_name, k) in enumerate(mode_config["kernels"].items()):
             if k_name not in kernels_limited:
                 continue
             start = datetime.datetime.utcnow()
@@ -496,10 +496,15 @@ if __name__ == "__main__":
 
             gps = GPSimulator(kernel_sim=k_norm, data_fraction=data_fraction, **mode_config["config"])
             gps.plot(figname=f"gp_{k_name}_{mode_name}")
-            performance_summary.append(gps.evaluate_multisample(n_samples=100))
 
-    df = pd.DataFrame(performance_summary)
-    df.to_csv(OUTPUT_PATH / f"perfomrance_sum_{mode_name}.csv")
+            df = pd.DataFrame([gps.evaluate_multisample(n_samples=10)])
+
+            if i == 0:
+                df.to_csv(OUTPUT_PATH / f"performance_sum_{mode_name}.csv")
+            else:
+                df.to_csv(OUTPUT_PATH / f"performance_sum_{mode_name}.csv", mode='a', header=False)
+            # performance_summary.append(gps.evaluate_multisample(n_samples=10))
+
 
         #     output_dict = gps.test_ci(data_fraction=0.3)
         #     ci_info.append({**output_dict, **mode_config["config"]})
