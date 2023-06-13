@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, asdict
-from functools import lru_cache
+from functools import cached_property
 from copy import copy
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -33,6 +33,20 @@ class GPData():
     y_mean: np.array = None
     y_cov: np.array = None
 
+    def __post_init__(self):
+        self.index = 0
+
+    def check_dimensions(self):
+        if self.x.ndim == 1:
+            self.x = self.x.reshape(-1, 1)
+        if self.y.ndim == 2:
+            self.y = self.y.reshape(-1)
+        if self.y_mean.ndim == 2:
+            self.y_mean = self.y_mean.reshape(-1)
+
+        assert self.x.shape[0] == self.y.shape[0] == self.y_mean.shape[0]
+        assert self.y_cov.shape == (len(self.x), len(self.x))
+
     def __len__(self):
         return len(self.x)
 
@@ -43,16 +57,28 @@ class GPData():
     def from_df(cls, df):
         return cls(**df.to_dict())
 
-    def __getitem__(self, idx):
-        try:
-            iter(idx)
-        except TypeError:
-            idx = [idx]
+    def get_field_item(self, field, idx):
+        value = getattr(self, field)
+        if value is None:
+            return value
+        if field == "y_cov":
+            if isinstance(idx, int):
+                return value[idx, idx]
+            return np.array([[self.y_cov[io, ii] for ii in idx] for io in idx])
+        return value[idx]
 
-        y_cov_new = np.array([[self.y_cov[io, ii] for ii in idx] for io in idx])
-        kwargs1D = {k: v[idx] for k, v in asdict(self).items() if (v is not None) and (k != "y_cov")}
-        new_data = self.__class__(**{"y_cov": y_cov_new, **kwargs1D})
-        return new_data
+    def __getitem__(self, idx):
+        return self.__class__(**{k: self.get_field_item(k, idx) for k in asdict(self).keys()})
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == len(self):
+            self.index = 0
+            raise StopIteration
+        self.index += 1
+        return self[self.index - 1]
 
 
 def weights_func_value(y):
@@ -123,8 +149,7 @@ class GPSimulator():
         if data is None:
             self._data_true = self.sim_gp(n_samples=1)[0]
 
-    @property
-    @lru_cache()
+    @cached_property
     def data(self):
         return self.subsample_data(self.data_true, self.data_fraction, data_fraction_weights=self.data_fraction_weights)
 
@@ -150,8 +175,7 @@ class GPSimulator():
             raise "GP has not been fitted yet"
         return self.extract_params_from_kernel(self.gpm_fit.kernel_)
 
-    @property
-    @lru_cache()
+    @cached_property
     def data_post(self):
         y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1)
         return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
@@ -169,7 +193,8 @@ class GPSimulator():
 
     @property
     def train_idx(self):
-        return np.arange(len(self.x))[np.isin(self.x, self.data.x)]
+        return [idx for idx in range(len(self.x)) if self.x[idx] in
+                self.data.x]
 
     @staticmethod
     def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None):
@@ -193,9 +218,12 @@ class GPSimulator():
         return 1 / y_post_cov.shape[0] * np.sqrt(np.sum(y_post_cov))
 
     @staticmethod
-    def get_predictive_prob(data_predict: GPData, y: np.typing.ArrayLike):
-        return multivariate_normal.pdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
-
+    def get_predictive_logprob(data_predict: GPData, y: np.typing.ArrayLike):
+        # slogdet = np.linalg.slogdet(data_predict.y_cov)
+        # prob = np.exp(((-len(y)/2) * np.log(2 * np.pi) - 1/2 * slogdet[1] - 1/2 * (
+        #         y - data_predict.y_mean).T @ np.linalg.inv(data_predict.y_cov) @ (y - data_predict.y_mean)))
+        prob2 = multivariate_normal.logpdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
+        return prob2
 
     @staticmethod
     def extract_params_from_kernel(kernel):
@@ -286,6 +314,17 @@ class GPSimulator():
             # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
             #     json.dump(eval_dict, target)
 
+    def evaluate_mean_fun(self):
+        covered = 0
+        for dp, dt in zip(self.data_post, self.data_true):
+            ci = self.calculate_ci(dp.y_cov, dp.y_mean)
+            if ci[0] < dt.y < ci[1]:
+                covered += 1
+
+        covered_fraction = covered/len(self.data_true)
+
+        return covered_fraction
+
     def evaluate_overall_mean(self):
         covered = 0
         se_avg = self.se_avg(self.data_post.y_cov)
@@ -299,12 +338,22 @@ class GPSimulator():
                 "pred_prob_overall_mean": pred_prob}
 
     def evaluate(self):
+
+        covered_fraction = self.evaluate_mean_fun()
+
         overall_mean = self.evaluate_overall_mean()
         param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
 
-        pred_prob_test = self.get_predictive_prob(self.data_post[self.test_idx],
-                                                             self.data_true.y[self.test_idx])
-        return {"pred_prob_test": pred_prob_test, **overall_mean, **param_error}
+        pred_logprob_test = self.get_predictive_logprob(self.data_post[self.test_idx],
+                                                     self.data_true.y[self.test_idx])
+
+        pred_logprob_train = self.get_predictive_logprob(self.data_post[self.train_idx],
+                                                      self.data_true.y[self.train_idx])
+        pred_logprob_test_train = self.get_predictive_logprob(self.data_post, self.data_true.y)
+        return {"pred_logprob_test": pred_logprob_test, "pred_logprob_train": pred_logprob_train,
+                "pred_logprob_test_train": pred_logprob_test_train, **overall_mean,
+                "covered_fraction": covered_fraction,
+                **param_error}
 
     def evaluate_multisample(self, n_samples=100):
         gps = copy(self)
@@ -368,7 +417,7 @@ if __name__ == "__main__":
     data_fraction = 0.1
 
     kernels_limited = list(OU_KERNELS["bounded"].keys())
-    # kernels_limited = [k for k in kernels_limited if k in ["sinrbf_rbf"]]
+    # kernels_limited = [k for k in kernels_limited if k in ["dot"]]
     # data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
