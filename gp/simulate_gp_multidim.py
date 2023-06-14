@@ -1,14 +1,13 @@
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
-from logging import getLogger
 import matplotlib.pyplot as plt
 import numpy as np
 from logging import getLogger
 from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 
-from exploration.gp import GPModel, plot_gpr_samples, plot_kernel_function
-from exploration.constants import OUTPUT_PATH
+from gp.gp import GPR, plot_gpr_samples, plot_kernel_function
+from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
 from log_setup import setup_logging
 
@@ -18,7 +17,7 @@ mpl.style.use('seaborn-v0_8')
 
 
 def simulate_bp_gp(kernel, global_mean=120):
-    gpm = GPModel(kernel=kernel)
+    gpm = GPR(kernel=kernel)
     # y_samples = gpm.sample_from_prior(x, global_mean=global_mean)
     x, y_samples = plot_gpr_samples(gpr_model=gpm, n_samples=10, ax=ax, global_mean=global_mean)
     plt.show()
@@ -32,7 +31,7 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
     if x.ndim == 1:
         x = x.reshape(-1, 1)
 
-    gpm = GPModel(kernel=kernel, normalize_y=False)
+    gpm = GPR(kernel=kernel, normalize_y=False)
 
     y_prior, y_prior_mean, y_prior_cov = gpm.sample_from_prior(x, n_samples=4, global_mean=global_mean)
     y_prior_std = np.diag(y_prior_cov)
@@ -57,7 +56,7 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
     x_red = x[idx]
 
     # kernel = kernel + ConstantKernel(constant_value=global_mean)
-    gpm = GPModel(kernel=kernel, normalize_y=False)
+    gpm = GPR(kernel=kernel, normalize_y=False)
     gpm.fit(x_red, y_red)
     y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=4)
     plot_gpr_samples(ax[1, 0], x, y_post, y_post_mean, np.diag(y_post_cov))

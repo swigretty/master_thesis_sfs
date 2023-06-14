@@ -1,7 +1,7 @@
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern
 from pathlib import Path
-from exploration.constants import OUTPUT_PATH
+from constants.constants import OUTPUT_PATH
 import matplotlib.pyplot as plt
 import numpy as np
 from log_setup import setup_logging

@@ -1,16 +1,10 @@
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared,\
     ConstantKernel, RationalQuadratic, Matern, Product, Sum
 from sklearn.gaussian_process import GaussianProcessRegressor
-import matplotlib.pyplot as plt
-import numpy as np
-from functools import partial
 from sklearn.kernel_approximation import Nystroem
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.utils import check_random_state
 import re
 from functools import partial
-import scipy.optimize
 from logging import getLogger
 
 logger = getLogger(__name__)

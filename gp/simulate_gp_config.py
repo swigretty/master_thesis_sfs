@@ -1,6 +1,5 @@
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
-from functools import partial
 from dataclasses import dataclass, asdict
 from logging import getLogger
 import numpy as np

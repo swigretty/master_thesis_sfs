@@ -13,10 +13,10 @@ import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
     Matern, ConstantKernel, DotProduct
-from exploration.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
-from exploration.constants import OUTPUT_PATH
+from gp.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
+from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx, get_sesonal_weights
-from exploration.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES, PERIOD_DAY
+from gp.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES, PERIOD_DAY
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -236,7 +236,8 @@ class GPSimulator():
 
     @staticmethod
     def kl_mvn(to, fr):
-        """Calculate `KL(to||fr)`, where `to` and `fr` are pairs of means and covariance matrices
+        """
+        Calculate KL divergence, `KL(to||fr)`, where `to` and `fr` are pairs of means and covariance matrices
 
          simple interpretation of the KL divergence of "to" from "fr" is the expected excess surprise from using
           "fr" as a model when the actual distribution is "to".
