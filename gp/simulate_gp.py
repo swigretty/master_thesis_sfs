@@ -1,93 +1,24 @@
 import datetime
-from dataclasses import dataclass, asdict
 from functools import cached_property
 from copy import copy
 import pandas as pd
 import matplotlib.pyplot as plt
-import json
 import numpy as np
 from logging import getLogger
 import scipy
-from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
-from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared, ConstantKernel, RationalQuadratic, \
-    Matern, ConstantKernel, DotProduct
-from gp.gp import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel
+from gp.gp_regressor import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior, GPData
 from constants.constants import OUTPUT_PATH
-from exploration.explore import get_red_idx, get_sesonal_weights
-from gp.simulate_gp_config import base_config, OU_KERNELS, KERNELS, PARAM_NAMES, PERIOD_DAY
+from exploration.explore import get_red_idx
+from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
+from gp.evaluate import GPEvaluator
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
 
 mpl.style.use('seaborn-v0_8')
-
-
-@dataclass
-class GPData():
-    """
-    gp1 = GPData(x=np.array([1]), y = np.array([2]))
-    """
-    x: np.array
-    y: np.array
-    y_mean: np.array = None
-    y_cov: np.array = None
-
-    def __post_init__(self):
-        self.index = 0
-        self.check_dimensions()
-
-    def check_dimensions(self):
-        if self.x.ndim == 1:
-            self.x = self.x.reshape(-1, 1)
-        if self.y.ndim == 2:
-            self.y = self.y.reshape(-1)
-        if self.y_mean.ndim == 2:
-            self.y_mean = self.y_mean.reshape(-1)
-
-        assert self.x.shape[0] == self.y.shape[0] == self.y_mean.shape[0]
-        assert self.y_cov.shape == (len(self.x), len(self.x))
-
-    def __len__(self):
-        return len(self.x)
-
-    def to_df(self):
-        df = pd.DataFrame({k: v for k, v in asdict(self).items() if k not in ["y_cov", "x"]})
-        df["y_var"] = np.diag(self.y_cov)
-        if self.x.shape[1] > 1:
-            for i in self.x.shape[1]:
-                df[f"x{i}"] = self.x[:, i]
-        else:
-            df["x"] = self.x.reshape(-1)
-        return df
-
-    @classmethod
-    def from_df(cls, df):
-        return cls(**df.to_dict())
-
-    def get_field_item(self, field, idx):
-        value = getattr(self, field)
-        if value is None:
-            return value
-        if field == "y_cov":
-            if isinstance(idx, int):
-                return value[idx, idx]
-            return np.array([[self.y_cov[io, ii] for ii in idx] for io in idx])
-        return value[idx]
-
-    def __getitem__(self, idx):
-        return self.__class__(**{k: self.get_field_item(k, idx) for k in asdict(self).keys()})
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.index == len(self):
-            self.index = 0
-            raise StopIteration
-        self.index += 1
-        return self[self.index - 1]
 
 
 def weights_func_value(y):
@@ -111,7 +42,7 @@ class GPSimulator():
         self.meas_noise = meas_noise
         self.offset = mean_f(0)
 
-        self.data_fraction_weights = data_fraction_weights
+        self._data_fraction_weights = data_fraction_weights
         self.data_fraction = data_fraction
 
         if kernel_fit is None:
@@ -147,6 +78,19 @@ class GPSimulator():
                 range(n_samples)]
 
         return data
+
+    @property
+    def data_fraction_weights(self):
+        if self._data_fraction_weights != "seasonal":
+            return self._data_fraction_weights
+
+        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
+
+        true_dec = self.gpm_sim.predict_mean_decomposed(self.x)
+        fun = [fun for name, fun in true_dec.items() if "ExpSineSquared" in name]
+        assert len(fun) == 1, "cannot extract seasonal pattern"
+        weights = fun[0] - min(fun[0])
+        return weights * 0.1
 
     @property
     def data_true(self):
@@ -215,52 +159,6 @@ class GPSimulator():
         return data[idx]
 
     @staticmethod
-    def calculate_ci(se, mean, alpha=0.05, dist=norm):
-        return (mean - se * dist.ppf(1 - alpha/2), mean + se * dist.ppf(1 - alpha/2))
-
-    @staticmethod
-    def se_avg(y_post_cov):
-        """
-        Var(A+B) = Var(A) + Var(B) + 2Cov(A,B)
-        Var(c * A) = c^2 * A
-        """
-        return 1 / y_post_cov.shape[0] * np.sqrt(np.sum(y_post_cov))
-
-    @staticmethod
-    def get_predictive_logprob(data_predict: GPData, y: np.typing.ArrayLike):
-        # slogdet = np.linalg.slogdet(data_predict.y_cov)
-        # prob = np.exp(((-len(y)/2) * np.log(2 * np.pi) - 1/2 * slogdet[1] - 1/2 * (
-        #         y - data_predict.y_mean).T @ np.linalg.inv(data_predict.y_cov) @ (y - data_predict.y_mean)))
-        prob2 = multivariate_normal.logpdf(y, mean=data_predict.y_mean, cov=data_predict.y_cov)
-        return prob2
-
-    @staticmethod
-    def kl_mvn(to, fr):
-        """
-        Calculate KL divergence, `KL(to||fr)`, where `to` and `fr` are pairs of means and covariance matrices
-
-         simple interpretation of the KL divergence of "to" from "fr" is the expected excess surprise from using
-          "fr" as a model when the actual distribution is "to".
-        """
-        m_to, S_to = to
-        m_fr, S_fr = fr
-
-        d = m_fr - m_to
-
-        c, lower = scipy.linalg.cho_factor(S_fr)
-
-        def solve(B):
-            return scipy.linalg.cho_solve((c, lower), B)
-
-        def logdet(S):
-            return np.linalg.slogdet(S)[1]
-
-        term1 = np.trace(solve(S_to))
-        term2 = logdet(S_fr) - logdet(S_to)
-        term3 = d.T @ solve(d)
-        return (term1 + term2 + term3 - len(d)) / 2.
-
-    @staticmethod
     def extract_params_from_kernel(kernel):
         return {k: v for k, v in kernel.get_params().items() if ("__" in k) and ("bounds" not in k) and any(
             [pn in k for pn in PARAM_NAMES])}
@@ -314,6 +212,18 @@ class GPSimulator():
                        self.data.y, y_true=self.data_true.y)
         ax.set_title("Predictive Distribution")
 
+    def plot_true_with_samples(self, ax=None, figname=None):
+        nrows = 1
+        ncols = 1
+        if ax is None:
+            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
+        ax.plot(self.x, self.data_true.y, "r:")
+        ax.scatter(self.data.x, self.data.y, color="red", zorder=5, label="Observations")
+        if figname is not None:
+            self.output_path.mkdir(parents=True, exist_ok=True)
+            figfile = f"{figname}_{self.data_fraction:.2f}"
+            fig.savefig(self.output_path / f"{figfile}.pdf")
+
     def plot(self, figname=None):
         nrows = 3
         ncols = 2
@@ -349,59 +259,22 @@ class GPSimulator():
             # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
             #     json.dump(eval_dict, target)
 
-    def evaluate_fun(self):
-        covered = 0
-
-        def calculate_ci_row(row):
-            return self.calculate_ci(row["y_var"], row["y_mean"])
-
-        df = self.data_post.to_df()
-        df[["ci_lb", "ci_ub"]] = df.apply(lambda row: calculate_ci_row(row), axis=1).to_list()
-        df["ci_covered"] = (df["ci_lb"] < self.data_true.y) & (self.data_true.y < df["ci_ub"])
-
-        # for dp, dt in zip(self.data_post, self.data_true):
-        #     ci = self.calculate_ci(dp.y_cov, dp.y_mean)
-        #     if ci[0] < dt.y < ci[1]:
-        #         covered += 1
-
-        # covered_fraction = covered/len(self.data_true)
-        covered_fraction = np.mean(df["ci_covered"])
-        kl_fn = self.kl_mvn((self.data_true.y_mean, self.data_true.y_cov), (self.data_post.y_mean, self.data_post.y_cov))
-        return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn}
-
-    def evaluate_overall_mean(self):
-        covered = 0
-        se_avg = self.se_avg(self.data_post.y_cov)
-        ci = self.calculate_ci(se_avg, np.mean(self.data_post.y_mean))
-        if ci[0] < np.mean(self.data_true.y) < ci[1]:
-            covered = 1
-
-        pred_prob = norm.pdf((np.mean(self.data_true.y) - np.mean(self.data_post.y_mean))/se_avg)
-        return {"ci_overall_mean_lb": ci[0], "ci_overall_mean_ub": ci[1],
-                "overall_mean_covered": covered, "ci_overall_width": ci[1]-ci[0],
-                "pred_prob_overall_mean": pred_prob}
-
     def evaluate(self):
+        param_error = {}
+        if self.kernel_sim == self.kernel_fit:
+            param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
+        train_perf = GPEvaluator(self.data_true[self.train_idx], self.data_post[self.train_idx]).evaluate_fun()
+        train_perf["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 
-        eval_fun_dict = self.evaluate_fun()
-
-        overall_mean = self.evaluate_overall_mean()
-        param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
-
-        pred_logprob_test = self.get_predictive_logprob(self.data_post[self.test_idx],
-                                                     self.data_true.y[self.test_idx])
-
-        pred_logprob_train = self.get_predictive_logprob(self.data_post[self.train_idx],
-                                                      self.data_true.y[self.train_idx])
-        pred_logprob_test_train = self.get_predictive_logprob(self.data_post, self.data_true.y)
-        return {"pred_logprob_test": pred_logprob_test, "pred_logprob_train": pred_logprob_train,
-                "pred_logprob_test_train": pred_logprob_test_train, **overall_mean, **eval_fun_dict,
-                **param_error}
+        test_perf = GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).evaluate_fun()
+        overall_perf = GPEvaluator(self.data_true, self.data_post).evaluate()
+        return {"param_error": param_error, "train_perf": train_perf, "test_perf": test_perf,
+                "overall_perf": overall_perf}
 
     def evaluate_multisample(self, n_samples=100):
         gps = copy(self)
         samples = gps.sim_gp(n_samples)
-        eval_list = []
+        eval_dict = {}
 
         for sample in samples:
             gps.data_true = sample
@@ -409,12 +282,15 @@ class GPSimulator():
                 gps.fit(refit=True)
             except Exception as e:
                 logger.warning("Could not fit GP")
-            eval_list.append(gps.evaluate())
-        df = pd.DataFrame(eval_list)
-        summary_dict = df.mean(axis=0).to_dict()
-        summary_dict["data_fraction"] = gps.data_fraction
-        summary_dict["kernel_sim"] = gps.kernel_sim
-        summary_dict["n_samples"] = n_samples
+            eval_sample = gps.evaluate()
+            eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
+
+        summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
+        for v in summary_dict.values():
+            v["data_fraction"] = gps.data_fraction
+            v["kernel_sim"] = gps.kernel_sim
+            v["kernel_fit"] = gps.gpm_fit.kernel_
+            v["n_samples"] = n_samples
         return summary_dict
 
     def mean_decomposition_plot(self, figname=None):
@@ -457,64 +333,60 @@ if __name__ == "__main__":
     setup_logging()
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-    data_fraction = 0.1
+    data_fraction_list = [0.05]
 
-    kernels_limited = list(OU_KERNELS["bounded"].keys())
-    # kernels_limited = [k for k in kernels_limited if k in ["dot"]]
+    kernels_limited = None
+    kernels_limited = ["sin_rbf"]
+
     # data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
 
     modes = {
         # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
         #                   "config": {"normalize_y": False, **base_config}},
-             "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
-                            "config": {"normalize_y": False, **base_config}},
-        #     "ou_bounded_normk_non_uniform": {"kernels": OU_KERNELS["bounded"],
-        #                       "config": {"normalize_y": False, "data_fraction_weights": weights_func_value,
-        #                                  **base_config}},
-        #     "ou_bounded_normk_cycl": {"kernels": OU_KERNELS["bounded"], "config": {
-        #         "normalize_y": False, "data_fraction_weights": data_fraction_weights,
-        #         **base_config}}
-        #      "ou_bounded_nonorm": {"kernels": OU_KERNELS["bounded"],
-        #                    "config": {"normalize_y": False, **base_config}},
-        # #      "ou_unbounded":
-        # #          {"kernels": OU_KERNELS["unbounded"],
-        # #           "config": {"normalize_y": True, **base_config}},
-        #
-        #      "bounded_nonorm": {"kernels": KERNELS["bounded"],
-        #                         "config": {"normalize_y": False, **base_config}},
-             # "bounded": {"kernels": KERNELS["bounded"],
-             #             "config": {"normalize_y": True, **base_config}}
+        #      "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
+        #                     "config": {"normalize_y": False, **base_config}},
+            "ou_bounded_seasonal": {"kernels": OU_KERNELS["bounded"],
+                              "config": {"normalize_y": False, "data_fraction_weights": "seasonal",
+                                         **base_config}},
              }
 
+    eval_row = 0
     for mode_name, mode_config in modes.items():
-        performance_summary = []
-        for i, (k_name, k) in enumerate(mode_config["kernels"].items()):
-            if k_name not in kernels_limited:
-                continue
-            start = datetime.datetime.utcnow()
-            logger.info(f"Simulation started for {mode_name}: {k_name}")
-            k_norm = GPSimulator.get_normalized_kernel(k)
+        for data_fraction in data_fraction_list:
+            for k_name, k in mode_config["kernels"].items():
 
-            gps = GPSimulator(kernel_sim=k_norm, data_fraction=data_fraction, **mode_config["config"])
-            gps.plot(figname=f"gp_{k_name}_{mode_name}")
+                if kernels_limited is not None and k_name not in kernels_limited:
+                    continue
 
-            df = pd.DataFrame([gps.evaluate_multisample(n_samples=10)])
+                start = datetime.datetime.utcnow()
+                logger.info(f"Simulation started for {mode_name}: {k_name}")
 
-            if i == 0:
-                df.to_csv(OUTPUT_PATH / f"performance_sum_{mode_name}.csv")
-            else:
-                df.to_csv(OUTPUT_PATH / f"performance_sum_{mode_name}.csv", mode='a', header=False)
-            # performance_summary.append(gps.evaluate_multisample(n_samples=10))
+                k_norm = GPSimulator.get_normalized_kernel(k)
+                gps = GPSimulator(kernel_sim=k_norm, data_fraction=data_fraction, **mode_config["config"])
+                gps.plot_true_with_samples(figname=f"true_samples_{mode_name}")
+                gps.plot(figname=f"gp_{k_name}_{mode_name}")
+                eval_dict = gps.evaluate_multisample(n_samples=100)
+
+                for k, v in eval_dict.items():
+                    df = pd.DataFrame([v])
+                    df["mode"] = mode_name
+                    df["kernel_name"] = k_name
+                    if not (OUTPUT_PATH / f"{k}.csv").exists() and eval_row == 0:
+                        df.to_csv(OUTPUT_PATH / f"{k}.csv")
+                    else:
+                        df.to_csv(OUTPUT_PATH / f"{k}.csv", mode='a', header=False)
+
+                eval_row += 1
 
 
-        #     output_dict = gps.test_ci(data_fraction=0.3)
-        #     ci_info.append({**output_dict, **mode_config["config"]})
-        #
-        #     logger.info(f"Simulation ended for {mode_name}: {k_name}. "
-        #                 f"Duration: {(datetime.datetime.utcnow()-start).total_seconds()} sec")
-        #
-        # ci_info_df = pd.DataFrame(ci_info)
-        # ci_info_df = ci_info_df[[col for col in ci_info_df.columns if col not in ["x", 'mean_f']]]
-        # ci_info_df.to_csv(OUTPUT_PATH / f"ci_info_{mode_name}.csv")
+
+
+
+
+
+
+
+
+
 
 

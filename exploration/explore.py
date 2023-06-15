@@ -4,7 +4,7 @@ from simulation.simulate_bp import BPTimseSeriesSimulator, random_cosinus_season
 from functools import partial
 from exploration.blr import blr_corr, plot_blr_output, blr_simple
 import matplotlib.pyplot as plt
-from exploration.gp import GPR, ARKernel
+from gp.gp_regressor import GPR, ARKernel
 from statsmodels.tsa.arima_process import ArmaProcess
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.arima_process import arma_acovf

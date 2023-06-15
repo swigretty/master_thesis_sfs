@@ -1,3 +1,6 @@
+from dataclasses import dataclass, asdict
+
+import pandas as pd
 from sklearn.gaussian_process.kernels import RBF,  WhiteKernel, ExpSineSquared,\
     ConstantKernel, RationalQuadratic, Matern, Product, Sum
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -185,12 +188,81 @@ class GPR(GaussianProcessRegressor):
         return y_samples, y_mean, y_cov
 
     def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0):
+        gps = self
+        if hasattr(self, "X_train_"):  # has already been fitted
+            gps = self.__class__(kernel=self.kernel)  # sample_y does only need kernel information
         mean_f_val = np.array([mean_f(val) for val in x])
         mean_f_val_full = np.vstack([mean_f_val for i in range(n_samples)]).T
-        y_samples, y_mean, y_cov = self.sample_y(x, n_samples)
+        y_samples, y_mean, y_cov = gps.sample_y(x, n_samples)
         return y_samples + mean_f_val_full, y_mean + np.mean(mean_f_val_full, axis=1), y_cov
 
     def sample_from_posterior(self, x, n_samples):
         if not hasattr(self, "X_train_"):  # Unfitted;predict based on GP prior
             raise Exception("GP has not been fitted yet, cannot sample from posterior")
         return self.sample_y(x, n_samples)
+
+
+@dataclass
+class GPData():
+    """
+    gp1 = GPData(x=np.array([1]), y = np.array([2]))
+    """
+    x: np.array
+    y: np.array
+    y_mean: np.array = None
+    y_cov: np.array = None
+
+    def __post_init__(self):
+        self.index = 0
+        self.check_dimensions()
+
+    def check_dimensions(self):
+        if self.x.ndim == 1:
+            self.x = self.x.reshape(-1, 1)
+        if self.y.ndim == 2:
+            self.y = self.y.reshape(-1)
+        if self.y_mean.ndim == 2:
+            self.y_mean = self.y_mean.reshape(-1)
+
+        assert self.x.shape[0] == self.y.shape[0] == self.y_mean.shape[0]
+        assert self.y_cov.shape == (len(self.x), len(self.x))
+
+    def __len__(self):
+        return len(self.x)
+
+    def to_df(self):
+        df = pd.DataFrame({k: v for k, v in asdict(self).items() if k not in ["y_cov", "x"]})
+        df["y_var"] = np.diag(self.y_cov)
+        if self.x.shape[1] > 1:
+            for i in self.x.shape[1]:
+                df[f"x{i}"] = self.x[:, i]
+        else:
+            df["x"] = self.x.reshape(-1)
+        return df
+
+    @classmethod
+    def from_df(cls, df):
+        return cls(**df.to_dict())
+
+    def get_field_item(self, field, idx):
+        value = getattr(self, field)
+        if value is None:
+            return value
+        if field == "y_cov":
+            if isinstance(idx, int):
+                return value[idx, idx]
+            return np.array([[self.y_cov[io, ii] for ii in idx] for io in idx])
+        return value[idx]
+
+    def __getitem__(self, idx):
+        return self.__class__(**{k: self.get_field_item(k, idx) for k in asdict(self).keys()})
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == len(self):
+            self.index = 0
+            raise StopIteration
+        self.index += 1
+        return self[self.index - 1]
