@@ -1,4 +1,4 @@
-\usepackage{amsmath}\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
+\chapter{Gaussian Process Regression}\label{ch:gaussian-process-regression}
 The objective of regression is generally to establish a mapping between the input variable $x$ and
 its corresponding output $f(x)$.
 In order to solve such a problem one usually needs some additional constraints on $f(x)$.
@@ -515,8 +515,10 @@ However, deriving $\Sigma_e$ for an ARMA process with irregularly spaced samples
 been shown in chapter \ref{ch:time-series-decomposition-and-regression}.
 The next section will illustrate how choosing a specific kernel function solves this problem.
 
-\section{Mean Function}\label{subsec:mean-function}
+\section{Mean Function - draft}\label{subsec:mean-function}
 
+TODO: finish, cite: Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
+\\
 
 A Gaussian process is fully specified by its mean function, $\mu(x)$, and its covariance
 function, $k(x, x')$.
@@ -525,7 +527,6 @@ the covariance structure of the data. In other words, if we subtract the mean fu
 observed data, we obtain a new dataset with zero mean, but the same covariance structure.
 
 
-Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
 
 
 Assuming we want to model $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function
@@ -593,7 +594,12 @@ because
 
 
 
-\section{Kernel Functions}\label{subsec:kernel}
+\section{Kernel Functions - draft}\label{subsec:kernel}
+
+TODO: finish
+\\
+
+
 
 In the last section we started of with a describing the prior distribution over
 $\mathbf{Y}$ or $F_X = [f(x_1) \dots f(x_n))]^{\top}$ and shoved that a kernel function $k(x, x')$ needs to be
