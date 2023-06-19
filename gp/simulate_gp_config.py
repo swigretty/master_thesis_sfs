@@ -15,7 +15,7 @@ PERIOD_WEEK = 7 * PERIOD_DAY
 def mean_fun_const(x):
     # 110 to 130 (healthy range)
     # physiological:  60 to 300
-    return 0
+    return 120
 
 
 # measuring time in hours
@@ -25,7 +25,7 @@ class GPSimulatorConfig():
     n_days: int = 7
     samples_per_hour: int = 10
 
-    meas_noise: int = 0.0001
+    meas_noise: int = 0
     mean_f: callable = mean_fun_const
 
     simulation_config_keys = ["meas_noise", "mean_f", "x"]
@@ -88,7 +88,9 @@ for mode in ["fixed", "bounded", "unbounded"]:
                             }
     _kernels = {**_simple_kernels, **_combination_kernels}
 
-    ou_kernels = {k: (_kernels["ou"] + v if k != "ou" else v) for k, v in _kernels.items()}
+    ou_kernels = {k: (_kernels["ou"] + v + WhiteKernel(noise_level=0.0001, noise_level_bounds="fixed") if
+                      k != "ou" else v + WhiteKernel(noise_level=0.0001, noise_level_bounds="fixed"))
+                  for k, v in _kernels.items()}
 
     KERNELS[mode] = _kernels
     OU_KERNELS[mode] = ou_kernels

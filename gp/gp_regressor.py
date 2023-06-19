@@ -266,3 +266,11 @@ class GPData():
             raise StopIteration
         self.index += 1
         return self[self.index - 1]
+
+    def __add__(self, value):
+        new_fields = {k: (v + value if k in ["y_mean", "y"] else v) for k, v in asdict(self).items()}
+        return self.__class__(**new_fields)
+
+    def __sub__(self, value):
+        new_fields = {k: (v - value if k in ["y_mean", "y"] else v) for k, v in asdict(self).items()}
+        return self.__class__(**new_fields)
