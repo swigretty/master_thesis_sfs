@@ -19,7 +19,7 @@
 %----------------------------------------------------------------------------------------
 
 \documentclass[
-	11pt, % Set the default font size, options include: 8pt, 9pt, 10pt, 11pt, 12pt, 14pt, 17pt, 20pt
+	9pt, % Set the default font size, options include: 8pt, 9pt, 10pt, 11pt, 12pt, 14pt, 17pt, 20pt
 	%t, % Uncomment to vertically align all slide content to the top of the slide, rather than the default centered
 	%aspectratio=169, % Uncomment to set the aspect ratio to a 16:9 ratio which matches the aspect ratio of 1080p and 4K screens and projectors
 ]{beamer}
@@ -201,24 +201,60 @@
 
 
 \begin{frame}
-	\frametitle{Objective}
+	\frametitle{Problem Statement}
+
 		Extracting Time Series characteristics such as
 		\begin{itemize}
 		\item hourly/daily/weekly mean
-		\item time in target reange
+		\item time in target range
 		\item day and night blood pressure
 		\end{itemize}
+
+	\bigskip % Vertical whitespace
+
+	E.g the empirical average of all data point within one week, is a biased estimator of the weekly mean.
+
 \end{frame}
 
-E.g the empirical average of all data point within one week, is a biased estimator of the weekly mean.
 
-Ideally we would like to have unbiased estimates of these characteristics including uncertainty estimates,
-that capture the uncertainty due to the lack of data in the proximity of the point of
-prediction.
+\begin{frame}
+	\frametitle{Objective}
+
+		\begin{figure}
+				\includegraphics[width=0.8\linewidth]{predictive_distribution}
+				\caption{Black solid line: predicted mean. Gray area: predicted standard deviation}
+		\end{figure}
+
+	Ideally we would like to have unbiased estimates of the BP value as a function of time, including uncertainty estimates,
+	that capture the uncertainty due to the lack of data in the proximity of the point of
+	prediction. This would then allow for the extraction of the time series charactersitics of interest..
+\end{frame}
+
+
 
 \section{Gaussian Process Regression} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 %------------------------------------------------
+\subsection{Regression}
+
+\begin{frame}
+	\frametitle{Non-Parametric Bayesian Regression}
+
+
+	The objective of regression is generally to establish a mapping between the input variable $x$ and its corresponding output $f(x)$.
+
+	In order to solve such a problem one usually needs some additional constraints on $f(x)$.
+	This could mean to restrict yourself to a cetain family of functions, e.g. linear functions of the input $x$.
+
+	An alternative approach is to assign prior probabilities to all possible functions,
+giving higher probabilities to those considered more plausible.
+	In this \alert{non-parametric and bayesian} framework,
+inference revolves around the posterior distribution of these functions,
+given some potentially noisy observations of $f(x)$.
+
+\end{frame}
+
+
 
 \subsection{Bayesian Inference}\label{subsec:bayesian-inference}
 
@@ -232,6 +268,121 @@ prediction.
 	\end{figure}
 
 \end{frame}
+
+
+\subsection{Gaussian Process}
+
+\begin{frame}
+	\frametitle{Gaussian Process Definition}
+
+
+A Gaussian process (GP) can be viewed as a gaussian distribution over functions or as an infinite set of random
+variables representing the values of the function $f(x)$ at location $x$.
+The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
+by:
+
+\begin{definition}[Gaussian Process]\label{def:GP}
+ A Gaussian process is a collection of random variables, any finite number of which have a joint Gaussian distribution.
+\end{definition}
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Gaussian Process Definition}
+
+As a (multivariate) Gaussian distribution is defined by its mean and covariance matrix, a GP is
+uniquely identified by its mean $m(x)$ and covariance (kernel) function $k(x,x')$.
+
+We write
+
+\begin{gather*}
+    f(x) \sim GP(m(x), k(x,x'))
+\end{gather*}
+with
+\begin{gather*}
+    m(x) = \mathbb{E}[f(x)] \\
+    k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
+\end{gather*}
+
+%If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
+%$F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
+%
+%\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
+%for
+%\begin{gather}\label{def:Kernel-Matrix}
+%    K_{AA} =
+%    \begin{bmatrix}
+%        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+%        \vdots  &  & \vdots  & \vdots \\
+%        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+%    \end{bmatrix} \text{and }
+%    \mu_A =
+%    \begin{bmatrix}
+%        m(x_1) \\
+%        \vdots \\
+%        m(x_n)
+%    \end{bmatrix}
+%\end{gather}
+%
+%The finite marginals $F_{x_1}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
+%In our running example we might consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Gaussian Process Definition}
+
+
+If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
+$F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
+
+\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
+for
+\begin{gather}\label{def:Kernel-Matrix}
+    K_{AA} =
+    \begin{bmatrix}
+        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots  & \vdots \\
+        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix} \text{and }
+    \mu_A =
+    \begin{bmatrix}
+        m(x_1) \\
+        \vdots \\
+        m(x_n)
+    \end{bmatrix}
+\end{gather}
+
+The finite marginals $F_{x_1}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
+In our running example we might consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Gaussian Process Examples}
+	Note that a GP with finite index set and hence with joint gaussian distribution is just a specific case
+of GP. If we assume an ARMA process with gaussian innovations for the blood pressure time series, one can view the time series
+as a collection of multivariate normally distributed random variables and thus as a GP.
+
+
+%If we consider the linear regression case from chapter \ref{ch:time-series-decomposition-and-regression} and assume a
+%prior distribution
+%on $\beta$, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
+%\[
+%    \mu \sim \N(0, XX^{\top})
+%\]
+%This is equivalent to a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
+%This special case of gaussian process regression with this specific kernel function is known as Bayesian linear regression
+%and will be presented in the next section.
+
+
+
+\end{frame}
+
+
+
 
 %------------------------------------------------
 
@@ -330,16 +481,16 @@ prediction.
 
 %------------------------------------------------
 
-\subsection{Figure}
-
-\begin{frame}
-	\frametitle{Figure}
-
-	\begin{figure}
-		\includegraphics[width=0.8\linewidth]{creodocs_logo.pdf}
-		\caption{Creodocs logo.}
-	\end{figure}
-\end{frame}
+%\subsection{Figure}
+%
+%\begin{frame}
+%	\frametitle{Figure}
+%
+%	\begin{figure}
+%		\includegraphics[width=0.8\linewidth]{creodocs_logo.pdf}
+%		\caption{Creodocs logo.}
+%	\end{figure}
+%\end{frame}
 
 %------------------------------------------------
 
