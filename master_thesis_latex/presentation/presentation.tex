@@ -27,7 +27,6 @@
 \graphicspath{{Images/}{./}} % Specifies where to look for included images (trailing slash required)
 
 \usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule for better rules in tables
-
 %----------------------------------------------------------------------------------------
 %	SELECT LAYOUT THEME
 %----------------------------------------------------------------------------------------
@@ -102,7 +101,8 @@
 
 %\usepackage{helvet} % Use the Helvetica font for sans serif text
 \usepackage[default]{opensans}
-\usepackage{graphicx} % Use the Open Sans font for sans serif text
+\usepackage{graphicx}
+\usepackage{amsfonts} % Use the Open Sans font for sans serif text
 %\usepackage[default]{FiraSans} % Use the Fira Sans font for sans serif text
 %\usepackage[default]{lato} % Use the Lato font for sans serif text
 
@@ -212,7 +212,8 @@
 
 	\bigskip % Vertical whitespace
 
-	E.g the empirical average of all data point within one week, is a biased estimator of the weekly mean.
+	Empirical averages are biased estimator of the hourly/daily/nightly/weekly mean if
+	the samples are not uniformly distributed across time.
 
 \end{frame}
 
@@ -225,9 +226,12 @@
 				\caption{Black solid line: predicted mean. Gray area: predicted standard deviation}
 		\end{figure}
 
-	Ideally we would like to have unbiased estimates of the BP value as a function of time, including uncertainty estimates,
-	that capture the uncertainty due to the lack of data in the proximity of the point of
-	prediction. This would then allow for the extraction of the time series charactersitics of interest..
+	Ideally:
+	\begin{itemize}
+		\item unbiased estimates of the BP value as a function of time (from which all the
+		characteristics of interest can be extracted)
+		\item uncertainty estimates, that can capture the uncertainty due to the lack of data
+	\end{itemize}
 \end{frame}
 
 
@@ -235,28 +239,31 @@
 \section{Gaussian Process Regression} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 %------------------------------------------------
-\subsection{Regression}
+\subsection{Introduction}
 
 \begin{frame}
-	\frametitle{Non-Parametric Bayesian Regression}
+	\frametitle{Gaussian Process Regression}
 
 
-	The objective of regression is generally to establish a mapping between the input variable $x$ and its corresponding output $f(x)$.
+	\textbf{Regression:} establish a mapping between the input variable $x$ and its corresponding output $f(x)$.
+	\bigskip % Vertical whitespace
 
-	In order to solve such a problem one usually needs some additional constraints on $f(x)$.
-	This could mean to restrict yourself to a cetain family of functions, e.g. linear functions of the input $x$.
+	In order to solve such a problem one usually needs some additional constraints on $f(x)$:
 
-	An alternative approach is to assign prior probabilities to all possible functions,
-giving higher probabilities to those considered more plausible.
-	In this \alert{non-parametric and bayesian} framework,
-inference revolves around the posterior distribution of these functions,
-given some potentially noisy observations of $f(x)$.
+	\bigskip % Vertical whitespace
+	\textbf{Parametric approach:} Restrict to a class of functions with parameters, e.g. linear functions. Parameters
+	are inferred e.g through ML estimation (frequentist) or MAP estimation (bayesian).
+
+
+	\bigskip % Vertical whitespace
+	\textbf{Non-parametric and Bayesian regression:}
+	Assign prior probabilities to all possible functions, giving higher probabilities to those considered more plausible.
+	Inference revolves around the posterior distribution of these functions,
+	given some potentially noisy observations of $f(x)$. If Gaussian Process (GP) prior are used, we call it
+	Gaussian Process regression.
 
 \end{frame}
 
-
-
-\subsection{Bayesian Inference}\label{subsec:bayesian-inference}
 
 \begin{frame}
 	\frametitle{Bayesian Inference}
@@ -270,7 +277,7 @@ given some potentially noisy observations of $f(x)$.
 \end{frame}
 
 
-\subsection{Gaussian Process}
+\subsection{Gaussian Process Definition}
 
 \begin{frame}
 	\frametitle{Gaussian Process Definition}
@@ -304,31 +311,21 @@ with
     m(x) = \mathbb{E}[f(x)] \\
     k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
 \end{gather*}
+\end{frame}
 
-%If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
-%$F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
-%
-%\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
-%for
-%\begin{gather}\label{def:Kernel-Matrix}
-%    K_{AA} =
-%    \begin{bmatrix}
-%        k(x_1, x_1) & k(x_1, x_2) & \dots & k(x_1, x_n)\\
-%        \vdots  &  & \vdots  & \vdots \\
-%        k(x_n, x_1)  & k(x_n, x_1) & \dots  & k(x_n, x_n)
-%    \end{bmatrix} \text{and }
-%    \mu_A =
-%    \begin{bmatrix}
-%        m(x_1) \\
-%        \vdots \\
-%        m(x_n)
-%    \end{bmatrix}
-%\end{gather}
-%
-%The finite marginals $F_{x_1}, \dots, F_{x_n}$ of the GP thus have a multivariate gaussian distribution.
-%In our running example we might consider $X$ to be the time interval $T_0=[0, T]$ however it could be higher dimensional.
+
+\begin{frame}
+	\frametitle{Gaussian Process Samples}
+
+	\begin{figure}
+			\includegraphics[width=0.5\linewidth]{prior_samples}
+			\caption{5 samples from a GP with $m(x)=0$  and $k(x,x') = \exp(-\frac{x-x'}{3}) +
+			9 * \exp(-\frac{2 \sin^2(\frac{\pi |x -x'|}{24})}{9}) + \exp(-\frac{(x-x')^2}{2 * 30^2}) $}
+	\end{figure}
+
 
 \end{frame}
+
 
 \begin{frame}
 	\frametitle{Gaussian Process Definition}
@@ -337,7 +334,7 @@ with
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
 $F_x := f(x)$ such that for a set $A \subset X$ with $A={x_1, \dots x_n}$ it holds that:
 
-\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim \N(\mu_A,\,K_{AA})\]
+\[F_A = [F_{x_1}, \dots , F_{x_n}] \sim N(\mu_A,\,K_{AA})\]
 for
 \begin{gather}\label{def:Kernel-Matrix}
     K_{AA} =
@@ -359,26 +356,153 @@ In our running example we might consider $X$ to be the time interval $T_0=[0, T]
 
 \end{frame}
 
+\subsection{Gaussian Process Examples}
 
 \begin{frame}
 	\frametitle{Gaussian Process Examples}
 	Note that a GP with finite index set and hence with joint gaussian distribution is just a specific case
-of GP. If we assume an ARMA process with gaussian innovations for the blood pressure time series, one can view the time series
+of GP. \\
+
+	If we assume an ARMA process with gaussian innovations one can view the time series
 as a collection of multivariate normally distributed random variables and thus as a GP.
 
-
-%If we consider the linear regression case from chapter \ref{ch:time-series-decomposition-and-regression} and assume a
-%prior distribution
-%on $\beta$, i.e. $\beta \sim N(0, I)$ then the predictive distribution over $\mu = X \beta$ is Gaussian:
-%\[
-%    \mu \sim \N(0, XX^{\top})
-%\]
-%This is equivalent to a GP with mean function $m(x) = 0$ and kernel function $k(x, x') = x^{\top}x'$.
-%This special case of gaussian process regression with this specific kernel function is known as Bayesian linear regression
-%and will be presented in the next section.
+	\[
+        X_t =  \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + \theta_1 W_{t-1} + \dots \theta_q W_{t-q} + W_t
+    \]
+    where $W_t \stackrel{iid}{\sim} N(0, \sigma^2)$ is a gaussian white noise process.
 
 
+\end{frame}
 
+
+\subsection{Gaussian Process Inference}
+
+\begin{frame}
+	\frametitle{Predictive (Posterior Distribution)}
+
+	General model for noisy blood pressure observations $Y(x)$ as a function of time $x \in \mathbb{R}$:
+
+	\begin{align*}
+		Y(x) = f(x) + \epsilon && \epsilon \sim N(0, \sigma_n^{2})
+	\end{align*}
+
+%	Assuming a linear model for $F_X = [f(x_1), \dots f(x_n)]^{\top}$ and:
+%\begin{gather*}
+%    F_X = X \beta + \mathbf{E}, \text{ with $\beta \sim N(0, \Sigma_p)$ and $\mathbf{E} \sim N(0, \Sigma_e)$}
+%\end{gather*}
+
+Prior distribution over the function $f(x)$:
+\begin{gather*}
+    f(x) \sim GP(0, k(x, x')),
+\end{gather*}
+
+
+The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by:
+\begin{gather}
+    \begin{bmatrix}
+        \mathbf{Y} \\
+        f^{\ast}
+    \end{bmatrix}
+    \sim N \left(
+        \begin{bmatrix}
+        0 \\
+        0
+        \end{bmatrix},
+        \begin{bmatrix}
+        K_{XX} + \sigma_n^2 I & K_{Xx^{\ast}} \\
+        K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
+        \end{bmatrix}
+        \right)
+    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+\end{gather}
+
+
+The posterior (or predictive) distribution over $f^{\ast}$ can be derived by the well known conditioning rule for
+	multivariate Gaussians:
+\begin{gather}
+    p(f^{\ast}| \mathbf{Y}, X) = N(
+K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
+K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
+\end{gather}
+
+
+
+\end{frame}
+
+
+\subsection{Kernel Functions}
+
+\begin{frame}
+	\frametitle{Kernel Functions}
+
+
+	The kernel (or covariance) function $k(x,x')$ of a GP defines the dependency structure
+	of the random variables $Y(x_1), \dots Y(x_n)$.
+	\bigskip % Vertical whitespace
+
+	It is equivalent to the concept of the autocovariance function in time series analysis:
+
+	\begin{gather*}
+    k(x, x') = \gamma_Y(x,x') = Cov(Y(x), Y(x')) = E[(Y(x) - \mu_Y(x))(Y(x')-\mu_Y(x'))]
+	\end{gather*}
+
+	\bigskip % Vertical whitespace
+
+
+	Stationary kernels depend only on $\tau = x-x'$ and produce sationary time series.
+
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Stationary Kernels - Squared Exponential}
+
+	A.K.A. Radial Basis Function or Gaussian Kernel
+
+	\begin{figure}
+			\includegraphics[width=1\linewidth]{RBF_scale}
+			\caption{RBF kernel with different length scale}
+	\end{figure}
+
+	\begin{gather*}
+    k(\tau) = \sigma^2 \exp(-\frac{\tau^2}{2 l^2})
+	\end{gather*}
+	with $l$ being the length scale and $\tau = x-x'$
+\end{frame}
+
+\begin{frame}
+	\frametitle{Stationary Kernels - Matérn}
+
+
+	\begin{figure}
+			\includegraphics[width=1\linewidth]{Matern_3}
+			\caption{Matérn Kernel with different $\nu$}
+	\end{figure}
+
+	Matern kernel
+	\begin{gather*}
+    k_{\nu}(\tau) = \sigma^2 \frac{2^{1-\nu}}{\Gamma(\nu)}(\frac{\sqrt{2\nu} \tau}{l})^{\nu} K_{\nu}
+    (\frac{\sqrt{2\nu} \tau}{l})
+	\end{gather*}
+
+	when $\nu = \frac{1}{2}$ this is the continuous time analogue of an AR(1) process.
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Periodic Kernel}
+	Periodic (non-stationary) kernel: Expsinesquared kernel:
+
+	\begin{figure}
+			\includegraphics[width=1\linewidth]{sin_len}
+			\caption{Periodic Kernel with different length scale}
+	\end{figure}
+
+	\begin{gather*}
+    k(x, x') = \sigma^2 \exp(- \frac{2 \sin^2(\pi |x-x'| \backslash p)}{l^2})
+	\end{gather*}
+
+	where $p$ is the period
 \end{frame}
 
 
