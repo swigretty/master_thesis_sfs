@@ -507,6 +507,67 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 
 
 
+\section{Experiments} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+
+
+\begin{frame}[fragile]
+	\frametitle{Experiment}
+
+	\begin{verbatim}
+
+		Kernel = 1.02**2 * 1**2 * Matern(length_scale=3, nu=0.5)
+				+ 3.16**2 * ExpSineSquared(length_scale=3, periodicity=24)
+				+ 1**2 * RBF(length_scale=50) + WhiteKernel(noise_level=0.0001)
+
+	\end{verbatim}
+
+	\begin{figure}
+			\includegraphics[width=0.7\linewidth]{true_decomposed}
+%			\caption{Periodic Kernel with different length scale}
+	\end{figure}
+
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Experiment}
+
+
+	\begin{figure}
+			\includegraphics[width=0.7\linewidth]{gp_sin_rbf_ou_bounded_seasonal_0.20}
+%			\caption{Periodic Kernel with different length scale}
+	\end{figure}
+
+\end{frame}
+
+
+
+\section{Outlook}% Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+
+
+\begin{frame}
+	\frametitle{Outlook}
+
+	\begin{itemize}
+		\item For statistics of interest compare performance of GP regression to baseline method:
+		\begin{itemize}
+			\item weekly/daily/hourly mean to empirical average over sample points or to mean of linear regression line
+		\end{itemize}
+	\end{itemize}
+
+	\bigskip % Vertical whitespace
+
+	\begin{itemize}
+		\item Adversarial analysis: compare performance of baseline and GP regression introducing different adversarial
+		factors
+		\begin{itemize}
+			\item Model mis-specification (mis-specified kernel or hyperparameters and non-gausianities)
+			\item Missing data. More or less data available, more or less extreme non-uniform sampling patterns
+		\end{itemize}
+
+	\end{itemize}
+
+\end{frame}
 
 %------------------------------------------------
 
