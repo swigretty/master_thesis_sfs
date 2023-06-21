@@ -206,7 +206,7 @@ class GPSimulator():
         data_prior = self.data_prior
 
         if add_offset:
-            data_prior = [data + self.offset for data in data_prior ]
+            data_prior = [data + self.offset for data in data_prior]
 
         plot_lim = 30
 
@@ -253,6 +253,8 @@ class GPSimulator():
             figfile = f"{figname}_{self.data_fraction:.2f}"
             fig.savefig(self.output_path / f"{figfile}.pdf")
 
+        plt.close()
+
     def plot(self, figname=None, add_offset=False):
         nrows = 3
         ncols = 2
@@ -287,6 +289,7 @@ class GPSimulator():
             # # write JSON files:
             # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
             #     json.dump(eval_dict, target)
+        plt.close()
 
     def evaluate(self):
         param_error = {}
@@ -385,26 +388,29 @@ if __name__ == "__main__":
 
                 if kernels_limited is not None and k_name not in kernels_limited:
                     continue
-                rng = np.random.default_rng(11)
                 start = datetime.datetime.utcnow()
                 logger.info(f"Simulation started for {mode_name}: {k_name}")
 
                 k_norm = GPSimulator.get_normalized_kernel(k)
-                gps = GPSimulator(rng=rng, kernel_sim=k_norm, data_fraction=data_fraction, **mode_config["config"])
-                gps.plot_true_with_samples(figname=f"true_samples_{mode_name}2")
-                gps.plot(figname=f"gp_{k_name}_{mode_name}")
-                eval_dict = gps.evaluate_multisample(n_samples=100)
+                for i in range(1):
+                    gps = GPSimulator(rng=np.random.default_rng(i), kernel_sim=k_norm, data_fraction=data_fraction,
+                                      **mode_config["config"])
+                    # gps.data_true = None
+                    gps.plot_true_with_samples(figname=f"true_samples_{mode_name}_{i}")
+                    gps.plot(figname=f"gp_{k_name}_{mode_name}_{i}")
 
-                for k, v in eval_dict.items():
-                    df = pd.DataFrame([v])
-                    df["mode"] = mode_name
-                    df["kernel_name"] = k_name
-                    if not (OUTPUT_PATH / f"{k}.csv").exists() and eval_row == 0:
-                        df.to_csv(OUTPUT_PATH / f"{k}.csv")
-                    else:
-                        df.to_csv(OUTPUT_PATH / f"{k}.csv", mode='a', header=False)
-
-                eval_row += 1
+                # eval_dict = gps.evaluate_multisample(n_samples=100)
+                #
+                # for k, v in eval_dict.items():
+                #     df = pd.DataFrame([v])
+                #     df["mode"] = mode_name
+                #     df["kernel_name"] = k_name
+                #     if not (OUTPUT_PATH / f"{k}.csv").exists() and eval_row == 0:
+                #         df.to_csv(OUTPUT_PATH / f"{k}.csv")
+                #     else:
+                #         df.to_csv(OUTPUT_PATH / f"{k}.csv", mode='a', header=False)
+                #
+                # eval_row += 1
 
 
 
