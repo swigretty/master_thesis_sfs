@@ -78,6 +78,9 @@ if __name__ == "__main__":
     kernels = [c * RBF(length_scale=1) for c in [0.1, 1, 10, 100]]
     plot_kernels(kernels, plot_file="RBF_scale.pdf", t=t)
 
+    kernels = [RBF(length_scale=ls) for ls in [1, 10, 100]]
+    plot_kernels(kernels, plot_file="RBF_len.pdf", t=t)
+
     kernels = [c * Matern(length_scale=1, nu=0.5) for c in [0.1, 1, 10, 100]]
     plot_kernels(kernels, plot_file="OU_scale.pdf", t=t)
 
