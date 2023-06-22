@@ -19,7 +19,7 @@
 %----------------------------------------------------------------------------------------
 
 \documentclass[
-	9pt, % Set the default font size, options include: 8pt, 9pt, 10pt, 11pt, 12pt, 14pt, 17pt, 20pt
+	8pt, % Set the default font size, options include: 8pt, 9pt, 10pt, 11pt, 12pt, 14pt, 17pt, 20pt
 	%t, % Uncomment to vertically align all slide content to the top of the slide, rather than the default centered
 	%aspectratio=169, % Uncomment to set the aspect ratio to a 16:9 ratio which matches the aspect ratio of 1080p and 4K screens and projectors
 ]{beamer}
@@ -259,7 +259,7 @@
 	\textbf{Non-parametric and Bayesian regression:}
 	Assign prior probabilities to all possible functions, giving higher probabilities to those considered more plausible.
 	Inference revolves around the posterior distribution of these functions,
-	given some potentially noisy observations of $f(x)$. If Gaussian Process (GP) prior are used, we call it
+	given some potentially noisy observations of $f(x)$. If a Gaussian Process (GP) prior is used, we call it
 	Gaussian Process regression.
 
 \end{frame}
@@ -430,6 +430,46 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 \end{frame}
 
 
+
+\begin{frame}
+	\frametitle{Bayesian Inference}
+	\begin{figure}
+			\includegraphics[width=0.4\linewidth]{bayesian_learining}
+			\caption{X2: RV representing the value $f^{\ast} := f(x^\ast)$ we want to predict,
+				X1: RV representing observed value $Y_1 := Y(X_1)$. We observe $y_1$ (dashed line)}
+	\end{figure}
+
+	The joint distribution (ellipse):
+	\begin{gather}
+		\begin{bmatrix}
+			Y_1 \\
+			f^{\ast}
+		\end{bmatrix}
+		\sim N \left(
+			\begin{bmatrix}
+			0 \\
+			0
+			\end{bmatrix},
+			\begin{bmatrix}
+			k(x_1, x_1) + \sigma_n^2 I & k(x_1, x^{\ast}) \\
+			k(x^{\ast}, x_1) & k(x^{\ast}, x^{\ast})
+			\end{bmatrix}
+			\right)
+		= p(Y_1, f^{\ast}| x_1, x^{\ast})
+	\end{gather}
+
+	The predictive distribution over $f^{\ast}$ (dashed-dot line):
+	\begin{gather}
+		p(f^{\ast}| Y_1 = y_1) = N(\bar{\mu}, \bar{\Sigma})
+	\end{gather}
+
+	where $\bar{\mu} = k(x^{\ast}, x_1) (k(x_1, x_1) + \sigma_n^2)^{-1} y_1$ \\
+	and $\bar{\Sigma} = k(x^{\ast}, x^{\ast}) - k(x^{\ast}, x_1)(k(x_1, x_1) + \sigma_n^2)^{-1} k(x_1, x^{\ast})$
+\end{frame}
+
+
+
+
 \subsection{Kernel Functions}
 
 \begin{frame}
@@ -507,11 +547,11 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 
 
 
-\section{Experiments} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\section{Simulations} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 
 \begin{frame}[fragile]
-	\frametitle{Experiment}
+	\frametitle{Simulation}
 
 	\begin{verbatim}
 
@@ -530,7 +570,7 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 \end{frame}
 
 \begin{frame}
-	\frametitle{Experiment}
+	\frametitle{Simulation}
 
 
 	\begin{figure}
@@ -543,7 +583,7 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 
 
 \begin{frame}
-	\frametitle{Experiment}
+	\frametitle{Simulation}
 
 	\begin{figure}
 			\includegraphics[width=0.7\linewidth]{gp_sin_rbf_ou_bounded_seasonal_4_0.20}
