@@ -391,41 +391,20 @@ as a collection of multivariate normally distributed random variables and thus a
 %    F_X = X \beta + \mathbf{E}, \text{ with $\beta \sim N(0, \Sigma_p)$ and $\mathbf{E} \sim N(0, \Sigma_e)$}
 %\end{gather*}
 
-Prior distribution over the function $f(x)$:
-\begin{gather*}
-    f(x) \sim GP(0, k(x, x')),
-\end{gather*}
+	\smallskip
 
+	Prior distribution over the function $f(x)$:
+	\begin{gather*}
+		f(x) \sim GP(0, k(x, x')),
+	\end{gather*}
 
-The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by:
-\begin{gather}
-    \begin{bmatrix}
-        \mathbf{Y} \\
-        f^{\ast}
-    \end{bmatrix}
-    \sim N \left(
-        \begin{bmatrix}
-        0 \\
-        0
-        \end{bmatrix},
-        \begin{bmatrix}
-        K_{XX} + \sigma_n^2 I & K_{Xx^{\ast}} \\
-        K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
-        \end{bmatrix}
-        \right)
-    = p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
-\end{gather}
+	\smallskip
 
-
-The posterior (or predictive) distribution over $f^{\ast}$ can be derived by the well known conditioning rule for
-	multivariate Gaussians:
-\begin{gather}
-    p(f^{\ast}| \mathbf{Y}, X) = N(
-K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
-K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
-\end{gather}
-
-
+	\begin{figure}
+			\includegraphics[width=0.4\linewidth]{bayesian_learining_mod}
+			\caption{$f^{\ast} := f(x^\ast)$, the value we want to predict.
+				$Y1 := Y(x1) = f(x1) + \epsilon$. We observe $y1$}
+	\end{figure}
 
 \end{frame}
 
@@ -434,9 +413,9 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 \begin{frame}
 	\frametitle{Bayesian Inference}
 	\begin{figure}
-			\includegraphics[width=0.4\linewidth]{bayesian_learining}
-			\caption{X2: RV representing the value $f^{\ast} := f(x^\ast)$ we want to predict,
-				X1: RV representing observed value $Y_1 := Y(X_1)$. We observe $y_1$ (dashed line)}
+			\includegraphics[width=0.4\linewidth]{bayesian_learining_mod}
+			\caption{$f^{\ast} := f(x^\ast)$, the value we want to predict.
+				$Y1 := Y(x1) = f(x1) + \epsilon$. We observe $y1$}
 	\end{figure}
 
 	The joint distribution (ellipse):
@@ -465,9 +444,46 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 
 	where $\bar{\mu} = k(x^{\ast}, x_1) (k(x_1, x_1) + \sigma_n^2)^{-1} y_1$ \\
 	and $\bar{\Sigma} = k(x^{\ast}, x^{\ast}) - k(x^{\ast}, x_1)(k(x_1, x_1) + \sigma_n^2)^{-1} k(x_1, x^{\ast})$
+
 \end{frame}
 
 
+
+
+
+\begin{frame}
+	\frametitle{Bayesian Inference}
+
+	 For a whole vector of observations $\mathbf{Y}$ and prediction time points $x^{\ast}$,
+	 the joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by:
+	\begin{gather}
+		\begin{bmatrix}
+			\mathbf{Y} \\
+			f^{\ast}
+		\end{bmatrix}
+		\sim N \left(
+			\begin{bmatrix}
+			0 \\
+			0
+			\end{bmatrix},
+			\begin{bmatrix}
+			K_{XX} + \sigma_n^2 I & K_{Xx^{\ast}} \\
+			K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
+			\end{bmatrix}
+			\right)
+		= p(\mathbf{Y}, f^{\ast}| X, x^{\ast})
+	\end{gather}
+
+
+	The posterior (or predictive) distribution over $f^{\ast}$ can be derived by the well known conditioning rule for
+		multivariate Gaussians:
+	\begin{gather}
+		p(f^{\ast}| \mathbf{Y}, X) = N(
+	K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
+	K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
+	\end{gather}
+
+\end{frame}
 
 
 \subsection{Kernel Functions}
