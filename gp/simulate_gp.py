@@ -363,8 +363,9 @@ def plot_mean_decompose(kernel="sin_rbf"):
 
 if __name__ == "__main__":
     setup_logging()
+    nplots = 3
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-    data_fraction_list = [0.01, 0.05, 0.1, 0.2]
+    data_fraction_list = [0.2]
 
     kernels_limited = None
     kernels_limited = ["sin_rbf"]
@@ -392,7 +393,7 @@ if __name__ == "__main__":
                 logger.info(f"Simulation started for {mode_name}: {k_name}")
 
                 k_norm = GPSimulator.get_normalized_kernel(k)
-                for i in range(1):
+                for i in range(nplots):
                     gps = GPSimulator(rng=np.random.default_rng(i), kernel_sim=k_norm, data_fraction=data_fraction,
                                       **mode_config["config"])
                     # gps.data_true = None
