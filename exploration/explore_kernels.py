@@ -84,7 +84,7 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
     fig.savefig(plot_path / plot_file)
 
 
-def plot_sim_info(kernels, mode_values, mode_name="mode", t=np.linspace(0, 20, 200), nsim=100, ax=None):
+def plot_sim_info(kernels, mode_values, mode_name="mode", t=np.linspace(0, 20, 200), nsim=1000, ax=None):
 
     sim_info = []
     for i, k in enumerate(kernels):
