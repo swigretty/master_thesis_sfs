@@ -142,10 +142,10 @@ class GPSimulator():
     @property
     def data_mean(self):
         sigma_mean = 1/len(self.data.y) * np.var(self.data.y)
-        y_cov = np.zeros((len(self.x), len(self.x)), int)
+        y_cov = np.zeros((len(self.x), len(self.x)), float)
         np.fill_diagonal(y_cov, sigma_mean)
         y = np.repeat(np.mean(self.data.y), len(self.x))
-        return GPData(x=self.x, y=y, y_mean=np.mean(self.data.y), y_cov=y_cov)
+        return GPData(x=self.x, y=y, y_mean=y, y_cov=y_cov)
 
     @cached_property
     def data_post_y(self):
