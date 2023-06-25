@@ -33,6 +33,7 @@ class GPEvaluator:
     def mse(self):
         return np.square(self.data_true.y - self.data_post.y_mean).mean()
 
+
     @staticmethod
     def kl_div(to, fr):
         """
@@ -77,19 +78,20 @@ class GPEvaluator:
 
         covered_fraction = np.mean(df["ci_covered"])
         kl_fn = self.kl_div_fun()
-        return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn, "pred_logprob": self.get_predictive_logprob()}
+        return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn,
+                "pred_logprob": self.get_predictive_logprob(), "mse": self.mse()}
 
     def evaluate_overall_mean(self):
         covered = 0
         se_avg = self.se_avg(self.data_post.y_cov)
-        ci = self.calculate_ci(se_avg, np.mean(self.data_post.y_mean))
-        if ci[0] < np.mean(self.data_true.y) < ci[1]:
+        mean_pred = np.mean(self.data_post.y_mean)
+        mean_true = np.mean(self.data_true.y)
+        ci = self.calculate_ci(se_avg, mean_pred)
+        if ci[0] < mean_true < ci[1]:
             covered = 1
 
-        pred_prob = norm.pdf((np.mean(self.data_true.y) - np.mean(self.data_post.y_mean)) / se_avg)
+        pred_prob = norm.pdf((mean_true - mean_pred) / se_avg)
 
-        m_true = np.mean(self.data_true.y_mean)
-        m_post = np.mean(self.data_post.y_mean)
         S_true = self.se_avg(self.data_true.y_cov)**2
         S_post = se_avg**2
         # TODO make this work for 1D sample
@@ -97,7 +99,7 @@ class GPEvaluator:
 
         return {"ci_overall_mean_lb": ci[0], "ci_overall_mean_ub": ci[1],
                 "overall_mean_covered": covered, "ci_overall_width": ci[1]-ci[0],
-                "pred_prob_overall_mean": pred_prob}
+                "pred_prob_overall_mean": pred_prob, "mse_overll_mean": (mean_true-mean_pred)**2}
 
     def evaluate(self):
         eval_fun_dict = self.evaluate_fun()
