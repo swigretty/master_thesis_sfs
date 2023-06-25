@@ -30,6 +30,9 @@ class GPEvaluator:
         prob2 = multivariate_normal.logpdf(self.data_true.y, mean=self.data_post.y_mean, cov=self.data_post.y_cov)
         return prob2
 
+    def mse(self):
+        return np.square(self.data_true.y - self.data_post.y_mean).mean()
+
     @staticmethod
     def kl_div(to, fr):
         """

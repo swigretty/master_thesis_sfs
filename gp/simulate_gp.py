@@ -139,6 +139,14 @@ class GPSimulator():
         y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1)
         return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
 
+    @property
+    def data_mean(self):
+        sigma_mean = 1/len(self.data.y) * np.var(self.data.y)
+        y_cov = np.zeros((len(self.x), len(self.x)), int)
+        np.fill_diagonal(y_cov, sigma_mean)
+        y = np.repeat(np.mean(self.data.y), len(self.x))
+        return GPData(x=self.x, y=y, y_mean=np.mean(self.data.y), y_cov=y_cov)
+
     @cached_property
     def data_post_y(self):
         y_cov = copy(self.data_post.y_cov)
@@ -301,9 +309,13 @@ class GPSimulator():
         train_perf["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 
         test_perf = GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).evaluate_fun()
+
         overall_perf = GPEvaluator(self.data_true, self.data_post).evaluate()
+
+        overall_perf_mean = GPEvaluator(self.data_true, self.data_mean).evaluate()
+
         return {"param_error": param_error, "train_perf": train_perf, "test_perf": test_perf,
-                "overall_perf": overall_perf}
+                "overall_perf": overall_perf, "overall_perf_mean": overall_perf_mean}
 
     def evaluate_multisample(self, n_samples=100):
         gps = copy(self)
@@ -365,65 +377,4 @@ def plot_mean_decompose(kernel="sin_rbf"):
 
 if __name__ == "__main__":
     setup_logging()
-    nplots = 3
-    OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-    data_fraction_list = [0.2]
-
-    kernels_limited = None
-    kernels_limited = ["sin_rbf"]
-
-    # data_fraction_weights = get_sesonal_weights(base_config["x"], period=PERIOD_DAY)
-
-    modes = {
-        # "ou_fixed": {"kernels": OU_KERNELS["fixed"],
-        #                   "config": {"normalize_y": False, **base_config}},
-        #      "ou_bounded": {"kernels":  OU_KERNELS["bounded"],
-        #                     "config": {"normalize_y": False, **base_config}},
-            "ou_bounded_seasonal": {"kernels": OU_KERNELS["bounded"],
-                              "config": {"normalize_y": False, "data_fraction_weights": "seasonal",
-                                         **base_config}},
-             }
-
-    eval_row = 0
-    for mode_name, mode_config in modes.items():
-        for data_fraction in data_fraction_list:
-            for k_name, k in mode_config["kernels"].items():
-
-                if kernels_limited is not None and k_name not in kernels_limited:
-                    continue
-                start = datetime.datetime.utcnow()
-                logger.info(f"Simulation started for {mode_name}: {k_name}")
-
-                k_norm = GPSimulator.get_normalized_kernel(k)
-                for i in range(nplots):
-                    gps = GPSimulator(rng=np.random.default_rng(i), kernel_sim=k_norm, data_fraction=data_fraction,
-                                      **mode_config["config"])
-                    # gps.data_true = None
-                    gps.plot_true_with_samples(figname=f"true_samples_{mode_name}_{i}")
-                    gps.plot(figname=f"gp_{k_name}_{mode_name}_{i}")
-
-                eval_dict = gps.evaluate_multisample(n_samples=100)
-                #
-                # for k, v in eval_dict.items():
-                #     df = pd.DataFrame([v])
-                #     df["mode"] = mode_name
-                #     df["kernel_name"] = k_name
-                #     if not (OUTPUT_PATH / f"{k}.csv").exists() and eval_row == 0:
-                #         df.to_csv(OUTPUT_PATH / f"{k}.csv")
-                #     else:
-                #         df.to_csv(OUTPUT_PATH / f"{k}.csv", mode='a', header=False)
-                #
-                # eval_row += 1
-
-
-
-
-
-
-
-
-
-
-
-
 

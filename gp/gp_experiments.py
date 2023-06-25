@@ -12,7 +12,7 @@ from datetime import datetime
 logger = getLogger(__name__)
 
 
-def generate_plots(k_name, mode_name, nplots=1, rng=None, **kwargs):
+def plot_gp_regression_sample(k_name, mode_name, nplots=1, rng=None, **kwargs):
 
     for i in range(nplots):
         if nplots > 1 or rng is None:
@@ -32,7 +32,7 @@ def evaluate_multisample(gps=None, n_samples=10, **gps_kwargs):
 
 
 def plot_evaluate_multisample(k_name, mode_name, nplots=1, n_samples=100, **gps_kwargs):
-    gps = generate_plots(k_name, mode_name, nplots=nplots, **gps_kwargs)
+    gps = plot_gp_regression_sample(k_name, mode_name, nplots=nplots, **gps_kwargs)
     return evaluate_multisample(gps=gps, n_samples=n_samples)
 
 
@@ -72,13 +72,17 @@ if __name__ == "__main__":
     kernels_limited = ["sin_rbf"]
 
     modes = {
-        # "ou_bounded": {"kernels":  OU_KERNELS["bounded"], "config": {"normalize_y": False, **base_config}},
+        "ou_bounded": {"kernels":  OU_KERNELS["bounded"], "config": {"normalize_y": False, **base_config}},
         "ou_bounded_seasonal": {"kernels": OU_KERNELS["bounded"],
                                 "config": {"normalize_y": False, "data_fraction_weights": "seasonal",
                                            **base_config}}}
     for m_k, m_v in modes.items():
         m_v["kernels"] = {k_k: k_v for k_k, k_v in m_v["kernels"].items() if k_k in kernels_limited}
 
+    mode_name = "ou_bounded_seasonal"
+    mode = modes[mode_name]
+    k_name = "sin_rbf"
+    plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name], **mode["config"])
     plot_evaluate_kernels(modes, data_fraction_list)
 
 
