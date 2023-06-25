@@ -29,7 +29,7 @@ class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH,
-                 data_fraction_weights=None, data_fraction=0.3, data_true=None, rng=None):
+                 data_fraction_weights=None, data_fraction=0.3, data_true=None, rng=None, normalize_kernel=False):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
@@ -37,6 +37,8 @@ class GPSimulator():
 
         self.x = x
         self.kernel_sim = kernel_sim
+        if normalize_kernel:
+            self.kernel_sim = self.get_normalized_kernel(kernel_sim)
 
         self.mean_f = mean_f
         self.meas_noise = meas_noise
@@ -50,7 +52,7 @@ class GPSimulator():
             self.rng = np.random.default_rng()
 
         if kernel_fit is None:
-            kernel_fit = kernel_sim
+            kernel_fit = self.kernel_sim
             # TODO only allow for centered input
             # if not normalize_y:
             #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2,
@@ -400,7 +402,7 @@ if __name__ == "__main__":
                     gps.plot_true_with_samples(figname=f"true_samples_{mode_name}_{i}")
                     gps.plot(figname=f"gp_{k_name}_{mode_name}_{i}")
 
-                # eval_dict = gps.evaluate_multisample(n_samples=100)
+                eval_dict = gps.evaluate_multisample(n_samples=100)
                 #
                 # for k, v in eval_dict.items():
                 #     df = pd.DataFrame([v])
