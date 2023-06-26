@@ -6,7 +6,8 @@ from logging import getLogger
 from matplotlib.colors import CSS4_COLORS
 import matplotlib as mpl
 
-from gp.gp_regressor import GPR, plot_gpr_samples, plot_kernel_function
+from gp.gp_regressor import GPR
+from gp.gp_plotting_utils import plot_kernel_function, plot_gpr_samples
 from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
 from log_setup import setup_logging

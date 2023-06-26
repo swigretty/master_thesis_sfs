@@ -2,8 +2,9 @@ import scipy
 import numpy as np
 from copy import copy
 from scipy.stats import norm, multivariate_normal
+from gp.evalutation_utils import calculate_ci
 
-from gp.gp_regressor import GPData
+from gp.gp_data import GPData
 
 
 class GPEvaluator:
@@ -13,10 +14,6 @@ class GPEvaluator:
         self.data_post = data_post
 
         assert len(self.data_true) == len(self.data_post)
-
-    @staticmethod
-    def calculate_ci(se, mean, alpha=0.05, dist=norm):
-        return (mean - se * dist.ppf(1 - alpha/2), mean + se * dist.ppf(1 - alpha/2))
 
     @staticmethod
     def se_avg(y_post_cov):
@@ -69,14 +66,8 @@ class GPEvaluator:
         return self.kl_div((m_to, S_to), (m_fr, S_fr))
 
     def evaluate_fun(self):
-        def calculate_ci_row(row):
-            return self.calculate_ci(row["y_var"], row["y_mean"])
-
-        df = self.data_post.to_df()
-        df[["ci_lb", "ci_ub"]] = df.apply(lambda row: calculate_ci_row(row), axis=1).to_list()
-        df["ci_covered"] = (df["ci_lb"] < self.data_true.y) & (self.data_true.y < df["ci_ub"])
-
-        covered_fraction = np.mean(df["ci_covered"])
+        ci_covered = (self.data_post.ci["ci_lb"] < self.data_true.y) & (self.data_true.y < self.data_post.ci["ci_ub"])
+        covered_fraction = np.mean(ci_covered)
         kl_fn = self.kl_div_fun()
         return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn,
                 "pred_logprob": self.get_predictive_logprob(), "mse": self.mse()}
@@ -86,7 +77,7 @@ class GPEvaluator:
         se_avg = self.se_avg(self.data_post.y_cov)
         mean_pred = np.mean(self.data_post.y_mean)
         mean_true = np.mean(self.data_true.y)
-        ci = self.calculate_ci(se_avg, mean_pred)
+        ci = calculate_ci(se_avg, mean_pred)
         if ci[0] < mean_true < ci[1]:
             covered = 1
 

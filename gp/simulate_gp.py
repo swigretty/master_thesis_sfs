@@ -9,7 +9,9 @@ import scipy
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
-from gp.gp_regressor import GPR, plot_gpr_samples, plot_kernel_function, plot_posterior, GPData
+from gp.gp_regressor import GPR
+from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples
+from gp.gp_data import GPData
 from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
@@ -59,7 +61,7 @@ class GPSimulator():
             #     constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
-        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng)
+        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng, alpha=0)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise, rng=rng)
 
         self.data_true = data_true
@@ -236,6 +238,7 @@ class GPSimulator():
         data_post = self.data_post
         data = self.data
         data_true = self.data_true
+
         if add_offset:
             data_post += self.offset
             data += self.offset
@@ -340,8 +343,8 @@ class GPSimulator():
         return summary_dict
 
     def mean_decomposition_plot(self, figname=None):
-        data = self.sim_gp(n_samples=1)
-        self.gpm_sim.fit(data.x, data.y)
+
+        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
 
         y_post, y_post_mean, y_post_cov = self.gpm_sim.sample_from_posterior(self.x, n_samples=1)
         decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
@@ -350,7 +353,7 @@ class GPSimulator():
         ncols = 1
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
 
-        ax.plot(data.x, data.y)
+        ax.plot(self.data_true.x, self.data_true.y)
 
         sum_of_v = np.zeros(len(self.x))
         for k, v in decomposed_dict_sim.items():
@@ -358,7 +361,7 @@ class GPSimulator():
             sum_of_v += v
 
         assert np.all(sum_of_v - y_post_mean < 0.00000001)
-        assert np.all(y_post_mean - data.y < 0.00000001)
+        assert np.all(y_post_mean - self.data_true.y < 0.00000001)
         # ax.plot(data.x, sum_of_v, label="sum")
         # ax.plot(data.x, y_post_mean, label="post_mean")
         ax.legend()

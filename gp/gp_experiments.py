@@ -82,7 +82,8 @@ if __name__ == "__main__":
     mode_name = "ou_bounded_seasonal"
     mode = modes[mode_name]
     k_name = "sin_rbf"
-    plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name], **mode["config"])
+    plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name],
+                              data_fraction=0.2, **mode["config"])
     plot_evaluate_kernels(modes, data_fraction_list)
 
 
