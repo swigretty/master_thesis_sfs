@@ -85,6 +85,14 @@ class GPData():
         new_fields = {k: (v - value if k in ["y_mean", "y"] else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
+    @property
+    def y_var(self):
+        return np.diag(self)
+
+    @property
+    def y_std(self):
+        return np.sqrt(self.y_var)
+
     def calculate_ci_row(self, row):
         return calculate_ci(np.sqrt(row["y_var"]), row["y_mean"])
 

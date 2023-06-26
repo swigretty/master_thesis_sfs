@@ -227,7 +227,7 @@ class GPSimulator():
 
         data0 = data_prior[0]
 
-        y_prior_std = np.diag(data0.y_cov)
+        y_prior_std = data0.y_std
         ylim = None
         if max(y_prior_std) > plot_lim:
             ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
@@ -244,7 +244,8 @@ class GPSimulator():
             data += self.offset
             data_true += self.offset
 
-        plot_posterior(ax, data_post.x, data_post.y_mean, np.diag(data_post.y_cov), data.x, data.y, y_true=data_true.y)
+        plot_posterior(ax, data_post.x, data_post.y_mean, y_post_std=data_post.y_std, x_red=data.x, y_red=data.y,
+                       y_true=data_true.y)
         ax.set_title("Predictive Distribution")
 
     def plot_true_with_samples(self, ax=None, figname=None, add_offset=True):
@@ -308,6 +309,7 @@ class GPSimulator():
         param_error = {}
         if self.kernel_sim == self.kernel_fit:
             param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
+
         train_perf = GPEvaluator(self.data_true[self.train_idx], self.data_post[self.train_idx]).evaluate_fun()
         train_perf["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 

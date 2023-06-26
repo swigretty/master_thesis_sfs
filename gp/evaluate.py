@@ -2,9 +2,10 @@ import scipy
 import numpy as np
 from copy import copy
 from scipy.stats import norm, multivariate_normal
-from gp.evalutation_utils import calculate_ci
-
+from gp.evalutation_utils import calculate_ci, se_overall_mean_from_cov
+import matplotlib.pyplot as plt
 from gp.gp_data import GPData
+from gp.gp_plotting_utils import plot_posterior
 
 
 class GPEvaluator:
@@ -15,21 +16,12 @@ class GPEvaluator:
 
         assert len(self.data_true) == len(self.data_post)
 
-    @staticmethod
-    def se_avg(y_post_cov):
-        """
-        Var(A+B) = Var(A) + Var(B) + 2Cov(A,B)
-        Var(c * A) = c^2 * A
-        """
-        return 1 / y_post_cov.shape[0] * np.sqrt(np.sum(y_post_cov))
-
     def get_predictive_logprob(self):
         prob2 = multivariate_normal.logpdf(self.data_true.y, mean=self.data_post.y_mean, cov=self.data_post.y_cov)
         return prob2
 
     def mse(self):
         return np.square(self.data_true.y - self.data_post.y_mean).mean()
-
 
     @staticmethod
     def kl_div(to, fr):
@@ -65,27 +57,28 @@ class GPEvaluator:
         S_fr = self.data_post.y_cov
         return self.kl_div((m_to, S_to), (m_fr, S_fr))
 
+    @property
+    def ci_covered_fun(self):
+        return (self.data_post.ci["ci_lb"] < self.data_true.y) & (self.data_true.y < self.data_post.ci["ci_ub"])
+
     def evaluate_fun(self):
-        ci_covered = (self.data_post.ci["ci_lb"] < self.data_true.y) & (self.data_true.y < self.data_post.ci["ci_ub"])
-        covered_fraction = np.mean(ci_covered)
-        kl_fn = self.kl_div_fun()
-        return {"covered_fraction_fun": covered_fraction, "kl_fun": kl_fn,
+        return {"covered_fraction_fun": np.mean(self.ci_covered_fun), "kl_fun": self.kl_div_fun(),
                 "pred_logprob": self.get_predictive_logprob(), "mse": self.mse()}
 
     def evaluate_overall_mean(self):
         covered = 0
-        se_avg = self.se_avg(self.data_post.y_cov)
+        se_pred = se_overall_mean_from_cov(self.data_post.y_cov)
         mean_pred = np.mean(self.data_post.y_mean)
         mean_true = np.mean(self.data_true.y)
-        ci = calculate_ci(se_avg, mean_pred)
+        ci = calculate_ci(se_pred, mean_pred)
         if ci[0] < mean_true < ci[1]:
             covered = 1
 
-        pred_prob = norm.pdf((mean_true - mean_pred) / se_avg)
+        pred_prob = norm.pdf((mean_true - mean_pred) / se_pred)
 
-        S_true = self.se_avg(self.data_true.y_cov)**2
-        S_post = se_avg**2
         # TODO make this work for 1D sample
+        # S_true = se_overall_mean_from_cov(self.data_post.y_cov)**2
+        # S_post = se_avg**2
         # kl = self.kl_div((m_true, S_true), (m_post, S_post))
 
         return {"ci_overall_mean_lb": ci[0], "ci_overall_mean_ub": ci[1],
@@ -96,6 +89,18 @@ class GPEvaluator:
         eval_fun_dict = self.evaluate_fun()
         overall_mean = self.evaluate_overall_mean()
         return {**overall_mean, **eval_fun_dict}
+
+    def plot_errors(self, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots(1, 1)
+
+        plot_posterior(ax, self.data_post.x, self.data_post.y_mean, y_post_std=None, x_red=None, y_red=None,
+                   y_true=None)
+
+
+        self.ci_covered_fun
+
+        return
 
 
 

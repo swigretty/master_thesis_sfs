@@ -38,7 +38,7 @@ def plot_gpr_samples(ax, x, y_mean, y_std=None, y=None, ylim=None):
             x = x[:, 1]
         else:
             x = x.reshape(-1)
-    if y_std.ndim > 1:
+    if y_std is not None and y_std.ndim > 1:
         raise ValueError(f"y_std must have 1 dimension not {y_std.ndim}")
     if y is not None:
         for idx, single_prior in enumerate(y):
