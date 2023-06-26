@@ -8,14 +8,21 @@ import pandas as pd
 @dataclass
 class GPData():
     """
+    Class storing all the relevant information to describe a sample drawn from
+    a Gaussian Process and to be used for Gaussian Process regression.
+
+    Initialize:
     gp1 = GPData(x=np.array([1]), y = np.array([2]))
     """
-    x: np.array
-    y: np.array
-    y_mean: np.array = None
-    y_cov: np.array = None
+    y: np.array  # The response variable. (Blood Pressure)
+    x: np.array = None  # design matrix (or independent, explanatory variables). (time)
+    y_mean: np.array = None  # The mean function of the GP evaluated at input x
+    y_cov: np.array = None  # The cov function values evaluated at the input x
 
     def __post_init__(self):
+        if self.x is None:
+            self.x = np.arange(len(self.y))
+
         self.index = 0
         self.check_dimensions()
 
@@ -86,3 +93,5 @@ class GPData():
         df = self.to_df()
         df[["ci_lb", "ci_ub"]] = df.apply(lambda row: self.calculate_ci_row(row), axis=1).to_list()
         return df[["ci_lb", "ci_ub"]]
+
+
