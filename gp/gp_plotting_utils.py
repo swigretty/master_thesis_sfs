@@ -3,38 +3,41 @@ import functools
 import matplotlib.pyplot as plt
 from logging import getLogger
 from constants.constants import OUTPUT_PATH
+
 logger = getLogger(__name__)
 
 
-def ts_plotter(func, output_path=OUTPUT_PATH, figname=""):
-    """ Function either plots on subplot of existing figure (ax is defined in kwargs)
-     or creates new figure with 1 plot (ax is None) and stores the figure in output_path"""
-    @functools.wraps(func)
-    def wrapper_plotter(*args, fig=None, ax=None, **kwargs):
+def ts_plotter(figname_suffix="", output_path=OUTPUT_PATH):
+    def ts_plotter_inner(func):
+        """ Function either plots on subplot of existing figure (ax is defined in kwargs)
+         or creates new figure with 1 plot (ax is None) and stores the figure in output_path"""
+        @functools.wraps(func)
+        def wrapper_plotter(*args, fig=None, ax=None, **kwargs):
+            nonlocal figname_suffix
+            nonlocal output_path
 
-        figname_suffix = kwargs.get("figname_suffix", "")
+            if ax and figname_suffix:
+                logger.warning(f"{figname_suffix=} will be ignored since figure not store in function: {func.__name__}")
+            if ax is None:
+                fig, ax = plt.subplots(nrows=1, ncols=1, figisize=(10, 6))
 
-        if ax and figname_suffix:
-            logger.warning(f"{figname_suffix=} will be ignored since figure not store in function: {func.__name__}")
-        if ax is None:
-            fig, ax = plt.subplots(nrows=1, ncols=1, figisize=(10, 6))
+            value = func(*args, ax=ax, **kwargs)
 
-        value = func(*args, figname_suffix="", ax=None, **kwargs)
-        figname_suffix = kwargs.get("figname_suffix", "")  # function might modify kwargs figname_suffix entry
-        if figname_suffix and not figname_suffix.startswith("_"):
-            figname_suffix = f"_{figname_suffix}"
+            if figname_suffix and not figname_suffix.startswith("_"):
+                figname_suffix = f"_{figname_suffix}"
 
-        if fig is not None:
-            fig.tight_layout()
-            fig.savefig(output_path / f"{func.__name__}{figname_suffix}.pdf")
-        return value
+            if fig is not None:
+                fig.tight_layout()
+                fig.savefig(output_path / f"{func.__name__}{figname_suffix}.pdf")
+            return value
 
-    plt.close()
-    return wrapper_plotter
+        plt.close()
+        return wrapper_plotter
+    return ts_plotter_inner
 
 
 @ts_plotter()
-def plot_kernel_function(x, kernel, figname_suffix="", ax=None):
+def plot_kernel_function(x, kernel, ax=None):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     KXX = kernel(x)
@@ -53,7 +56,7 @@ def plot_kernel_function(x, kernel, figname_suffix="", ax=None):
 
 @ts_plotter()
 def plot_posterior(x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
-                   y_true=None, ax=None, figname_suffix=""):
+                   y_true=None, ax=None):
     plot_gpr_samples(x, y_post_mean, y_post_std, y=None, ax=ax)
     if y_true is not None:
         ax.plot(x, y_true, "r:")
@@ -63,7 +66,7 @@ def plot_posterior(x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
 
 
 @ts_plotter()
-def plot_gpr_samples(x, y_mean, y_std=None, y=None, ylim=None, ax=None, figname_suffix=""):
+def plot_gpr_samples(x, y_mean, y_std=None, y=None, ylim=None, ax=None):
     """
     y has shape (n_prior_samples, n_samples_per_prior)
     """
