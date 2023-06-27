@@ -10,7 +10,7 @@ import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from gp.gp_regressor import GPR
-from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples
+from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, ts_plotter
 from gp.gp_data import GPData
 from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
@@ -31,7 +31,8 @@ class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH,
-                 data_fraction_weights=None, data_fraction=0.3, data_true=None, rng=None, normalize_kernel=False):
+                 data_fraction_weights=None, data_fraction=0.3, data_true=None, rng=None, normalize_kernel=False,
+                 session_name=None):
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
@@ -42,6 +43,10 @@ class GPSimulator():
         self.kernel_sim = kernel_sim
         if normalize_kernel:
             self.kernel_sim = self.get_normalized_kernel(kernel_sim)
+        self.session_name = session_name
+        if self.session_name is None:
+            self.session_name = self.kernel_sim.__name__
+
 
         self.mean_f = mean_f
         self.meas_noise = meas_noise
@@ -68,6 +73,9 @@ class GPSimulator():
         self.data_true = data_true
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
+
+    def plotter(self):
+        return ts_plotter(output_path=self.output_path)
 
     def sim_gp(self, n_samples=5):
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
@@ -215,7 +223,8 @@ class GPSimulator():
         if (not hasattr(self.gpm_fit, "X_train_")) or refit:
             self.gpm_fit.fit(self.data.x, self.data.y)
 
-    def plot_prior(self, ax, add_offset=False):
+    @plotter()
+    def plot_prior(self, add_offset=False, title="Samples from Prior Distribution", ax=None, figname_suffix=""):
         data_prior = self.data_prior
 
         if add_offset:
@@ -232,10 +241,11 @@ class GPSimulator():
         ylim = None
         if max(y_prior_std) > plot_lim:
             ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
-        plot_gpr_samples(ax, data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim)
-        ax.set_title("Samples from Prior Distribution")
+        plot_gpr_samples(data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim, ax=ax)
+        ax[0, 0].set_title(title)
 
-    def plot_posterior(self, ax, add_offset=False, title="Predictive Distribution"):
+    @plotter()
+    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, **kwargs):
         data_post = self.data_post
         data = self.data
         data_true = self.data_true
@@ -245,29 +255,31 @@ class GPSimulator():
             data += self.offset
             data_true += self.offset
 
-        plot_posterior(ax, data_post.x, data_post.y_mean, y_post_std=data_post.y_std, x_red=data.x, y_red=data.y,
-                       y_true=data_true.y)
+        plot_posterior(data_post.x, data_post.y_mean, y_post_std=data_post.y_std, x_red=data.x, y_red=data.y,
+                       y_true=data_true.y, ax=ax)
         ax.set_title(title)
 
-    def plot_true_with_samples(self, ax=None, figname=None, add_offset=True):
-        nrows = 1
-        ncols = 1
-
+    @plotter()
+    def plot_true_with_samples(self, add_offset=True, ax=None, **kwargs):
         data_true = self.data_true
         data = self.data
         if add_offset:
             data_true += self.offset
             data += self.offset
 
-        if ax is None:
-            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
         ax.plot(self.x, data_true.y, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
-        if figname is not None:
-            figfile = f"{figname}_{self.data_fraction:.2f}"
-            fig.savefig(self.output_path / f"true_samples_{figfile}.pdf")
 
-        plt.close()
+        figname_suffix = kwargs.get("figname_suffix", "")
+        kwargs["figname_suffix"] = f"{figname_suffix}_{self.data_fraction:.2f}"
+
+    def plot_overall_mean(self, ax):
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+        self.plot_true_with_samples(ax, add_offset=True)
+        ax.plot(self.data_mean.x, self.data_mean.y_mean, label="sample mean")
+        ax.plot(self.data_true.x, np.mean(self.data_true.y), label="true_mean")
+        ax.plot(self.data_post.x, np.mean(self.data_post.y_mean), label="predicted_mean")
 
     def plot(self, figname=None, add_offset=False):
         nrows = 3
@@ -276,13 +288,15 @@ class GPSimulator():
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
 
         self.plot_prior(ax[0, 0], add_offset=add_offset)
-        plot_kernel_function(ax[0, 1], self.x, self.kernel_sim)
+
+        plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 1])
 
         self.fit()
         self.gpm_sim.fit(self.data_true.x, self.data_true.y)
 
         self.plot_posterior(ax[1, 0], add_offset=add_offset)
-        plot_kernel_function(ax[1, 1], self.x, self.gpm_fit.kernel_)
+
+        plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1, 1])
 
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             ax[2, 0].plot(self.x, v, label=k)
@@ -294,14 +308,12 @@ class GPSimulator():
         fig.tight_layout()
         eval_dict = self.evaluate()
 
-        if figname is not None:
-            figfile = f"fit_{figname}_{self.data_fraction:.2f}"
-            fig.savefig(self.output_path / f"{figfile}.pdf")
+        if figname is None:
+            figname = self.kernel_sim.__name__
 
-            pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
-            # # write JSON files:
-            # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
-            #     json.dump(eval_dict, target)
+        figfile = f"fit_{figname}_{self.data_fraction:.2f}"
+        fig.savefig(self.output_path / f"{figfile}.pdf")
+        pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
         plt.close()
 
     def plot_errors(self, figname=None):

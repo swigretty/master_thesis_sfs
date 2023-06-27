@@ -20,7 +20,7 @@ mpl.style.use('seaborn-v0_8')
 def simulate_bp_gp(kernel, global_mean=120):
     gpm = GPR(kernel=kernel)
     # y_samples = gpm.sample_from_prior(x, global_mean=global_mean)
-    x, y_samples = plot_gpr_samples(gpr_model=gpm, n_samples=10, ax=ax, global_mean=global_mean)
+    x, y_samples = plot_gpr_samples(gpr_model=gpm, n_samples=10, global_mean=global_mean)
     plt.show()
     logger.info("Finished")
     return x, y_samples
@@ -43,9 +43,9 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
         ylim = [global_mean - plot_lim, global_mean + plot_lim]
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(30, 10))
 
-    plot_gpr_samples(ax[0, 0], x, y_prior, y_prior_mean, np.diag(y_prior_cov),
-                     ylim=ylim)
-    plot_kernel_function(ax[0, 1], x, kernel)
+    plot_gpr_samples(x, y_prior, y_prior_mean, np.diag(y_prior_cov),
+                     ylim=ylim, ax=ax[0, 0])
+    plot_kernel_function(x, kernel, ax=ax[0, 1])
 
     # Posterior
     y = y_prior[:, 0]
@@ -60,10 +60,10 @@ def sim_fit_plot_gp(x=np.linspace(0, 20, 100), global_mean=120,
     gpm = GPR(kernel=kernel, normalize_y=False)
     gpm.fit(x_red, y_red)
     y_post, y_post_mean, y_post_cov = gpm.sample_from_posterior(x, n_samples=4)
-    plot_gpr_samples(ax[1, 0], x, y_post, y_post_mean, np.diag(y_post_cov))
+    plot_gpr_samples(x, y_post, y_post_mean, np.diag(y_post_cov), ax=ax[1, 0])
     ax[1, 0].scatter(x_red[:, 1], y_red, color="red", zorder=10, label="Observations")
     ax[1, 0].set_title("Samples from posterior distribution")
-    plot_kernel_function(ax[1, 1], x, gpm.gp.kernel_)
+    plot_kernel_function(x, gpm.gp.kernel_, ax=ax[1, 1])
     # ax[1, 0].legend(loc="lower left")
     return fig
 

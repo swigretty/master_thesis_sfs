@@ -1,7 +1,40 @@
 import re
+import functools
+import matplotlib.pyplot as plt
+from logging import getLogger
+from constants.constants import OUTPUT_PATH
+logger = getLogger(__name__)
 
 
-def plot_kernel_function(ax, x, kernel):
+def ts_plotter(func, output_path=OUTPUT_PATH, figname=""):
+    """ Function either plots on subplot of existing figure (ax is defined in kwargs)
+     or creates new figure with 1 plot (ax is None) and stores the figure in output_path"""
+    @functools.wraps(func)
+    def wrapper_plotter(*args, fig=None, ax=None, **kwargs):
+
+        figname_suffix = kwargs.get("figname_suffix", "")
+
+        if ax and figname_suffix:
+            logger.warning(f"{figname_suffix=} will be ignored since figure not store in function: {func.__name__}")
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figisize=(10, 6))
+
+        value = func(*args, figname_suffix="", ax=None, **kwargs)
+        figname_suffix = kwargs.get("figname_suffix", "")  # function might modify kwargs figname_suffix entry
+        if figname_suffix and not figname_suffix.startswith("_"):
+            figname_suffix = f"_{figname_suffix}"
+
+        if fig is not None:
+            fig.tight_layout()
+            fig.savefig(output_path / f"{func.__name__}{figname_suffix}.pdf")
+        return value
+
+    plt.close()
+    return wrapper_plotter
+
+
+@ts_plotter()
+def plot_kernel_function(x, kernel, figname_suffix="", ax=None):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     KXX = kernel(x)
@@ -18,9 +51,10 @@ def plot_kernel_function(ax, x, kernel):
     ax.set_title(title)
 
 
-def plot_posterior(ax, x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
-                   y_true=None):
-    plot_gpr_samples(ax, x, y_post_mean, y_post_std, y=None)
+@ts_plotter()
+def plot_posterior(x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
+                   y_true=None, ax=None, figname_suffix=""):
+    plot_gpr_samples(x, y_post_mean, y_post_std, y=None, ax=ax)
     if y_true is not None:
         ax.plot(x, y_true, "r:")
     if (x_red is not None) and (y_red is not None):
@@ -28,7 +62,8 @@ def plot_posterior(ax, x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
     ax.set_title("Samples from posterior distribution")
 
 
-def plot_gpr_samples(ax, x, y_mean, y_std=None, y=None, ylim=None):
+@ts_plotter()
+def plot_gpr_samples(x, y_mean, y_std=None, y=None, ylim=None, ax=None, figname_suffix=""):
     """
     y has shape (n_prior_samples, n_samples_per_prior)
     """
