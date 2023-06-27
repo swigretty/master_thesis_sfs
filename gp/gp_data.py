@@ -22,6 +22,10 @@ class GPData():
     def __post_init__(self):
         if self.x is None:
             self.x = np.arange(len(self.y))
+        if self.y_mean is None:
+            self.y_mean = np.full((len(self.y)), np.nan)
+        if self.y_cov is None:
+            self.y_cov = np.full((len(self.y), len(self.y)), np.nan)
 
         self.index = 0
         self.check_dimensions()
@@ -87,7 +91,7 @@ class GPData():
 
     @property
     def y_var(self):
-        return np.diag(self)
+        return np.diag(self.y_cov)
 
     @property
     def y_std(self):

@@ -91,17 +91,16 @@ class GPEvaluator:
         return {**overall_mean, **eval_fun_dict}
 
     def plot_errors(self, ax=None):
+        error_data_true = GPData(np.array([]))
         if ax is None:
             fig, ax = plt.subplots(1, 1)
 
-        plot_posterior(ax, self.data_post.x, self.data_post.y_mean, y_post_std=None, x_red=None, y_red=None,
-                   y_true=None)
+        error_idx = np.nonzero(self.ci_covered_fun == 0)[0]
+        if len(error_idx) > 0:
+            error_data_true = self.data_true[error_idx]
 
-
-        self.ci_covered_fun
-
-        return
-
+        plot_posterior(ax, self.data_post.x, self.data_post.y_mean, y_post_std=self.data_post.y_std,
+                       x_red=error_data_true.x, y_red=error_data_true.y, y_true=self.data_true.y)
 
 
 

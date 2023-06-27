@@ -36,6 +36,7 @@ class GPSimulator():
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         self.output_path = output_path
+        self.output_path.mkdir(parents=True, exist_ok=True)
 
         self.x = x
         self.kernel_sim = kernel_sim
@@ -234,7 +235,7 @@ class GPSimulator():
         plot_gpr_samples(ax, data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim)
         ax.set_title("Samples from Prior Distribution")
 
-    def plot_posterior(self, ax, add_offset=False):
+    def plot_posterior(self, ax, add_offset=False, title="Predictive Distribution"):
         data_post = self.data_post
         data = self.data
         data_true = self.data_true
@@ -246,7 +247,7 @@ class GPSimulator():
 
         plot_posterior(ax, data_post.x, data_post.y_mean, y_post_std=data_post.y_std, x_red=data.x, y_red=data.y,
                        y_true=data_true.y)
-        ax.set_title("Predictive Distribution")
+        ax.set_title(title)
 
     def plot_true_with_samples(self, ax=None, figname=None, add_offset=True):
         nrows = 1
@@ -263,9 +264,8 @@ class GPSimulator():
         ax.plot(self.x, data_true.y, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
         if figname is not None:
-            self.output_path.mkdir(parents=True, exist_ok=True)
             figfile = f"{figname}_{self.data_fraction:.2f}"
-            fig.savefig(self.output_path / f"{figfile}.pdf")
+            fig.savefig(self.output_path / f"true_samples_{figfile}.pdf")
 
         plt.close()
 
@@ -295,8 +295,7 @@ class GPSimulator():
         eval_dict = self.evaluate()
 
         if figname is not None:
-            self.output_path.mkdir(parents=True, exist_ok=True)
-            figfile = f"{figname}_{self.data_fraction:.2f}"
+            figfile = f"fit_{figname}_{self.data_fraction:.2f}"
             fig.savefig(self.output_path / f"{figfile}.pdf")
 
             pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
@@ -304,6 +303,21 @@ class GPSimulator():
             # with (self.output_path / f"{figfile}.json").open("w", encoding="UTF-8") as target:
             #     json.dump(eval_dict, target)
         plt.close()
+
+    def plot_errors(self, figname=None):
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(20,20))
+        self.plot_posterior(ax=ax[0, 0], add_offset=False)
+        GPEvaluator(self.data_true, self.data_post).plot_errors(ax=ax[0, 1])
+        ax[0, 1].set_title("errors overall")
+        GPEvaluator(self.data_true[self.train_idx], self.data_post[self.train_idx]).plot_errors(ax=ax[1, 0])
+        ax[1, 0].set_title("errors train")
+        GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).plot_errors(ax=ax[1, 1])
+        ax[1, 1].set_title("errors test")
+
+        if figname is not None:
+            figfile = f"err_{figname}_{self.data_fraction:.2f}"
+            fig.savefig(self.output_path / f"{figfile}.pdf")
+
 
     def evaluate(self):
         param_error = {}
@@ -371,7 +385,6 @@ class GPSimulator():
         fig.tight_layout()
 
         if figname is not None:
-            self.output_path.mkdir(parents=True, exist_ok=True)
             fig.savefig(self.output_path / f"{figname}_mean_dec.pdf")
 
 
