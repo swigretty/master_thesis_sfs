@@ -7,6 +7,7 @@ from constants.constants import OUTPUT_PATH
 logger = getLogger(__name__)
 
 
+# TODO combine Plotter and ts_plotter
 class Plotter():
     def __init__(self, f):
         self.func = f

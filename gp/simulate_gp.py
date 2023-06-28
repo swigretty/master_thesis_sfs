@@ -277,8 +277,10 @@ class GPSimulator():
         self.plot_true_with_samples(ax=ax, add_offset=True)
         plot_lines_dict = {"sample mean":  self.data_mean.y_mean, "true mean": self.data_true.y,
                            "predicted_mean": self.data_post.y_mean}
-        for k, v in plot_lines_dict.items():
-            ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k, linestyle='dashed')
+        # loosely dashed, dashed dotted, dotted
+        linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
+        for i, (k, v) in enumerate(plot_lines_dict.items()):
+            ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k, linestyle=linestyles[i])
         ax.legend()
 
     def plot(self, add_offset=False):

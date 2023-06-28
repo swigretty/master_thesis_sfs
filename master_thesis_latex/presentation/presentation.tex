@@ -666,6 +666,37 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
+
+\begin{frame}
+	\frametitle{Outlook - Weekly BP Mean}
+	\begin{figure}
+		\includegraphics[width=0.7\linewidth]{plot_overall_mean_ou_bounded_seasonal_sin_rbf_0.20}
+%			\caption{Periodic Kernel with different length scale}
+	\end{figure}
+
+
+	\begin{table}
+		\begin{tabular}{l l l}
+			\toprule
+			\textbf{metric} & \textbf{GP Predicted Mean} & \textbf{Sample Mean}\\
+			\midrule
+			ci covered & True & False \\
+			predictive probability dens. & 0.25904 & $<$ 0.00001 \\
+			mse & 0.0030 & 4.3988 \\
+			ci width &  0.231 & 0.012 \\
+			\bottomrule
+		\end{tabular}
+%		\caption{}
+
+%		{'ci_overall_mean_lb': -13.305443087675325, 'ci_overall_mean_ub': -13.07422728777426, 'overall_mean_covered': 1, 'ci_overall_width': 0.2312157999010651, 'pred_prob_overall_mean': 0.25903971192446634, 'mse_overll_mean': 0.0030048794026204416, 'covered_fraction_fun': 0.9678571428571429, 'kl_fun': 189561702.44658434, 'pred_logprob': 1182.5772622643588, 'mse': 0.1775464329777053}
+%		{'ci_overall_mean_lb': -11.043858712746218, 'ci_overall_mean_ub': -11.031493422441432, 'overall_mean_covered': 0, 'ci_overall_width': 0.012365290304785503, 'pred_prob_overall_mean': 0.0, 'mse_overll_mean': 4.39884489044144, 'covered_fraction_fun': 0.05476190476190476, 'kl_fun': 11412263.566746384, 'pred_logprob': -720975.0783134875, 'mse': 14.386045805246933}
+
+	\end{table}
+
+
+\end{frame}
+
+
 \begin{frame}
 	\frametitle{Outlook}
 
