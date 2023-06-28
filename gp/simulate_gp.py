@@ -10,7 +10,7 @@ import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from gp.gp_regressor import GPR
-from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, ts_plotter
+from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
 from constants.constants import OUTPUT_PATH
 from exploration.explore import get_red_idx
@@ -43,10 +43,7 @@ class GPSimulator():
         self.kernel_sim = kernel_sim
         if normalize_kernel:
             self.kernel_sim = self.get_normalized_kernel(kernel_sim)
-        self.session_name = session_name
-        if self.session_name is None:
-            self.session_name = self.kernel_sim.__name__
-        self.figname_suffix = f"{self.session_name}_{self.data_fraction:.2f}"
+
 
         self.mean_f = mean_f
         self.meas_noise = meas_noise
@@ -54,6 +51,11 @@ class GPSimulator():
 
         self._data_fraction_weights = data_fraction_weights
         self.data_fraction = data_fraction
+
+        self.session_name = session_name
+        if self.session_name is None:
+            self.session_name = self.kernel_sim.__class__.__name__
+        self.figname_suffix = f"{self.session_name}_{self.data_fraction:.2f}"
 
         self.rng = rng
         if self.rng is None:
@@ -74,8 +76,8 @@ class GPSimulator():
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
-    def plotter(self):
-        return ts_plotter(output_path=self.output_path, figname_suffix=self.figname_suffix)
+    # def plotter(self):
+    #     return ts_plotter(output_path=self.output_path, figname_suffix=self.figname_suffix)
 
     def sim_gp(self, n_samples=5):
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
@@ -223,7 +225,7 @@ class GPSimulator():
         if (not hasattr(self.gpm_fit, "X_train_")) or refit:
             self.gpm_fit.fit(self.data.x, self.data.y)
 
-    @plotter()
+    @Plotter
     def plot_prior(self, add_offset=False, title="Samples from Prior Distribution", ax=None):
         data_prior = self.data_prior
 
@@ -242,10 +244,10 @@ class GPSimulator():
         if max(y_prior_std) > plot_lim:
             ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
         plot_gpr_samples(data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim, ax=ax)
-        ax[0, 0].set_title(title)
+        ax.set_title(title)
 
-    @plotter()
-    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, **kwargs):
+    @Plotter
+    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
         data_post = self.data_post
         data = self.data
         data_true = self.data_true
@@ -259,8 +261,8 @@ class GPSimulator():
                        y_true=data_true.y, ax=ax)
         ax.set_title(title)
 
-    @plotter()
-    def plot_true_with_samples(self, add_offset=True, ax=None, **kwargs):
+    @Plotter
+    def plot_true_with_samples(self, add_offset=True, ax=None):
         data_true = self.data_true
         data = self.data
         if add_offset:
@@ -270,22 +272,22 @@ class GPSimulator():
         ax.plot(self.x, data_true.y, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
 
-    @plotter()
+    @Plotter
     def plot_overall_mean(self, ax=None):
-        self.plot_true_with_samples(ax, add_offset=True)
+        self.plot_true_with_samples(ax=ax, add_offset=True)
         plot_lines_dict = {"sample mean":  self.data_mean.y_mean, "true mean": self.data_true.y,
                            "predicted_mean": self.data_post.y_mean}
         for k, v in plot_lines_dict.items():
-            ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k)
+            ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k, linestyle='dashed')
         ax.legend()
 
-    def plot(self, figname=None, add_offset=False):
+    def plot(self, add_offset=False):
         nrows = 3
         ncols = 2
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
 
-        self.plot_prior(ax[0, 0], add_offset=add_offset)
+        self.plot_prior(add_offset=add_offset, ax=ax[0, 0])
 
         plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 1])
 
@@ -303,16 +305,16 @@ class GPSimulator():
         for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
             ax[2, 1].plot(self.x, v, label=k)
 
-        fig.tight_layout()
         eval_dict = self.evaluate()
 
+        fig.tight_layout()
         figfile = f"fit_{self.figname_suffix}"
         fig.savefig(self.output_path / f"{figfile}.pdf")
         pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
         plt.close()
 
-    def plot_errors(self, figname=None):
-        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(20,20))
+    def plot_errors(self):
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
         self.plot_posterior(ax=ax[0, 0], add_offset=False)
         GPEvaluator(self.data_true, self.data_post).plot_errors(ax=ax[0, 1])
         ax[0, 1].set_title("errors overall")
@@ -320,11 +322,10 @@ class GPSimulator():
         ax[1, 0].set_title("errors train")
         GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).plot_errors(ax=ax[1, 1])
         ax[1, 1].set_title("errors test")
-
-        if figname is not None:
-            figfile = f"err_{figname}_{self.data_fraction:.2f}"
-            fig.savefig(self.output_path / f"{figfile}.pdf")
-
+        fig.tight_layout()
+        figfile = f"err_{self.figname_suffix}"
+        fig.savefig(self.output_path / f"{figfile}.pdf")
+        plt.close()
 
     def evaluate(self):
         param_error = {}
@@ -365,16 +366,13 @@ class GPSimulator():
             v["n_samples"] = n_samples
         return summary_dict
 
-    def mean_decomposition_plot(self, figname=None):
+    @Plotter
+    def mean_decomposition_plot(self, ax=None):
 
         self.gpm_sim.fit(self.data_true.x, self.data_true.y)
 
         y_post, y_post_mean, y_post_cov = self.gpm_sim.sample_from_posterior(self.x, n_samples=1)
         decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
-
-        nrows = 1
-        ncols = 1
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, nrows * 5))
 
         ax.plot(self.data_true.x, self.data_true.y)
 
@@ -388,11 +386,6 @@ class GPSimulator():
         # ax.plot(data.x, sum_of_v, label="sum")
         # ax.plot(data.x, y_post_mean, label="post_mean")
         ax.legend()
-
-        fig.tight_layout()
-
-        if figname is not None:
-            fig.savefig(self.output_path / f"{figname}_mean_dec.pdf")
 
 
 def plot_mean_decompose(kernel="sin_rbf"):

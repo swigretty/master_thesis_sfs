@@ -13,18 +13,20 @@ logger = getLogger(__name__)
 
 
 def plot_gp_regression_sample(k_name, mode_name, nplots=1, rng=None, **kwargs):
-    fig_name_suffix = ""
+    mode_name_suffix = ""
     if rng is None:
         rng = np.random.default_rng(11)
     for i in range(nplots):
         if nplots > 1:
             rng = np.random.default_rng(i)
-            fig_name_suffix = f"_{i}"
+            mode_name_suffix = f"_{i}"
 
-        gps = GPSimulator(rng=rng, normalize_kernel=True, **kwargs)
-        gps.plot_true_with_samples(figname=f"{mode_name}{fig_name_suffix}")
-        gps.plot(figname=f"{k_name}_{mode_name}{fig_name_suffix}")
-        gps.plot_errors(figname=f"{k_name}_{mode_name}{fig_name_suffix}")
+        gps = GPSimulator(rng=rng, normalize_kernel=True, session_name=f"{mode_name}_{k_name}{mode_name_suffix}",
+                          **kwargs)
+        gps.plot_true_with_samples()
+        gps.plot()
+        gps.plot_errors()
+        gps.plot_overall_mean()
 
     return gps
 

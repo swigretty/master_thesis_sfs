@@ -7,14 +7,45 @@ from constants.constants import OUTPUT_PATH
 logger = getLogger(__name__)
 
 
+class Plotter():
+    def __init__(self, f):
+        self.func = f
+
+    def __call__(self, instance, *args, ax=None, **kwargs):
+        fig = None
+
+        output_path = instance.output_path
+        figname_suffix = instance.figname_suffix
+
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+
+        value = self.func(instance, *args, ax=ax, **kwargs)
+
+        if figname_suffix and not figname_suffix.startswith("_"):
+            figname_suffix = f"_{figname_suffix}"
+
+        if fig is not None:
+            fig.tight_layout()
+            fig.savefig(output_path / f"{self.func.__name__}{figname_suffix}.pdf")
+            plt.close()
+        return value
+
+    def __get__(self, instance, owner):
+        from functools import partial
+        return partial(self.__call__, instance)
+
+
 def ts_plotter(figname_suffix="", output_path=OUTPUT_PATH):
     def ts_plotter_inner(func):
         """ Function either plots on subplot of existing figure (ax is defined in kwargs)
          or creates new figure with 1 plot (ax is None) and stores the figure in output_path"""
         @functools.wraps(func)
-        def wrapper_plotter(*args, fig=None, ax=None, **kwargs):
+        def wrapper_plotter(*args, ax=None, **kwargs):
             nonlocal figname_suffix
             nonlocal output_path
+
+            fig = None
 
             if ax and figname_suffix:
                 logger.warning(f"{figname_suffix=} will be ignored since figure not store in function: {func.__name__}")
@@ -29,9 +60,9 @@ def ts_plotter(figname_suffix="", output_path=OUTPUT_PATH):
             if fig is not None:
                 fig.tight_layout()
                 fig.savefig(output_path / f"{func.__name__}{figname_suffix}.pdf")
+                plt.close()
             return value
 
-        plt.close()
         return wrapper_plotter
     return ts_plotter_inner
 
