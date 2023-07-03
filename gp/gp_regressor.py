@@ -94,6 +94,10 @@ class GPR(GaussianProcessRegressor):
         return decompose_dict
 
     def predict(self, x: np.ndarray, return_std=False, return_cov=False):
+        """
+        If not fitted yet returns y_mean=0 and vcov = kernel(x).
+        Does not consider alpha (i.e. measurement noise)
+        """
         if self.kernel_approx:
             x = self.kernel_approx.transform(x)
         return super().predict(x, return_std=return_std, return_cov=return_cov)
@@ -118,6 +122,10 @@ class GPR(GaussianProcessRegressor):
         return y_samples, y_mean, y_cov
 
     def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0):
+        """
+        Does return a sample, y_mean, and y_cov without considering the
+        measurement noise alpha.
+        """
         gps = self
         if hasattr(self, "X_train_"):  # has already been fitted
             gps = self.__class__(kernel=self.kernel)  # sample_y does only need kernel information

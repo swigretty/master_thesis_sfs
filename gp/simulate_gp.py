@@ -44,7 +44,6 @@ class GPSimulator():
         if normalize_kernel:
             self.kernel_sim = self.get_normalized_kernel(kernel_sim)
 
-
         self.mean_f = mean_f
         self.meas_noise = meas_noise
         self.offset = np.mean([mean_f(xi) for xi in self.x])
@@ -69,7 +68,7 @@ class GPSimulator():
             #     constant_value_bounds="fixed")
         self.kernel_fit = kernel_fit
 
-        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng, alpha=0)
+        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng, alpha=self.meas_noise)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise, rng=rng)
 
         self.data_true = data_true
@@ -80,12 +79,9 @@ class GPSimulator():
     #     return ts_plotter(output_path=self.output_path, figname_suffix=self.figname_suffix)
 
     def sim_gp(self, n_samples=5):
+        # samples without measurement noise
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
             self.x, n_samples=n_samples)  # mean_f=self.mean_f
-
-        # if n_samples == 1:
-        #     y_prior = y_prior.reshape(-1)
-        #     y_prior_mean = y_prior_mean.reshape(-1)
 
         if self.meas_noise:
             # TODO should this be scaled as well ?
@@ -110,6 +106,16 @@ class GPSimulator():
         assert len(fun) == 1, "cannot extract seasonal pattern"
         weights = fun[0] - min(fun[0])
         return weights * 0.1
+
+    @cached_property
+    def data_true_post(self):
+        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
+        y_post_mean, y_post_cov = self.gpm_sim.predict(self.data_true.x, return_cov=True)
+        # y_post_mean will only diverge from self.data_true.y if meas_noise != 0
+        if not self.meas_noise:
+            assert np.mean((self.data_true.y - y_post_mean)**2) < 10**(-4)
+
+        return GPData(x=self.data_true.x, y=self.data_true.y, y_mean=y_post_mean, y_cov=y_post_cov)
 
     @property
     def data_true(self):
@@ -154,6 +160,10 @@ class GPSimulator():
 
     @property
     def data_mean(self):
+        """
+        Using the overall mean as prediction.
+        cov is calculated assuming iid data.
+        """
         sigma_mean = 1/len(self.data.y) * np.var(self.data.y)
         y_cov = np.zeros((len(self.x), len(self.x)), float)
         np.fill_diagonal(y_cov, sigma_mean)
@@ -263,13 +273,13 @@ class GPSimulator():
 
     @Plotter
     def plot_true_with_samples(self, add_offset=True, ax=None):
-        data_true = self.data_true
+        data_true = self.data_true_post
         data = self.data
         if add_offset:
             data_true += self.offset
             data += self.offset
 
-        ax.plot(self.x, data_true.y, "r:")
+        ax.plot(self.x, data_true.y_mean, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
 
     @Plotter
@@ -294,7 +304,6 @@ class GPSimulator():
         plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 1])
 
         self.fit()
-        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
 
         self.plot_posterior(add_offset=add_offset, ax=ax[1, 0])
 
@@ -370,21 +379,16 @@ class GPSimulator():
 
     @Plotter
     def mean_decomposition_plot(self, ax=None):
-
-        self.gpm_sim.fit(self.data_true.x, self.data_true.y)
-
-        y_post, y_post_mean, y_post_cov = self.gpm_sim.sample_from_posterior(self.x, n_samples=1)
+        y_post_mean = self.data_true_post.y_mean
+        assert np.all(y_post_mean - self.data_true.y < 0.00000001)
         decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
-
         ax.plot(self.data_true.x, self.data_true.y)
-
         sum_of_v = np.zeros(len(self.x))
         for k, v in decomposed_dict_sim.items():
             ax.plot(self.x, v, label=k, linestyle="dashed")
             sum_of_v += v
 
         assert np.all(sum_of_v - y_post_mean < 0.00000001)
-        assert np.all(y_post_mean - self.data_true.y < 0.00000001)
         # ax.plot(data.x, sum_of_v, label="sum")
         # ax.plot(data.x, y_post_mean, label="post_mean")
         ax.legend()
