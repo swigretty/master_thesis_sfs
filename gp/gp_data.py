@@ -106,4 +106,15 @@ class GPData():
         df[["ci_lb", "ci_ub"]] = df.apply(lambda row: self.calculate_ci_row(row), axis=1).to_list()
         return df[["ci_lb", "ci_ub"]]
 
+    def get_samples(self, n_samples=10, rng=None) -> list:
+        samples_list = []
+        if rng is None:
+            rng = np.random.default_rng()
+        y_samples = rng.multivariate_normal(self.y_mean, self.y_cov, n_samples)
+        kwargs = asdict(self)
+        for s in y_samples:
+            kwargs["y"] = s
+            samples_list.append(self.__class__(**kwargs))
+        return samples_list
+
 
