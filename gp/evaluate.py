@@ -6,6 +6,10 @@ from gp.evalutation_utils import calculate_ci, se_overall_mean_from_cov
 import matplotlib.pyplot as plt
 from gp.gp_data import GPData
 from gp.gp_plotting_utils import plot_posterior
+from logging import getLogger
+
+
+logger = getLogger(__name__)
 
 
 class GPEvaluator:
@@ -36,7 +40,11 @@ class GPEvaluator:
 
         d = m_fr - m_to
 
-        c, lower = scipy.linalg.cho_factor(S_fr)
+        try:
+            c, lower = scipy.linalg.cho_factor(S_fr)
+        except Exception as e:
+            logger.warning(e)
+            return
 
         def solve(B):
             return scipy.linalg.cho_solve((c, lower), B)
@@ -68,7 +76,8 @@ class GPEvaluator:
                 self.data_true.y < self.data_post.ci["ci_ub"])
 
     def evaluate_fun(self):
-        return {"covered_fraction_fun": np.mean(self.ci_covered_meanfun), "kl_fun": self.kl_div_fun(),
+        return {"covered_fraction_fun": np.mean(self.ci_covered_meanfun),
+                "covered_fraction_yfun": np.mean(self.ci_covered_yfun), "kl_fun": self.kl_div_fun(),
                 "pred_logprob": self.get_predictive_logprob(), "mse": self.mse()}
 
     def evaluate_overall_mean(self):

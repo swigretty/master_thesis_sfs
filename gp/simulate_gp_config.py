@@ -25,7 +25,7 @@ class GPSimulatorConfig():
     n_days: int = 7
     samples_per_hour: int = 10
 
-    meas_noise: int = 0
+    meas_noise: int = 1
     mean_f: callable = mean_fun_const
 
     simulation_config_keys = ["meas_noise", "mean_f", "x"]
