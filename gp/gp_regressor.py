@@ -1,9 +1,11 @@
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern, Product, Sum
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern, Product, Sum, WhiteKernel
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.kernel_approximation import Nystroem
 import numpy as np
 from functools import partial
 from logging import getLogger
+from copy import copy
+
 
 logger = getLogger(__name__)
 
@@ -93,22 +95,48 @@ class GPR(GaussianProcessRegressor):
 
         return decompose_dict
 
-    def predict(self, x: np.ndarray, return_std=False, return_cov=False):
+    def predict(self, X: np.ndarray, return_std=False, return_cov=False, predict_y=False):
+        """
+        Predict using the Gaussian process regression model.
+        """
+        if self.kernel_approx:
+            x = self.kernel_approx.transform(X)
+
+        if predict_y:
+            orig_kernel = copy(self.kernel)
+            self.kernel = orig_kernel + WhiteKernel(noise_level=self.alpha)
+
+            if hasattr(self, "kernel_"):
+                orig_kernel_ = copy(self.kernel_)
+                self.kernel_ = orig_kernel_ + WhiteKernel(noise_level=self.alpha)
+
+        res = super().predict(X, return_cov=return_cov, return_std=return_std)
+
+        if predict_y:
+            self.kernel = orig_kernel
+            if hasattr(self, "kernel_"):
+                self.kernel_ = orig_kernel_
+
+        return res
+
+    def predict_y(self, x: np.ndarray, return_std=False, return_cov=False):
         """
         If not fitted yet returns y_mean=0 and vcov = kernel(x).
         Does not consider alpha (i.e. measurement noise)
         """
-        if self.kernel_approx:
-            x = self.kernel_approx.transform(x)
-        return super().predict(x, return_std=return_std, return_cov=return_cov)
+        return self.predict(x, return_std=return_std, return_cov=return_cov, predict_y=True)
 
     def fit(self, train_x: np.ndarray, train_y: np.ndarray):
         if self.kernel_approx:
             train_x = self.kernel_approx.fit_transform(train_x)
         super().fit(train_x, train_y)
 
-    def sample_y(self, x, n_samples=1):
-        y_mean, y_cov = self.predict(x, return_cov=True)
+    def sample_y(self, x, n_samples=1, predict_y=False):
+        """
+        if predict_y, measurment noise will be added to y_cov
+        """
+
+        y_mean, y_cov = self.predict(x, return_cov=True, predict_y=predict_y)
         if y_mean.ndim == 1:
             y_samples = self.rng.multivariate_normal(y_mean, y_cov, n_samples).T
         else:
@@ -121,7 +149,7 @@ class GPR(GaussianProcessRegressor):
             y_samples = np.hstack(y_samples)
         return y_samples, y_mean, y_cov
 
-    def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0):
+    def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0, predict_y=True):
         """
         Does return a sample, y_mean, and y_cov without considering the
         measurement noise alpha.
@@ -131,12 +159,12 @@ class GPR(GaussianProcessRegressor):
             gps = self.__class__(kernel=self.kernel)  # sample_y does only need kernel information
         mean_f_val = np.array([mean_f(val) for val in x])
         mean_f_val_full = np.vstack([mean_f_val for i in range(n_samples)]).T
-        y_samples, y_mean, y_cov = gps.sample_y(x, n_samples)
+        y_samples, y_mean, y_cov = gps.sample_y(x, n_samples, predict_y=predict_y)
         return y_samples + mean_f_val_full, y_mean + np.mean(mean_f_val_full, axis=1), y_cov
 
-    def sample_from_posterior(self, x, n_samples):
+    def sample_from_posterior(self, x, n_samples, predict_y=False):
         if not hasattr(self, "X_train_"):  # Unfitted;predict based on GP prior
             raise Exception("GP has not been fitted yet, cannot sample from posterior")
-        return self.sample_y(x, n_samples)
+        return self.sample_y(x, n_samples, predict_y=predict_y)
 
 
