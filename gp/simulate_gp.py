@@ -5,10 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from logging import getLogger
+import logging
 import scipy
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
-from sklearn.gaussian_process.kernels import Matern, ConstantKernel
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
@@ -40,10 +41,6 @@ class GPSimulator():
         self.output_path.mkdir(parents=True, exist_ok=True)
 
         self.x = x
-        self.kernel_sim = kernel_sim
-        if normalize_kernel:
-            self.kernel_sim = self.get_normalized_kernel(kernel_sim)
-
         self.mean_f = mean_f
         self.meas_noise = meas_noise
         self.offset = np.mean([mean_f(xi) for xi in self.x])
@@ -51,43 +48,47 @@ class GPSimulator():
         self._data_fraction_weights = data_fraction_weights
         self.data_fraction = data_fraction
 
-        self.session_name = session_name
-        if self.session_name is None:
-            self.session_name = self.kernel_sim.__class__.__name__
-        self.figname_suffix = f"{self.session_name}_{self.data_fraction:.2f}"
-
         self.rng = rng
         if self.rng is None:
             self.rng = np.random.default_rng()
 
+        self.kernel_sim = kernel_sim
+        if normalize_kernel:
+            self.kernel_sim, self.meas_noise = self.get_normalized_kernel(kernel_sim,
+                                                                          meas_noise=self.meas_noise)
+
         if kernel_fit is None:
             kernel_fit = self.kernel_sim
-            # TODO only allow for centered input
-            # if not normalize_y:
-            #     kernel_fit = kernel_sim + ConstantKernel(constant_value=self.offset ** 2,
-            #     constant_value_bounds="fixed")
+
         self.kernel_fit = kernel_fit
 
+        # self.kernel_sim_meas_noise = self.kernel_sim + WhiteKernel(noise_level=self.meas_noise,
+        #                                                            noise_level_bounds="fixed")
+        #
+        # self.gpm_sim_meas_noise = GPR(kernel=self.kernel_sim_meas_noise, normalize_y=False, optimizer=None,
+        #                               rng=rng, alpha=0)
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng, alpha=self.meas_noise)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise, rng=rng)
 
         self.data_true = data_true
 
-        logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
+        self.session_name = session_name
+        if self.session_name is None:
+            self.session_name = self.kernel_sim.__class__.__name__
+        self.figname_suffix = f"{self.session_name}_{self.data_fraction:.2f}"
 
-    # def plotter(self):
-    #     return ts_plotter(output_path=self.output_path, figname_suffix=self.figname_suffix)
+        logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
     def sim_gp(self, n_samples=5):
         # samples without measurement noise
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
-            self.x, n_samples=n_samples)  # mean_f=self.mean_f
+            self.x, n_samples=n_samples, predict_y=True)  # mean_f=self.mean_f
 
-        if self.meas_noise:
-            # TODO should this be scaled as well ?
-            # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
-            y_prior = y_prior + self.meas_noise * self.rng.standard_normal((y_prior.shape))
-            y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
+        # if self.meas_noise:
+        #     # TODO should this be scaled as well ?
+        #     # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
+        #     y_prior = y_prior + self.meas_noise * self.rng.standard_normal((y_prior.shape))
+        #     y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
 
         data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov) for idx in
                 range(n_samples)]
@@ -107,6 +108,12 @@ class GPSimulator():
         weights = fun[0] - min(fun[0])
         return weights * 0.1
 
+    @property
+    def data_true_post_y(self):
+        y_post_cov = self.data_true_post + np.diag(np.repeat(self.meas_noise, len(self.data_true_post)))
+        return GPData(x=self.data_true_post.x, y=self.data_true_post.y, y_mean=self.data_true_post.y_mean,
+                      y_cov=y_post_cov)
+
     @cached_property
     def data_true_post(self):
         self.gpm_sim.fit(self.data_true.x, self.data_true.y)
@@ -114,7 +121,6 @@ class GPSimulator():
         # y_post_mean will only diverge from self.data_true.y if meas_noise != 0
         if not self.meas_noise:
             assert np.mean((self.data_true.y - y_post_mean)**2) < 10**(-4)
-
         return GPData(x=self.data_true.x, y=self.data_true.y, y_mean=y_post_mean, y_cov=y_post_cov)
 
     @property
@@ -155,8 +161,14 @@ class GPSimulator():
 
     @cached_property
     def data_post(self):
-        y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1)
+        y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1, predict_y=False)
         return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
+
+    @cached_property
+    def data_post_y(self):
+        y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1, predict_y=True)
+        return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
+
 
     @property
     def data_mean(self):
@@ -207,24 +219,34 @@ class GPSimulator():
             [pn in k for pn in PARAM_NAMES])}
 
     @classmethod
-    def get_normalized_kernel(cls, kernel):
+    def get_normalized_kernel(cls, kernel, meas_noise=0):
+        previousloglevel = logger.getEffectiveLevel()
+        logger.setLevel(logging.WARNING)
+
         kernel_ = copy(kernel)
         std_range = (0.95, 1.05)
+
         i = 0
         scale = 1
         y_std = 2
-        while (std_range[0] > y_std) or (std_range[1] < y_std):
-            gps = cls(kernel_fit=kernel_)
+
+        while (std_range[0] > y_std) or (
+                std_range[1] < y_std):
+            gps = cls(kernel_sim=kernel_, meas_noise=meas_noise*1/scale)
             data_sim = gps.sim_gp(n_samples=100)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             # logger.info(y_std)
-            scale *= y_std
+            scale *= y_std**2
             kernel_ = ConstantKernel(constant_value=1/scale, constant_value_bounds="fixed") * kernel
             i += 1
             if i > 20:
                 break
+
+        logger.setLevel(previousloglevel)
+
         logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
-        return kernel_
+
+        return kernel_, 1/scale * meas_noise
 
     def choose_sample_from_prior(self, data_index: int = 0):
         data_single = copy(self.data_prior)
@@ -257,10 +279,10 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
+    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, predict_y=False):
         data_post = self.data_post
         data = self.data
-        data_true = self.data_true
+        data_true = self.data_true_post
 
         if add_offset:
             data_post += self.offset
@@ -268,7 +290,7 @@ class GPSimulator():
             data_true += self.offset
 
         plot_posterior(data_post.x, data_post.y_mean, y_post_std=data_post.y_std, x_red=data.x, y_red=data.y,
-                       y_true=data_true.y, ax=ax)
+                       y_true=data_true.y_mean, ax=ax)
         ax.set_title(title)
 
     @Plotter
@@ -293,7 +315,7 @@ class GPSimulator():
             ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k, linestyle=linestyles[i])
         ax.legend()
 
-    def plot(self, add_offset=False):
+    def plot(self, add_offset=False, predict_y=False):
         nrows = 3
         ncols = 2
 
@@ -305,7 +327,7 @@ class GPSimulator():
 
         self.fit()
 
-        self.plot_posterior(add_offset=add_offset, ax=ax[1, 0])
+        self.plot_posterior(add_offset=add_offset, ax=ax[1, 0], predict_y=predict_y)
 
         plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1, 1])
 
@@ -326,12 +348,14 @@ class GPSimulator():
 
     def plot_errors(self):
         fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(20, 20))
-        self.plot_posterior(ax=ax[0, 0], add_offset=False)
-        GPEvaluator(self.data_true, self.data_post).plot_errors(ax=ax[0, 1])
+        self.plot_posterior(ax=ax[0, 0], add_offset=False, predict_y=predict_y)
+        data_true = self.data_true_post
+
+        GPEvaluator(data_true, self.data_post).plot_errors(ax=ax[0, 1])
         ax[0, 1].set_title("errors overall")
-        GPEvaluator(self.data_true[self.train_idx], self.data_post[self.train_idx]).plot_errors(ax=ax[1, 0])
+        GPEvaluator(data_true[self.train_idx], self.data_post[self.train_idx]).plot_errors(ax=ax[1, 0])
         ax[1, 0].set_title("errors train")
-        GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).plot_errors(ax=ax[1, 1])
+        GPEvaluator(data_true[self.test_idx], self.data_post[self.test_idx]).plot_errors(ax=ax[1, 1])
         ax[1, 1].set_title("errors test")
         fig.tight_layout()
         figfile = f"err_{self.figname_suffix}"
@@ -343,14 +367,15 @@ class GPSimulator():
         if self.kernel_sim == self.kernel_fit:
             param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
 
-        train_perf = GPEvaluator(self.data_true[self.train_idx], self.data_post[self.train_idx]).evaluate_fun()
+        train_perf = GPEvaluator(self.data_true_post[self.train_idx], self.data_post[self.train_idx]).evaluate_fun()
         train_perf["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 
-        test_perf = GPEvaluator(self.data_true[self.test_idx], self.data_post[self.test_idx]).evaluate_fun()
+        test_perf = GPEvaluator(self.data_true_post[self.test_idx],
+                                self.data_post[self.test_idx]).evaluate_fun()
 
-        overall_perf = GPEvaluator(self.data_true, self.data_post).evaluate()
+        overall_perf = GPEvaluator(self.data_true_post, self.data_post).evaluate()
 
-        overall_perf_mean = GPEvaluator(self.data_true, self.data_mean).evaluate()
+        overall_perf_mean = GPEvaluator(self.data_true_post, self.data_mean).evaluate()
 
         return {"param_error": param_error, "train_perf": train_perf, "test_perf": test_perf,
                 "overall_perf": overall_perf, "overall_perf_mean": overall_perf_mean}

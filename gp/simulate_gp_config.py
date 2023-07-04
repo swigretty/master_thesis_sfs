@@ -88,8 +88,7 @@ for mode in ["fixed", "bounded", "unbounded"]:
                             }
     _kernels = {**_simple_kernels, **_combination_kernels}
 
-    ou_kernels = {k: (_kernels["ou"] + v + WhiteKernel(noise_level=0.0001, noise_level_bounds="fixed") if
-                      k != "ou" else v + WhiteKernel(noise_level=0.0001, noise_level_bounds="fixed"))
+    ou_kernels = {k: (_kernels["ou"] + v if k != "ou" else v)
                   for k, v in _kernels.items()}
 
     KERNELS[mode] = _kernels

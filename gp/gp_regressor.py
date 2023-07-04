@@ -100,31 +100,16 @@ class GPR(GaussianProcessRegressor):
         Predict using the Gaussian process regression model.
         """
         if self.kernel_approx:
-            x = self.kernel_approx.transform(X)
-
-        if predict_y:
-            orig_kernel = copy(self.kernel)
-            self.kernel = orig_kernel + WhiteKernel(noise_level=self.alpha)
-
-            if hasattr(self, "kernel_"):
-                orig_kernel_ = copy(self.kernel_)
-                self.kernel_ = orig_kernel_ + WhiteKernel(noise_level=self.alpha)
-
+            X = self.kernel_approx.transform(X)
         res = super().predict(X, return_cov=return_cov, return_std=return_std)
 
         if predict_y:
-            self.kernel = orig_kernel
-            if hasattr(self, "kernel_"):
-                self.kernel_ = orig_kernel_
+            if return_cov:
+                res[1] = res[1] = np.diag(np.repeat(self.alpha, len(res[0])))
+            if return_std:
+                res[1] = res[1] + np.sqrt(self.alpha)
 
         return res
-
-    def predict_y(self, x: np.ndarray, return_std=False, return_cov=False):
-        """
-        If not fitted yet returns y_mean=0 and vcov = kernel(x).
-        Does not consider alpha (i.e. measurement noise)
-        """
-        return self.predict(x, return_std=return_std, return_cov=return_cov, predict_y=True)
 
     def fit(self, train_x: np.ndarray, train_y: np.ndarray):
         if self.kernel_approx:

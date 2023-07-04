@@ -58,18 +58,24 @@ class GPEvaluator:
         return self.kl_div((m_to, S_to), (m_fr, S_fr))
 
     @property
-    def ci_covered_fun(self):
-        return (self.data_post.ci["ci_lb"] < self.data_true.y) & (self.data_true.y < self.data_post.ci["ci_ub"])
+    def ci_covered_meanfun(self):
+        return (self.data_post.ci["ci_lb"] < self.data_true.y_mean) & (
+                self.data_true.y_mean < self.data_post.ci["ci_ub"])
+
+    @property
+    def ci_covered_yfun(self):
+        return (self.data_post.ci["ci_lb"] < self.data_true.y) & (
+                self.data_true.y < self.data_post.ci["ci_ub"])
 
     def evaluate_fun(self):
-        return {"covered_fraction_fun": np.mean(self.ci_covered_fun), "kl_fun": self.kl_div_fun(),
+        return {"covered_fraction_fun": np.mean(self.ci_covered_meanfun), "kl_fun": self.kl_div_fun(),
                 "pred_logprob": self.get_predictive_logprob(), "mse": self.mse()}
 
     def evaluate_overall_mean(self):
         covered = 0
         se_pred = se_overall_mean_from_cov(self.data_post.y_cov)
         mean_pred = np.mean(self.data_post.y_mean)
-        mean_true = np.mean(self.data_true.y)
+        mean_true = np.mean(self.data_true.y_mean)
         ci = calculate_ci(se_pred, mean_pred)
         if ci[0] < mean_true < ci[1]:
             covered = 1
@@ -95,12 +101,12 @@ class GPEvaluator:
         if ax is None:
             fig, ax = plt.subplots(1, 1)
 
-        error_idx = np.nonzero(self.ci_covered_fun == 0)[0]
+        error_idx = np.nonzero(self.ci_covered_meanfun == 0)[0]
         if len(error_idx) > 0:
             error_data_true = self.data_true[error_idx]
 
         plot_posterior(self.data_post.x, self.data_post.y_mean, y_post_std=self.data_post.y_std,
-                       x_red=error_data_true.x, y_red=error_data_true.y, y_true=self.data_true.y, ax=ax)
+                       x_red=error_data_true.x, y_red=error_data_true.y, y_true=self.data_true.y_mean, ax=ax)
 
 
 
