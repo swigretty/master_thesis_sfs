@@ -43,7 +43,7 @@ def plot_evaluate_multisample(k_name, mode_name, nplots=1, n_samples=100, **gps_
     return evaluate_multisample(gps=gps, n_samples=n_samples)
 
 
-def plot_evaluate_kernels(modes, data_fraction_list, rng=np.random.default_rng(11)):
+def plot_evaluate_kernels(modes, data_fraction_list, rng=np.random.default_rng(11), n_samples=100):
     eval_row = 0
 
     for mode_name, mode_config in modes.items():
@@ -51,7 +51,8 @@ def plot_evaluate_kernels(modes, data_fraction_list, rng=np.random.default_rng(1
             for k_name, k in mode_config["kernels"].items():
                 logger.info(f"Simulation started for {mode_name}: {k_name}")
                 eval_dict = plot_evaluate_multisample(k_name, mode_name, rng=rng, kernel_sim=k,
-                                                      data_fraction=data_fraction, **mode_config["config"])
+                                                      data_fraction=data_fraction, **mode_config["config"],
+                                                      n_samples=n_samples)
 
                 for k, v in eval_dict.items():
                     df = pd.DataFrame([v])
@@ -90,9 +91,9 @@ if __name__ == "__main__":
     mode = modes[mode_name]
     k_name = "sin_rbf"
     config = mode["config"]
-    config["meas_noise"] = 0.1
+    config["meas_noise_var"] = 0.1
     plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name],
                               data_fraction=0.2, **config)
-    plot_evaluate_kernels(modes, data_fraction_list)
+    plot_evaluate_kernels(modes, data_fraction_list, n_samples=10)
 
 

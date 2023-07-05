@@ -356,10 +356,10 @@ class GPSimulator():
 
     @property
     def eval_data(self):
-        return {"y_true": self.y_true_prior.y, "signal_true": self.f_true_post, "data_post": self.f_post}
+        return {"y_true": self.y_true_prior.y, "f_true": self.f_true_post, "f_pred": self.f_post}
 
     def evaluate(self):
-        eval_base_kwargs = {"meas_noise": self.meas_noise_var}
+        eval_base_kwargs = {"meas_noise_var": self.meas_noise_var}
 
         param_error = {}
         if self.kernel_sim == self.kernel_fit:
