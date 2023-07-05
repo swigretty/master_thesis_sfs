@@ -24,6 +24,7 @@ class GPData():
 
 
     At the very least you need to provide either y or y_mean.
+    In most cases you will skip y, which is just a realization (sample) of the GP described by y_mean and y_cov.
 
     """
     y: np.array = None  # A sample from the GP.
