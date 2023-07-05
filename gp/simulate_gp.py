@@ -61,7 +61,8 @@ class GPSimulator():
             kernel_fit = self.kernel_sim
 
         self.kernel_fit = kernel_fit
-        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng, alpha=self.meas_noise_var)
+        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
+                           alpha=self.meas_noise_var)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise_var, rng=rng)
 
         self.y_true_prior = y_true_prior
@@ -74,16 +75,9 @@ class GPSimulator():
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
     def sim_gp(self, n_samples=5):
-        # samples without measurement noise
+        # samples with measurement noise if predict_y=True
         y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
             self.x, n_samples=n_samples, predict_y=True)  # mean_f=self.mean_f
-
-        # if self.meas_noise:
-        #     # TODO should this be scaled as well ?
-        #     # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
-        #     y_prior = y_prior + self.meas_noise * self.rng.standard_normal((y_prior.shape))
-        #     y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
-
         data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov)
                 for idx in range(n_samples)]
 
@@ -113,6 +107,9 @@ class GPSimulator():
 
     @property
     def y_true_prior(self):
+        """
+        This represents the true (potentially noisy) and complete measurements
+        """
         return self._data_true
 
     @y_true_prior.setter
@@ -124,7 +121,7 @@ class GPSimulator():
     @cached_property
     def y_true_prior_subsampled(self):
         """
-        This represents the true (potentially noisy) data
+        This represents the (potentially noisy) subsampled measurements, used to fit the GP
         """
         return self.subsample_data(self.y_true_prior, self.data_fraction,
                                    data_fraction_weights=self.data_fraction_weights)

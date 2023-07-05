@@ -152,7 +152,7 @@ class GPR(GaussianProcessRegressor):
 
     def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0, predict_y=True):
         """
-        Does return a sample, y_mean, and y_cov without considering the
+        If predict_y = False, does return a sample, y_mean, and y_cov without considering the
         measurement noise alpha.
         """
         mean_f_val = np.array([mean_f(val) for val in x])
