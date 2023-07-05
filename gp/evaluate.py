@@ -14,33 +14,34 @@ logger = getLogger(__name__)
 
 class GPEvaluator:
 
-    def __init__(self, y_true: np.array, signal_true: GPData, data_post: GPData, meas_noise: float = 0.0):
+    def __init__(self, y_true: np.array, f_true: GPData, f_pred: GPData, meas_noise_var: float = 0.0):
         """
+        Model. y(x) = f(x) + epsilon, epsilon ~ N(0, meas_noise)
 
-        y_true: The noisy measurements i.e. signal_true.y_mean + np.norm(mean=0, var=meas_noise)
-        signal_true: The true distribution over the signal f(x). The true GP is completely characterized by
-        the signal_true.y_mean and signal_true.y_cov. However, y_true is a realization of the true GP.
-        data_post: The predicted distribution over the signal f(x). It is completely characterized by data_post.y_mean
-        and data_post.y_cov
+        y_true: The noisy measurements i.e. signal_true.y_mean + norm(mean=0, var=meas_noise)
+        f_true: The true distribution over the signal f(x). The true GP is completely characterized by
+        the signal_true.y_mean and signal_true.y_cov.
+        y_true is a realization of this true GP and additional meas_noise.
+        f_pred: The predicted distribution over the signal f(x). It is completely characterized by f_pred.y_mean
+        and f_pred.y_cov. In GP regression this will be the posterior (i.e. predictive) distribution.
 
         """
         self.y_true = y_true
-        self.signal_true = signal_true
-        self.data_post = data_post
-        self.meas_noise = meas_noise
+        self.f_true = f_true
+        self.f_pred = f_pred
+        self.meas_noise_var = meas_noise_var
 
-        self.data_post_y = GPData(x=self.data_post.x, y_mean=self.data_post.y_mean,
-                                  y_cov=self.data_post.y_cov + np.diag(np.repeat(self.meas_noise,
-                                                                                 len(self.data_post))))
+        self.y_pred = GPData(x=self.f_pred.x, y_mean=self.f_pred.y_mean,
+                             y_cov=self.f_pred.y_cov + np.diag(np.repeat(self.meas_noise_var, len(self.f_pred))))
 
-        assert len(self.signal_true) == len(self.data_post) == len(self.data_post_y)
+        assert len(self.f_true) == len(self.f_pred) == len(self.y_pred)
 
     def get_predictive_logprob_y(self):
-        prob2 = multivariate_normal.logpdf(self.y_true, mean=self.data_post_y.y_mean, cov=self.data_post_y.y_cov)
+        prob2 = multivariate_normal.logpdf(self.y_true, mean=self.y_pred.y_mean, cov=self.y_pred.y_cov)
         return prob2
 
     def mse(self):
-        return np.square(self.y_true - self.data_post_y.y_mean).mean()
+        return np.square(self.y_true - self.y_pred.y_mean).mean()
 
     @staticmethod
     def kl_div(to, fr):
@@ -73,22 +74,22 @@ class GPEvaluator:
         return (term1 + term2 + term3 - len(d)) / 2.
 
     def kl_div_fun(self):
-        m_to = self.signal_true.y_mean
-        S_to = self.signal_true.y_cov
+        m_to = self.f_true.y_mean
+        S_to = self.f_true.y_cov
 
-        m_fr = self.data_post.y_mean
-        S_fr = self.data_post.y_cov
+        m_fr = self.f_pred.y_mean
+        S_fr = self.f_pred.y_cov
         return self.kl_div((m_to, S_to), (m_fr, S_fr))
 
     @property
     def ci_covered_meanfun(self):
-        return (self.data_post.ci["ci_lb"] < self.signal_true.y_mean) & (
-                self.signal_true.y_mean < self.data_post.ci["ci_ub"])
+        return (self.f_pred.ci["ci_lb"] < self.f_true.y_mean) & (
+                self.f_true.y_mean < self.f_pred.ci["ci_ub"])
 
     @property
     def ci_covered_yfun(self):
-        return (self.data_post_y.ci["ci_lb"] < self.y_true) & (
-                self.y_true < self.data_post_y.ci["ci_ub"])
+        return (self.y_pred.ci["ci_lb"] < self.y_true) & (
+                self.y_true < self.y_pred.ci["ci_ub"])
 
     def evaluate_fun(self):
         return {"covered_fraction_fun": np.mean(self.ci_covered_meanfun),
@@ -97,9 +98,9 @@ class GPEvaluator:
 
     def evaluate_overall_mean(self):
         covered = 0
-        se_pred = se_overall_mean_from_cov(self.data_post.y_cov)
-        mean_pred = np.mean(self.data_post.y_mean)
-        mean_true = np.mean(self.signal_true.y_mean)
+        se_pred = se_overall_mean_from_cov(self.f_pred.y_cov)
+        mean_pred = np.mean(self.f_pred.y_mean)
+        mean_true = np.mean(self.f_true.y_mean)
         ci = calculate_ci(se_pred, mean_pred)
         if ci[0] < mean_true < ci[1]:
             covered = 1
@@ -127,11 +128,11 @@ class GPEvaluator:
 
         error_idx = np.nonzero(self.ci_covered_meanfun == 0)[0]
         if len(error_idx) > 0:
-            error_data_true = self.signal_true[error_idx]
+            error_data_true = self.f_true[error_idx]
 
-        plot_posterior(self.data_post.x, self.data_post.y_mean, y_post_std=self.data_post.y_std,
+        plot_posterior(self.f_pred.x, self.f_pred.y_mean, y_post_std=self.f_pred.y_std,
                        x_red=error_data_true.x, y_red=error_data_true.y_mean,
-                       y_true=self.signal_true.y_mean, ax=ax)
+                       y_true=self.f_true.y_mean, ax=ax)
 
 
 
