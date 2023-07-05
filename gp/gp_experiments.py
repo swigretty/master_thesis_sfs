@@ -43,7 +43,7 @@ def plot_evaluate_multisample(k_name, mode_name, nplots=1, n_samples=100, **gps_
     return evaluate_multisample(gps=gps, n_samples=n_samples)
 
 
-def plot_evaluate_kernels(modes, data_fraction_list, rng=np.random.default_rng(11), n_samples=100):
+def evaluate_data_fraction(modes, data_fraction_list, rng=np.random.default_rng(11), n_samples=100):
     eval_row = 0
 
     for mode_name, mode_config in modes.items():
@@ -94,6 +94,10 @@ if __name__ == "__main__":
     config["meas_noise_var"] = 0.1
     plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name],
                               data_fraction=0.2, **config)
-    plot_evaluate_kernels(modes, data_fraction_list, n_samples=10)
+    evaluate_data_fraction(modes, data_fraction_list, n_samples=10)
+
+
+
+
 
 

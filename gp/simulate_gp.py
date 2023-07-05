@@ -70,7 +70,7 @@ class GPSimulator():
         self.session_name = session_name
         if self.session_name is None:
             self.session_name = self.kernel_sim.__class__.__name__
-        self.figname_suffix = f"{self.session_name}_{self.data_fraction:.2f}"
+        self.figname_suffix = f"{self.session_name}_mn{self.meas_noise_var:.2f}_df{self.data_fraction:.2f}"
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
