@@ -14,18 +14,25 @@ class GPData():
     Initialize:
     gp1 = GPData(x=np.array([1]), y = np.array([2]))
     """
-    y: np.array  # The response variable. (Blood Pressure)
+    y: np.array = None  # The response variable. (Blood Pressure). A sample from the GP with y_mean and y_cov.
     x: np.array = None  # design matrix (or independent, explanatory variables). (time)
     y_mean: np.array = None  # The mean function of the GP evaluated at input x
     y_cov: np.array = None  # The cov function values evaluated at the input x
 
     def __post_init__(self):
+        signal = self.y
+
+        if self.y is None:
+            if self.y_mean is None:
+                raise ValueError("Either y_mean or y need to be specified")
+            signal = self.y_mean
+            self.y = np.full((len(signal)), np.nan)
         if self.x is None:
-            self.x = np.arange(len(self.y))
+            self.x = np.arange(len(signal))
         if self.y_mean is None:
-            self.y_mean = np.full((len(self.y)), np.nan)
+            self.y_mean = np.full((len(signal)), np.nan)
         if self.y_cov is None:
-            self.y_cov = np.full((len(self.y), len(self.y)), np.nan)
+            self.y_cov = np.full((len(signal), len(signal)), np.nan)
 
         self.index = 0
         self.check_dimensions()

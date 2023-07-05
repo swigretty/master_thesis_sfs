@@ -90,8 +90,8 @@ class GPSimulator():
         #     y_prior = y_prior + self.meas_noise * self.rng.standard_normal((y_prior.shape))
         #     y_prior_cov[np.diag_indices_from(y_prior_cov)] += self.meas_noise
 
-        data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov) for idx in
-                range(n_samples)]
+        data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov)
+                for idx in range(n_samples)]
 
         return data
 
@@ -108,12 +108,6 @@ class GPSimulator():
         weights = fun[0] - min(fun[0])
         return weights * 0.1
 
-    @property
-    def data_true_post_y(self):
-        y_post_cov = self.data_true_post + np.diag(np.repeat(self.meas_noise, len(self.data_true_post)))
-        return GPData(x=self.data_true_post.x, y=self.data_true_post.y, y_mean=self.data_true_post.y_mean,
-                      y_cov=y_post_cov)
-
     @cached_property
     def data_true_post(self):
         self.gpm_sim.fit(self.data_true.x, self.data_true.y)
@@ -121,7 +115,7 @@ class GPSimulator():
         # y_post_mean will only diverge from self.data_true.y if meas_noise != 0
         if not self.meas_noise:
             assert np.mean((self.data_true.y - y_post_mean)**2) < 10**(-4)
-        return GPData(x=self.data_true.x, y=self.data_true.y, y_mean=y_post_mean, y_cov=y_post_cov)
+        return GPData(x=self.data_true.x, y_mean=y_post_mean, y_cov=y_post_cov)
 
     @property
     def data_true(self):
@@ -161,22 +155,9 @@ class GPSimulator():
 
     @cached_property
     def data_post(self):
-        y_post, y_post_mean, y_post_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=1, predict_y=False)
-        return GPData(x=self.x, y=y_post, y_mean=y_post_mean, y_cov=y_post_cov)
-
-    @cached_property
-    def data_post_y(self):
-        """
-        @cached_property
-        def data_post_y(self):
-            y_cov = copy(self.data_post.y_cov)
-            y_cov[np.diag_indices_from(y_cov)] += self.meas_noise
-            return GPData(x=self.x, y=self.data_post.y, y_mean=self.data_post.y_mean, y_cov=y_cov)
-
-        """
-        y_post_cov = self.data_post.y_cov + np.diag(np.repeat(self.meas_noise, len(self.data_post)))
-        return GPData(x=self.data_post.x, y=self.data_post.y, y_mean=self.data_post.y_mean,
-                      y_cov=y_post_cov)
+        # f_post_cov is the predicted covariance matrix for f(x) (not for y(x))
+        f_post_mean, f_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
+        return GPData(x=self.x, y_mean=f_post_mean, y_cov=f_post_cov)
 
     @property
     def data_mean(self):
@@ -188,7 +169,7 @@ class GPSimulator():
         y_cov = np.zeros((len(self.x), len(self.x)), float)
         np.fill_diagonal(y_cov, sigma_mean)
         y = np.repeat(np.mean(self.data.y), len(self.x))
-        return GPData(x=self.x, y=y, y_mean=y, y_cov=y_cov)
+        return GPData(x=self.x, y_mean=y, y_cov=y_cov)
 
     @property
     def test_idx(self):
@@ -225,21 +206,19 @@ class GPSimulator():
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
 
-        kernel_ = copy(kernel)
         std_range = (0.95, 1.05)
-
         i = 0
         scale = 1
         y_std = 2
 
         while (std_range[0] > y_std) or (
                 std_range[1] < y_std):
-            gps = cls(kernel_sim=kernel_, meas_noise=meas_noise*1/scale)
+
+            kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
+            gps = cls(kernel_sim=kernel_, meas_noise=meas_noise/scale**2)
             data_sim = gps.sim_gp(n_samples=100)
-            y_var = np.mean([np.var(d.y) for d in data_sim])
-            # logger.info(y_std)
-            scale *= y_var
-            kernel_ = ConstantKernel(constant_value=1/scale, constant_value_bounds="fixed") * kernel
+            y_std = np.mean([np.std(d.y) for d in data_sim])
+            scale *= y_std
             i += 1
             if i > 20:
                 break
@@ -351,46 +330,58 @@ class GPSimulator():
     def plot_errors(self):
         nrows = 2
         ncols = 2
+        current_row = 0
+        current_col = 0
         fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows*10, ncols*10))
-        self.plot_posterior(ax=axs[0, 0], add_offset=False)
+        self.plot_posterior(ax=axs[current_row, current_col], add_offset=False)
 
-        error_plot_dict = {"errors overall": {"idx": None, "ax": axs[0, 1]},
-                           "errors_train": {"idx": self.train_idx, "ax": axs[1, 0]},
-                           "errors_test": {"idx": self.test_idx, "ax": axs[1, 1]}}
-
-        for k, v in error_plot_dict.items():
-            data_true = self.data_true_post
-            data_post = self.data_post
-            if v["idx"] is not None:
-                data_true = data_true[v["idx"]]
-                data_post = data_post[v["idx"]]
-            GPEvaluator(data_true, data_post).plot_errors(ax=v["ax"])
-            v["ax"].set_title(k)
+        for k, v in self.eval_config.items():
+            if current_col == (ncols-1):
+                current_row += 1
+                current_col = 0
+            else:
+                current_col += 1
+            ax = axs[current_row, current_col]
+            eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
+                           self.eval_data.items()}
+            GPEvaluator(**eval_kwargs).plot_errors(ax=ax)
+            ax.set_title(k)
 
         fig.tight_layout()
         figfile = f"err_{self.figname_suffix}"
         fig.savefig(self.output_path / f"{figfile}.pdf")
         plt.close()
 
-    def evaluate(self, predict_y=False):
-        param_error = {}
-        data_post = self.data_post
-        if predict_y:
-            data_post = self.data_post_y
+    @property
+    def eval_config(self):
+        eval_config = {"train_perf": {"idx": self.train_idx, "fun": "evaluate_fun"},
+                       "test_perf": {"idx": self.test_idx, "fun": "evaluate_fun"},
+                       "overall_perf": {"idx": None, "fun": "evaluate"}}
+        return eval_config
 
+    @property
+    def eval_data(self):
+        return {"y_true": self.data_true.y, "signal_true": self.data_true_post, "data_post": self.data_post}
+
+    def evaluate(self):
+        eval_base_kwargs = {"meas_noise": self.meas_noise}
+
+        param_error = {}
         if self.kernel_sim == self.kernel_fit:
             param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
 
-        train_perf = GPEvaluator(self.data_true_post[self.train_idx], data_post[self.train_idx]).evaluate_fun()
-        train_perf["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
-        test_perf = GPEvaluator(self.data_true_post[self.test_idx], data_post[self.test_idx]).evaluate_fun()
+        output_dict = {"param_error": param_error}
+        for k, v in self.eval_config.items():
+            eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
+                           self.eval_data.items()}
+            gpe = GPEvaluator(**eval_kwargs, **eval_base_kwargs)
+            output_dict[k] = getattr(gpe, v["fun"])()
 
-        overall_perf = GPEvaluator(self.data_true_post, data_post).evaluate()
+        output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
+        output_dict["overall_perf_mean"] = GPEvaluator(self.data_true.y, self.data_true_post,
+                                                       self.data_mean, meas_noise=0).evaluate()
 
-        overall_perf_mean = GPEvaluator(self.data_true_post, self.data_mean).evaluate()
-
-        return {"param_error": param_error, "train_perf": train_perf, "test_perf": test_perf,
-                "overall_perf": overall_perf, "overall_perf_mean": overall_perf_mean}
+        return output_dict
 
     def evaluate_multisample(self, n_samples=100):
         gps = copy(self)

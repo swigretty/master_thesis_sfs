@@ -90,9 +90,9 @@ if __name__ == "__main__":
     mode = modes[mode_name]
     k_name = "sin_rbf"
     config = mode["config"]
-    config["meas_noise"] = 1
-    # plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name],
-    #                           data_fraction=0.2, **config)
+    config["meas_noise"] = 0.1
+    plot_gp_regression_sample(mode_name=mode_name, k_name=k_name, kernel_sim=mode["kernels"][k_name],
+                              data_fraction=0.2, **config)
     plot_evaluate_kernels(modes, data_fraction_list)
 
 
