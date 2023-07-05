@@ -8,13 +8,25 @@ import pandas as pd
 @dataclass
 class GPData():
     """
-    Class storing all the relevant information to describe a sample drawn from
-    a Gaussian Process and to be used for Gaussian Process regression.
+    Class storing all the relevant information to describe a
+    Gaussian Process (GP) as a finite set of random variables
+    and to be used for GP regression.
 
-    Initialize:
-    gp1 = GPData(x=np.array([1]), y = np.array([2]))
+    Assuming, y(x) ~ GP(m(x), k(x, x')) we have:
+
+    y_mean = [m(x_1), ..., m(x_n)]
+    y_cov = [[k(x_1, x_1) ... k(x_1, x_n],
+             .
+             .
+             .
+             [k(x_n, x_1) ... k(x_n, x_n]
+             ]
+
+
+    At the very least you need to provide either y or y_mean.
+
     """
-    y: np.array = None  # The response variable. (Blood Pressure). A sample from the GP with y_mean and y_cov.
+    y: np.array = None  # A sample from the GP.
     x: np.array = None  # design matrix (or independent, explanatory variables). (time)
     y_mean: np.array = None  # The mean function of the GP evaluated at input x
     y_cov: np.array = None  # The cov function values evaluated at the input x

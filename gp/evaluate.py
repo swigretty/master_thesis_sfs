@@ -15,6 +15,15 @@ logger = getLogger(__name__)
 class GPEvaluator:
 
     def __init__(self, y_true: np.array, signal_true: GPData, data_post: GPData, meas_noise: float = 0.0):
+        """
+
+        y_true: The noisy measurements i.e. signal_true.y_mean + np.norm(mean=0, var=meas_noise)
+        signal_true: The true distribution over the signal f(x). The true GP is completely characterized by
+        the signal_true.y_mean and signal_true.y_cov. However, y_true is a realization of the true GP.
+        data_post: The predicted distribution over the signal f(x). It is completely characterized by data_post.y_mean
+        and data_post.y_cov
+
+        """
         self.y_true = y_true
         self.signal_true = signal_true
         self.data_post = data_post
