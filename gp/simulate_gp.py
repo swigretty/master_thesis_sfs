@@ -55,7 +55,7 @@ class GPSimulator():
         self.kernel_sim = kernel_sim
         if normalize_kernel:
             self.kernel_sim, self.meas_noise_var = self.get_normalized_kernel(kernel_sim,
-                                                                              meas_noise=self.meas_noise_var)
+                                                                              meas_noise_var=self.meas_noise_var)
 
         if kernel_fit is None:
             kernel_fit = self.kernel_sim
@@ -197,7 +197,7 @@ class GPSimulator():
             [pn in k for pn in PARAM_NAMES])}
 
     @classmethod
-    def get_normalized_kernel(cls, kernel, meas_noise=0):
+    def get_normalized_kernel(cls, kernel, meas_noise_var=0):
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
 
@@ -210,7 +210,7 @@ class GPSimulator():
                 std_range[1] < y_std):
 
             kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
-            gps = cls(kernel_sim=kernel_, meas_noise_var=meas_noise / scale ** 2)
+            gps = cls(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2, rng=np.random.default_rng(11))
             data_sim = gps.sim_gp(n_samples=100)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std
@@ -222,7 +222,7 @@ class GPSimulator():
 
         logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
 
-        return kernel_, 1/scale * meas_noise
+        return kernel_, 1 / scale * meas_noise_var
 
     def choose_sample_from_prior(self, data_index: int = 0):
         data_single = copy(self.y_true_prior_samples)
@@ -398,6 +398,8 @@ class GPSimulator():
             v["kernel_sim"] = gps.kernel_sim
             v["kernel_fit"] = gps.gpm_fit.kernel_
             v["n_samples"] = n_samples
+            v["meas_noise_var"] = gps.meas_noise_var
+            v["session_name"] = gps.session_name
         return summary_dict
 
     @Plotter
