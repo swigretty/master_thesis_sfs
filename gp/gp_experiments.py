@@ -47,7 +47,8 @@ def evaluate_multisample(gps=None, n_samples=10, normalize_kernel=False, **gps_k
 
 
 def plot_evaluate_multisample(session_name=None, nplots=1, n_samples=100, normalize_kernel=False, **gps_kwargs):
-    gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel, **gps_kwargs)
+    gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel,
+                                    **gps_kwargs)
     return evaluate_multisample(gps=gps, n_samples=n_samples)
 
 
@@ -58,13 +59,13 @@ def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=
         for mode_name, mode_config in modes.items():
             for k_name, k in mode_config["kernels"].items():
                 session_name = f"{mode_name}_{k_name}"
-                k, nv = GPSimulator().get_normalized_kernel(kernel=k, meas_noise_var=nv)
+                kernel, nv = GPSimulator.get_normalized_kernel(kernel=k, meas_noise_var=nv)
                 for df in data_fraction:
                     logger.info(f"Simulation started for {session_name=}, {df=} and {nv=} ")
                     rng = np.random.default_rng(11)
                     eval_dict = plot_evaluate_multisample(
-                        session_name=session_name, rng=rng, kernel_sim=k, data_fraction=df, n_samples=n_samples,
-                        normalize_kernel=False, meas_noise_var=meas_noise_var, **mode_config["config"])
+                        session_name=session_name, rng=rng, kernel_sim=kernel, data_fraction=df, n_samples=n_samples,
+                        normalize_kernel=False, meas_noise_var=nv, **mode_config["config"])
 
                     for k, v in eval_dict.items():
                         df = pd.DataFrame([v])
@@ -81,10 +82,13 @@ def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=
             perf_plot(split=split, mode=mode_name)
 
 
-def get_limited_modes(kernels_limited):
+def get_limited_modes(kernels_limited=None, modes_limited=None):
     modes = copy.deepcopy(MODES)
-    for m_k, m_v in modes.items():
-        m_v["kernels"] = {k_k: k_v for k_k, k_v in m_v["kernels"].items() if k_k in kernels_limited}
+    if modes_limited:
+        modes = {k: v for k, v in modes.items() if k in modes_limited}
+    if kernels_limited:
+        for m_k, m_v in modes.items():
+            m_v["kernels"] = {k_k: k_v for k_k, k_v in m_v["kernels"].items() if k_k in kernels_limited}
     return modes
 
 
@@ -100,10 +104,10 @@ if __name__ == "__main__":
 
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
     kernels_limited = ["sin_rbf"]
-
-    modes = get_limited_modes(kernels_limited)
+    modes_limited = ["ou_bounded"]
+    modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     plot_sample()
-    evaluate_data_fraction(modes, meas_noise_var=(1), n_samples=1)
+    evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1)
 
 
