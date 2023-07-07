@@ -421,6 +421,7 @@ class GPSimulator():
         current_init_kwargs = {k: v for k, v in vars(self).items() if k in
                                inspect.signature(self.__init__).parameters.keys()}
         current_init_kwargs["normalize_kernel"] = False
+        eval_dict = {}
 
         for i in range(n_samples):
             gps = self.__class__(**current_init_kwargs)
