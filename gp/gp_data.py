@@ -27,7 +27,7 @@ class GPData():
     In most cases you will skip y, which is just a realization (sample) of the GP described by y_mean and y_cov.
 
     """
-    y: np.array = None  # A sample from the GP.
+    y: np.array = None  # A sample from the GP. # TODO rename to sample, mean, cov (since y is confusing)
     x: np.array = None  # design matrix (or independent, explanatory variables). (time)
     y_mean: np.array = None  # The mean function of the GP evaluated at input x
     y_cov: np.array = None  # The cov function values evaluated at the input x

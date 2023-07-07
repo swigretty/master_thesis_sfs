@@ -1,4 +1,5 @@
 import datetime
+import inspect
 from functools import cached_property
 from copy import copy
 import pandas as pd
@@ -38,22 +39,23 @@ class GPSimulator():
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
+        self.x = x
         self.output_path = output_path
         self.output_path.mkdir(parents=True, exist_ok=True)
-
-        self.x = x
-        self.mean_f = mean_f
-        self.meas_noise_var = meas_noise_var
-        self.offset = np.mean([mean_f(xi) for xi in self.x])
-
-        self._data_fraction_weights = data_fraction_weights
-        self.data_fraction = data_fraction
 
         self.rng = rng
         if self.rng is None:
             self.rng = np.random.default_rng()
 
+        self.mean_f = mean_f
+        self.meas_noise_var = meas_noise_var
+        self.offset = np.mean([mean_f(xi) for xi in self.x])
+
+        self.data_fraction_weights = data_fraction_weights
+        self.data_fraction = data_fraction
+
         self.kernel_sim = kernel_sim
+        self.normalize_kernel = normalize_kernel
         if normalize_kernel:
             self.kernel_sim, self.meas_noise_var = self.get_normalized_kernel(kernel_sim,
                                                                               meas_noise_var=self.meas_noise_var)
@@ -62,9 +64,10 @@ class GPSimulator():
             kernel_fit = self.kernel_sim
 
         self.kernel_fit = kernel_fit
+        self.normalize_y = normalize_y
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
                            alpha=0)
-        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=normalize_y, alpha=self.meas_noise_var, rng=rng)
+        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var, rng=rng)
 
         self.f_true = f_true
         self.meas_noise = meas_noise
@@ -103,13 +106,8 @@ class GPSimulator():
 
         return data
 
-    @property
-    def data_fraction_weights(self):
-        if self._data_fraction_weights != "seasonal":
-            return self._data_fraction_weights
-
+    def data_fraction_weights_seasonal(self):
         self.gpm_sim.fit(self.y_true.x, self.y_true.y)
-
         true_dec = self.gpm_sim.predict_mean_decomposed(self.x)
         fun = [fun for name, fun in true_dec.items() if "ExpSineSquared" in name]
         assert len(fun) == 1, "cannot extract seasonal pattern"
@@ -120,7 +118,6 @@ class GPSimulator():
     def f_true_post(self):
         self.gpm_sim.fit(self.f_true.x, self.f_true.y)
         f_post_mean, f_post_cov = self.gpm_sim.predict(self.y_true.x, return_cov=True)
-        # y_post_mean will only diverge from self.data_true.y if meas_noise != 0
         assert np.mean((self.f_true.y - f_post_mean) ** 2) < 10 ** (-4)
         return GPData(x=self.f_true.x, y_mean=f_post_mean, y_cov=f_post_cov)
 
@@ -159,12 +156,23 @@ class GPSimulator():
             self._f_true = self.sim_gp(n_samples=1, sim_y=False)[0]
 
     @cached_property
-    def y_true_subsampled(self):
+    def train_idx(self):
+        if callable(self.data_fraction_weights):
+            weights = self.data_fraction_weights(self.y_true)
+        elif self.data_fraction_weights == "seasonal":
+            self.data_fraction_weights = self.data_fraction_weights_seasonal()
+        else:
+            weights = self.data_fraction_weights
+        idx = get_red_idx(len(self.x), data_fraction=self.data_fraction, weights=weights,
+                          rng=self.rng)
+        return idx
+
+    @property
+    def y_true_train(self):
         """
         This represents the (potentially noisy) subsampled measurements, used to fit the GP
         """
-        return self.subsample_data(self.y_true, self.data_fraction,
-                                   data_fraction_weights=self.data_fraction_weights, rng=self.rng)
+        return self.y_true[self.train_idx]
 
     @property
     def y_true_samples(self):
@@ -199,10 +207,10 @@ class GPSimulator():
         Using the overall mean as prediction.
         cov is calculated assuming iid data.
         """
-        sigma_mean = 1 / len(self.y_true_subsampled.y) * np.var(self.y_true_subsampled.y)
+        sigma_mean = 1 / len(self.y_true_train.y) * np.var(self.y_true_train.y)
         y_cov = np.zeros((len(self.x), len(self.x)), float)
         np.fill_diagonal(y_cov, sigma_mean)
-        y = np.repeat(np.mean(self.y_true_subsampled.y), len(self.x))
+        y = np.repeat(np.mean(self.y_true_train.y), len(self.x))
         return GPData(x=self.x, y_mean=y, y_cov=y_cov)
 
     @property
@@ -214,12 +222,7 @@ class GPSimulator():
 
         """
         return [idx for idx in range(len(self.x)) if self.x[idx] not in
-                self.y_true_subsampled.x]
-
-    @property
-    def train_idx(self):
-        return [idx for idx in range(len(self.x)) if self.x[idx] in
-                self.y_true_subsampled.x]
+                self.y_true_train.x]
 
     @staticmethod
     def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None, rng=None):
@@ -270,7 +273,7 @@ class GPSimulator():
 
     def fit(self, refit=False):
         if (not hasattr(self.gpm_fit, "X_train_")) or refit:
-            self.gpm_fit.fit(self.y_true_subsampled.x, self.y_true_subsampled.y)
+            self.gpm_fit.fit(self.y_true_train.x, self.y_true_train.y)
 
     @Plotter
     def plot_prior(self, add_offset=False, title="Samples from Prior Distribution", ax=None):
@@ -295,11 +298,10 @@ class GPSimulator():
 
     @Plotter
     def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
-        data_dict = {"f_post": self.f_post, "y_true_subsampled": self.y_true_subsampled,
+        data_dict = {"f_post": self.f_post, "y_true_subsampled": self.y_true_train,
                      "f_true": self.f_true}
         if add_offset:
             data_dict = {k: v + self.offset for k, v in data_dict}
-
 
         plot_posterior(self.x, data_dict["f_post"].y_mean, y_post_std=data_dict["f_post"].y_std,
                        x_red=data_dict["y_true_subsampled"].x, y_red=data_dict["y_true_subsampled"].y,
@@ -309,7 +311,7 @@ class GPSimulator():
     @Plotter
     def plot_true_with_samples(self, add_offset=True, ax=None):
         data_true = self.y_true
-        data = self.y_true_subsampled
+        data = self.y_true_train
         if add_offset:
             data_true += self.offset
             data += self.offset
@@ -416,16 +418,13 @@ class GPSimulator():
         return output_dict
 
     def evaluate_multisample(self, n_samples=100):
-        gps = copy(self)
-        samples = gps.sim_gp(n_samples)
-        eval_dict = {}
+        current_init_kwargs = {k: v for k, v in vars(self).items() if k in
+                               inspect.signature(self.__init__).parameters.keys()}
+        current_init_kwargs["normalize_kernel"] = False
 
-        for sample in samples:
-            gps.y_true = sample
-            try:
-                gps.fit(refit=True)
-            except Exception as e:
-                logger.warning("Could not fit GP")
+        for i in range(n_samples):
+            gps = self.__class__(**current_init_kwargs)
+            gps.fit()
             eval_sample = gps.evaluate()
             eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
 

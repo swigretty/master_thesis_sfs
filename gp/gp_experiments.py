@@ -39,17 +39,18 @@ def plot_gp_regression_sample(session_name=None, nplots=1, rng=None, normalize_k
     return gps
 
 
-def evaluate_multisample(gps=None, n_samples=10, normalize_kernel=False, **gps_kwargs):
+def evaluate_multisample(gps=None, n_samples=10, **gps_kwargs):
     if gps is None:
-        gps = GPSimulator(normalize_kernel=normalize_kernel, **gps_kwargs)
+        gps = GPSimulator(normalize_kernel=True, **gps_kwargs)
     eval_dict = gps.evaluate_multisample(n_samples=n_samples)
     return eval_dict
 
 
 def plot_evaluate_multisample(session_name=None, nplots=1, n_samples=100, normalize_kernel=False, **gps_kwargs):
-    gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel,
-                                    **gps_kwargs)
-    return evaluate_multisample(gps=gps, n_samples=n_samples)
+    return evaluate_multisample(n_samples=n_samples, session_name=session_name, **gps_kwargs)
+    # gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel,
+    #                                 **gps_kwargs)
+    # return evaluate_multisample(gps=gps, n_samples=n_samples)
 
 
 def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10), n_samples=100):
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     modes_limited = ["ou_bounded"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
-    plot_sample()
+    # plot_sample()
     evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1)
 
 
