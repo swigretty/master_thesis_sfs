@@ -102,7 +102,8 @@
 %\usepackage{helvet} % Use the Helvetica font for sans serif text
 \usepackage[default]{opensans}
 \usepackage{graphicx}
-\usepackage{amsfonts} % Use the Open Sans font for sans serif text
+\usepackage{amsfonts}
+\usepackage{wasysym} % Use the Open Sans font for sans serif text
 %\usepackage[default]{FiraSans} % Use the Fira Sans font for sans serif text
 %\usepackage[default]{lato} % Use the Lato font for sans serif text
 
@@ -403,7 +404,9 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{figure}
 			\includegraphics[width=0.4\linewidth]{bayesian_learining_mod}
 			\caption{$f^{\ast} := f(x^\ast)$, the value we want to predict.
-				$Y1 := Y(x1) = f(x1) + \epsilon$. We observe $y1$}
+				$Y1 := Y(x1) = f(x1) + \epsilon$. $Y1 \sim N(0, k(x1,x1) + \sigma_n^2)$ and
+				$f^{\ast} \sim N(0, k(x^{\ast}, x^{\ast}))$.
+				We observe $y1$}
 	\end{figure}
 
 \end{frame}
@@ -646,7 +649,11 @@ as a collection of multivariate normally distributed random variables and thus a
 			\item Simulate from true GP (adversarial add non-gaussian noise)
 			\item subsample data (adversarial: different densities, non-uniform sampling)
 			\item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
-			\item Extract time series characteristics of interest including its distribution
+			\item Extract time series characteristics of interest including its distribution.
+				\begin{itemize}
+					\item If distribution can not be calculated analytically (e.g. TTR) we can
+					sample from the posterior distribution (Multivariate Gaussian) to approx. it.
+				\end{itemize}
 			\item Calculate performance metric, comparing true to predicted
 		\end{enumerate}
 	\smallskip
@@ -703,16 +710,53 @@ as a collection of multivariate normally distributed random variables and thus a
 	Time Series characteristics of interest ?
 	\begin{itemize}
 		\item TTR
-		\item day/night BP
+		\item day/night BP (fit trapez model to extracted cyclic pattern, weighting based on cyclic pattern)
 		\item $\dots$
+	\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+	\frametitle{Outlook}
+
+%	\begin{verbatim}
+%
+%	Kernel = 1.02**2 * 1**2 * Matern(length_scale=3, nu=0.5)
+%			+ 3.16**2 * ExpSineSquared(length_scale=3, periodicity=24)
+%			+ 1**2 * RBF(length_scale=50) + WhiteKernel(noise_level=0.0001)
+%
+%	\end{verbatim}
+
+	\begin{figure}
+			\includegraphics[width=0.7\linewidth]{true_decomposed}
+%			\caption{Periodic Kernel with different length scale}
+	\end{figure}
+
+
+	Time Series characteristics assumed so far ?
+	\begin{itemize}
+		\item measurement noise (Gaussian White noise with var=0.0001)
+		\item cyclic pattern amplitude (~ 5 mmHg)
+		\item cyclic pattern period (=24h)
+		\item AR(1) component
+		\item long term trend
+		\item data density (0-3 per hour)
+		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
 	\end{itemize}
 \end{frame}
 
 
 
+\begin{frame}
+	\frametitle{Computational Complexity}
 
+	\begin{itemize}
+		\item update posterior (when new data arrives)
+		\item same user hyperparameters assume to be constant (updated every 2 weeks ?)
+	\end{itemize}
 
-%
+\end{frame}
 %%------------------------------------------------
 %
 %\begin{frame}
