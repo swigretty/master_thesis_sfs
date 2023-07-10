@@ -160,9 +160,10 @@ class GPSimulator():
         if callable(self.data_fraction_weights):
             weights = self.data_fraction_weights(self.y_true)
         elif self.data_fraction_weights == "seasonal":
-            self.data_fraction_weights = self.data_fraction_weights_seasonal()
+            weights = self.data_fraction_weights_seasonal()
         else:
             weights = self.data_fraction_weights
+
         idx = get_red_idx(len(self.x), data_fraction=self.data_fraction, weights=weights,
                           rng=self.rng)
         return idx
@@ -299,7 +300,7 @@ class GPSimulator():
     @Plotter
     def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
         data_dict = {"f_post": self.f_post, "y_true_subsampled": self.y_true_train,
-                     "f_true": self.f_true}
+                     "f_true": self.f_true_post}
         if add_offset:
             data_dict = {k: v + self.offset for k, v in data_dict}
 
