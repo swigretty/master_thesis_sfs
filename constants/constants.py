@@ -17,7 +17,7 @@ def get_output_path(now, session_name=None):
     if session_name:
         base_path = base_path / session_name
 
-    return base_path / f"{now.strftime('%m_%d_%I_%M_%S')}"
+    return base_path / f"{now.strftime('%m_%d_%H_%M_%S')}"
 
 
 if __name__ == "__main__":

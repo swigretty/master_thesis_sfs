@@ -78,8 +78,8 @@ def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=
                     #
                     # eval_row += 1
 
-        for split in ["overall", "train", "test"]:
-            perf_plot(split=split, mode=mode_name)
+        # for split in ["overall", "train", "test"]:
+        #     perf_plot(split=split, mode=mode_name)
 
 
 def get_limited_modes(kernels_limited=None, modes_limited=None):

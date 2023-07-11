@@ -444,8 +444,6 @@ class GPSimulator():
             eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
                            self.eval_data.items()}
 
-            time.append(datetime.datetime.utcnow())
-            logger.info(f" eval_kwargs for {k}: {time[-1] - time[-2]}")
             gpe = GPEvaluator(**eval_kwargs, **eval_base_kwargs)
             output_dict[k] = getattr(gpe, v["fun"])()
 
@@ -483,7 +481,7 @@ class GPSimulator():
             v["session_name"] = gps.session_name
 
         with (self.output_path / "eval_summary.json").open("w") as f:
-            f.write(json.dumps(summary_dict))
+            f.write(json.dumps(summary_dict, default=str))
 
         return summary_dict
 
