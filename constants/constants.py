@@ -12,11 +12,12 @@ OUTPUT_FOLDER = f"{Path(__main__.__file__).stem}_{now.strftime('%m_%d_%I_%M_%S')
 OUTPUT_PATH = OUTPUT_PATH_BASE / OUTPUT_FOLDER
 
 
-def get_output_path(now, session_name=None):
+def get_output_path(now=None, session_name=None):
     base_path = OUTPUT_PATH_BASE / f"{Path(__main__.__file__).stem}"
     if session_name:
         base_path = base_path / session_name
-
+    if now is None:
+        return base_path
     return base_path / f"{now.strftime('%m_%d_%H_%M_%S')}"
 
 

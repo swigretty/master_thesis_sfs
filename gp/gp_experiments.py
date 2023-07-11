@@ -7,6 +7,8 @@ from logging import getLogger
 from log_setup import setup_logging
 import numpy as np
 import pandas as pd
+from constants.constants import get_output_path
+
 from datetime import datetime
 
 
@@ -49,10 +51,11 @@ def plot_evaluate_multisample(session_name=None, nplots=1, n_samples=100, normal
     # return evaluate_multisample(n_samples=n_samples, session_name=session_name, **gps_kwargs)
     gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel,
                                     **gps_kwargs)
-    return evaluate_multisample(gps=gps, n_samples=n_samples)
+    return evaluate_multisample(gps=gps, n_samples=n_samples), gps
 
 
 def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10), n_samples=100):
+    output_path = get_output_path()
 
     eval_row = 0
     for nv in meas_noise_var:
@@ -63,23 +66,22 @@ def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=
                 for df in data_fraction:
                     logger.info(f"Simulation started for {session_name=}, {df=} and {nv=} ")
                     rng = np.random.default_rng(11)
-                    eval_dict = plot_evaluate_multisample(
+                    eval_dict, gps = plot_evaluate_multisample(
                         session_name=session_name, rng=rng, kernel_sim=kernel, data_fraction=df, n_samples=n_samples,
                         normalize_kernel=False, meas_noise_var=nv, **mode_config["config"])
+                    for k, v in eval_dict.items():
+                        df = pd.DataFrame([v])
+                        df["mode"] = mode_name
+                        df["kernel_name"] = k_name
+                        if not (output_path / f"{k}.csv").exists() and eval_row == 0:
+                            df.to_csv(output_path / f"{k}.csv", index=None)
+                        else:
+                            df.to_csv(output_path / f"{k}.csv", mode='a', header=False, index=None)
 
-                    # for k, v in eval_dict.items():
-                    #     df = pd.DataFrame([v])
-                    #     df["mode"] = mode_name
-                    #     df["kernel_name"] = k_name
-                    #     if not (OUTPUT_PATH / f"{k}.csv").exists() and eval_row == 0:
-                    #         df.to_csv(OUTPUT_PATH / f"{k}.csv")
-                    #     else:
-                    #         df.to_csv(OUTPUT_PATH / f"{k}.csv", mode='a', header=False)
-                    #
-                    # eval_row += 1
+                    eval_row += 1
 
-        # for split in ["overall", "train", "test"]:
-        #     perf_plot(split=split, mode=mode_name)
+    for split in ["overall", "train", "test"]:
+        perf_plot(split=split, mode=mode_name, file_path=output_path)
 
 
 def get_limited_modes(kernels_limited=None, modes_limited=None):
@@ -111,4 +113,5 @@ if __name__ == "__main__":
     # plot_sample()
     evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1)
 
-
+    for split in ["overall", "train", "test"]:
+        perf_plot(split=split, file_path=get_output_path())

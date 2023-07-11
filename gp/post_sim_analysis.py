@@ -1,26 +1,43 @@
 from pathlib import Path
 import numpy as np
-from constants.constants import OUTPUT_PATH
+from constants.constants import get_output_path
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
 split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_logprob", "data_fraction",
-                          "pred_prob_overall_mean"],
-         "train": ["covered_fraction_fun", "pred_logprob", "data_fraction", "log_marginal_likelihood"],
-         "test": ["covered_fraction_fun", "pred_logprob", "data_fraction"]}
+                          "pred_prob_overall_mean", "meas_noise_var"],
+         "train": ["covered_fraction_fun", "pred_logprob", "data_fraction", "log_marginal_likelihood", "meas_noise_var"],
+         "test": ["covered_fraction_fun", "pred_logprob", "data_fraction", "meas_noise_var"]}
 
 
-def perf_plot(split="overall", mode="ou_bounded", file_path=OUTPUT_PATH):
-    col_of_int = split_dict[split]
-    test_perf = pd.read_csv(file_path / f"{split}_perf.csv")
-    test_perf = test_perf[test_perf["mode"] == mode]
-    fig, ax = plt.subplots(ncols=len(col_of_int), nrows=len(col_of_int), figsize=(10, 10))
+def perf_plot(split="overall", mode=None, file_path=None):
+    def is_numeric(col):
+        try:
+            pd.to_numeric(col)
+            return True
+        except Exception:
+            return False
+
+    if file_path is None:
+        file_path = get_output_path()
+    # col_of_int = split_dict[split]
+
+    test_perf = pd.read_csv(file_path / f"{split}_perf.csv", index_col=False)
+    if mode is not None:
+        test_perf = test_perf[test_perf["mode"] == mode]
+    col_of_int = [col for col in test_perf.columns if is_numeric(test_perf[col])]
+
+    fig, ax = plt.subplots(ncols=len(col_of_int), nrows=len(col_of_int), figsize=(20, 20))
     pd.plotting.scatter_matrix(test_perf[col_of_int], alpha=0.8, ax=ax)
-    fig.savefig(OUTPUT_PATH / f"{split}_perf_scatter_matrix.pdf")
+    fig.savefig(file_path / f"{split}_perf_scatter_matrix.pdf")
 
 
-def perf_plot_split(data_fraction=0.1, file_path=OUTPUT_PATH):
+def perf_plot_split(data_fraction=0.1, file_path=None):
+
+    if file_path is None:
+        file_path = get_output_path()
+
     col_of_int = next(iter(split_dict.values()))
     for v in split_dict.values():
         col_of_int = np.intersect1d(col_of_int, v)
