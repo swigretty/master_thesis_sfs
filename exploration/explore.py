@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 from simulation.simulate_bp import BPTimseSeriesSimulator, random_cosinus_seasonal, cosinus_seasonal, linear_trend
 from functools import partial
-from exploration.blr import blr_corr, plot_blr_output, blr_simple
+# from exploration.blr import blr_corr, plot_blr_output, blr_simple
 import matplotlib.pyplot as plt
 from gp.gp_regressor import GPR, ARKernel
 from statsmodels.tsa.arima_process import ArmaProcess

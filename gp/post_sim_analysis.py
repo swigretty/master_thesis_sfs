@@ -5,10 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "kl_fun", "pred_logprob", "data_fraction",
+split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_logprob", "data_fraction",
                           "pred_prob_overall_mean"],
-         "train": ["covered_fraction_fun", "kl_fun", "pred_logprob", "data_fraction", "log_marginal_likelihood"],
-         "test": ["covered_fraction_fun", "kl_fun", "pred_logprob", "data_fraction"]}
+         "train": ["covered_fraction_fun", "pred_logprob", "data_fraction", "log_marginal_likelihood"],
+         "test": ["covered_fraction_fun", "pred_logprob", "data_fraction"]}
 
 
 def perf_plot(split="overall", mode="ou_bounded", file_path=OUTPUT_PATH):

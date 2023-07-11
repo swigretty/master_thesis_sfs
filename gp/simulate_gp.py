@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from logging import getLogger
 import logging
+import json
 import scipy
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
@@ -14,7 +15,7 @@ from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
-from constants.constants import OUTPUT_PATH
+from constants.constants import get_output_path
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
 from gp.evaluate import GPEvaluator
@@ -22,7 +23,7 @@ from log_setup import setup_logging
 
 logger = getLogger(__name__)
 
-mpl.style.use('seaborn-v0_8')
+# mpl.style.use('seaborn-v0_8')
 
 
 def weights_func_value(y):
@@ -32,16 +33,16 @@ def weights_func_value(y):
 class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
-                 meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=OUTPUT_PATH,
+                 meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
                  data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None,
                  rng=None, normalize_kernel=False,
                  session_name=None):
 
+        self.sim_time = datetime.datetime.utcnow()
+
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         self.x = x
-        self.output_path = output_path
-        self.output_path.mkdir(parents=True, exist_ok=True)
 
         self.rng = rng
         if self.rng is None:
@@ -78,7 +79,19 @@ class GPSimulator():
         self.session_name = session_name
         if self.session_name is None:
             self.session_name = self.kernel_sim.__class__.__name__
-        self.figname_suffix = f"{self.session_name}_mn{self.meas_noise_var:.2f}_df{self.data_fraction:.2f}"
+        # self.figname_suffix = f"{self.session_name}_mn{self.meas_noise_var:.2f}_df{self.data_fraction:.2f}"
+        self.figname_suffix = ""
+
+        self.output_path = output_path
+        if self.output_path is not None:
+            if callable(self.output_path):
+                self.output_path = self.output_path(self.sim_time, session_name=self.session_name)
+            self.output_path.mkdir(parents=True)
+            with (self.output_path/"config.json").open("w") as f:
+                f.write(json.dumps({k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)},
+                                   default=str))
+
+            self.df.to_csv(self.output_path / f"data.csv")
 
         logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
 
@@ -90,6 +103,11 @@ class GPSimulator():
     #             for idx in range(n_samples)]
     #
     #     return data
+    @property
+    def df(self):
+        is_training_data = [idx in self.train_idx for idx in range(len(self.x))]
+        return pd.DataFrame({"x": self.x.reshape(-1), "f_true": self.f_true.y, "meas_noise": self.meas_noise,
+                             "training_data": is_training_data})
 
     def sim_gp(self, n_samples=5, sim_y=True):
         # samples without measurement noise
@@ -156,40 +174,49 @@ class GPSimulator():
 
     @f_true.setter
     def f_true(self, data=None):
+        if hasattr(self, "_f_true"):
+            raise Exception("f_true is already set")
         self._f_true = data
         if data is None:
             self._f_true = self.sim_gp(n_samples=1, sim_y=False)[0]
 
-    @cached_property
+    @property
     def train_idx(self):
-        if callable(self.data_fraction_weights):
-            weights = self.data_fraction_weights(self.y_true)
-        elif self.data_fraction_weights == "seasonal":
-            weights = self.data_fraction_weights_seasonal()
-        else:
-            weights = self.data_fraction_weights
+        if not hasattr(self, "_train_idx"):
+            if callable(self.data_fraction_weights):
+                weights = self.data_fraction_weights(self.y_true)
+            elif self.data_fraction_weights == "seasonal":
+                weights = self.data_fraction_weights_seasonal()
+            else:
+                weights = self.data_fraction_weights
 
-        idx = get_red_idx(len(self.x), data_fraction=self.data_fraction, weights=weights,
-                          rng=self.rng)
-        return idx
+            self._train_idx = get_red_idx(len(self.x), data_fraction=self.data_fraction, weights=weights, rng=self.rng)
+
+        return self._train_idx
+
+    @property
+    def test_idx(self):
+        """
+        this is very slow [idx for idx in range(len(self.x)) if idx not in self.train_idx]
+        """
+        if not hasattr(self, "_test_idx"):
+            self._test_idx = np.setdiff1d(np.arange(len(self.x)), self.train_idx)
+        return self._test_idx
 
     @property
     def y_true_train(self):
         """
         This represents the (potentially noisy) subsampled measurements, used to fit the GP
         """
-        return self.y_true[self.train_idx]
+        if not hasattr(self, "_y_true_train"):
+            self._y_true_train = self.y_true[self.train_idx]
+        return self._y_true_train
 
     @property
     def y_true_samples(self):
-        if not hasattr(self, "_data_prior"):
-            self.y_true_samples = self.sim_gp(n_samples=5)
-        return self._data_prior
-
-    @y_true_samples.setter
-    def y_true_samples(self, data: list):
-        data = data + [self.y_true]
-        self._data_prior = data
+        if not hasattr(self, "_y_true_samples"):
+            self._y_true_samples = self.sim_gp(n_samples=5) + [self.y_true]
+        return self._y_true_samples
 
     @property
     def param_sim(self):
@@ -201,34 +228,31 @@ class GPSimulator():
             raise "GP has not been fitted yet"
         return self.extract_params_from_kernel(self.gpm_fit.kernel_)
 
-    @cached_property
+    @property
     def f_post(self):
-        # f_post_cov is the predicted covariance matrix for f(x) (not for y(x))
-        f_post_mean, f_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
-        return GPData(x=self.x, y_mean=f_post_mean, y_cov=f_post_cov)
+        """
+        The posterior distribution over f based on the fitted gaussian process model
+        """
+        if not hasattr(self.gpm_fit, "X_train_"):
+            raise "GP has not been fitted yet"
+        if not hasattr(self, "_f_post"):
+            f_post_mean, f_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
+            self._f_post = GPData(x=self.x, y_mean=f_post_mean, y_cov=f_post_cov)
+        return self._f_post
 
     @property
-    def data_mean(self):
+    def pred_empirical_mean(self):
         """
         Using the overall mean as prediction.
         cov is calculated assuming iid data.
         """
-        sigma_mean = 1 / len(self.y_true_train.y) * np.var(self.y_true_train.y)
-        y_cov = np.zeros((len(self.x), len(self.x)), float)
-        np.fill_diagonal(y_cov, sigma_mean)
-        y = np.repeat(np.mean(self.y_true_train.y), len(self.x))
-        return GPData(x=self.x, y_mean=y, y_cov=y_cov)
-
-    @property
-    def test_idx(self):
-        """
-        or
-        x = np.setdiff1d(self.data_post.x, self.data.x, assume_unique=True)
-        return np.arange(len(self.x))[np.isin(self.x, x)]
-
-        """
-        return [idx for idx in range(len(self.x)) if self.x[idx] not in
-                self.y_true_train.x]
+        if not hasattr(self, "_pred_empirical_mean"):
+            sigma_mean = 1 / len(self.y_true_train.y) * np.var(self.y_true_train.y)
+            y_cov = np.zeros((len(self.x), len(self.x)), float)
+            np.fill_diagonal(y_cov, sigma_mean)
+            y = np.repeat(np.mean(self.y_true_train.y), len(self.x))
+            self._pred_empirical_mean = GPData(x=self.x, y_mean=y, y_cov=y_cov)
+        return self._pred_empirical_mean
 
     @staticmethod
     def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None, rng=None):
@@ -258,7 +282,8 @@ class GPSimulator():
                 std_range[1] < y_std):
 
             kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
-            gps = cls(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2, rng=np.random.default_rng(11))
+            gps = cls(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
+                      rng=np.random.default_rng(11), output_path=None)
             data_sim = gps.sim_gp(n_samples=100)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std
@@ -316,19 +341,19 @@ class GPSimulator():
 
     @Plotter
     def plot_true_with_samples(self, add_offset=True, ax=None):
-        data_true = self.y_true
+        data_true = self.f_true
         data = self.y_true_train
         if add_offset:
             data_true += self.offset
             data += self.offset
-
-        ax.plot(self.x, data_true.y_mean, "r:")
+        ax.set_title("True Time Series with Samples")
+        ax.plot(data_true.x, data_true.y, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
 
     @Plotter
     def plot_overall_mean(self, ax=None):
         self.plot_true_with_samples(ax=ax, add_offset=True)
-        plot_lines_dict = {"sample mean":  self.data_mean.y_mean, "true mean": self.y_true.y_mean,
+        plot_lines_dict = {"sample mean":  self.pred_empirical_mean.y_mean, "true mean": self.y_true.y_mean,
                            "predicted_mean": self.f_post.y_mean}
         # loosely dashed, dashed dotted, dotted
         linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
@@ -362,10 +387,13 @@ class GPSimulator():
         eval_dict = self.evaluate()
 
         fig.tight_layout()
-        figfile = f"fit_{self.figname_suffix}"
+        figfile = "fit"
+        # figfile = f"fit_{self.figname_suffix}"
         fig.savefig(self.output_path / f"{figfile}.pdf")
-        pd.DataFrame([eval_dict]).to_csv(self.output_path / f"{figfile}.csv")
         plt.close()
+        eval_df = pd.DataFrame([eval_dict])
+        eval_df.to_csv(self.output_path / f"{figfile}.csv")
+        return eval_df
 
     def plot_errors(self):
         nrows = 2
@@ -388,7 +416,8 @@ class GPSimulator():
             ax.set_title(k)
 
         fig.tight_layout()
-        figfile = f"err_{self.figname_suffix}"
+        figfile = "err"
+        # figfile = f"err_{self.figname_suffix}"
         fig.savefig(self.output_path / f"{figfile}.pdf")
         plt.close()
 
@@ -409,24 +438,33 @@ class GPSimulator():
         param_error = {}
         if self.kernel_sim == self.kernel_fit:
             param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
-
         output_dict = {"param_error": param_error}
+
         for k, v in self.eval_config.items():
             eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
                            self.eval_data.items()}
+
+            time.append(datetime.datetime.utcnow())
+            logger.info(f" eval_kwargs for {k}: {time[-1] - time[-2]}")
             gpe = GPEvaluator(**eval_kwargs, **eval_base_kwargs)
             output_dict[k] = getattr(gpe, v["fun"])()
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
+
         output_dict["overall_perf_mean"] = GPEvaluator(self.y_true.y, self.f_true,
-                                                       self.data_mean, meas_noise_var=0).evaluate()
+                                                       self.pred_empirical_mean, meas_noise_var=0).evaluate()
 
         return output_dict
 
+    @property
+    def current_init_kwargs(self):
+        return {k: v for k, v in vars(self).items() if k in inspect.signature(self.__init__).parameters.keys()}
+
     def evaluate_multisample(self, n_samples=100):
-        current_init_kwargs = {k: v for k, v in vars(self).items() if k in
-                               inspect.signature(self.__init__).parameters.keys()}
+        current_init_kwargs = copy(self.current_init_kwargs)
         current_init_kwargs["normalize_kernel"] = False
+        current_init_kwargs["output_path"] = None
+
         eval_dict = {}
 
         for i in range(n_samples):
@@ -443,6 +481,10 @@ class GPSimulator():
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
             v["session_name"] = gps.session_name
+
+        with (self.output_path / "eval_summary.json").open("w") as f:
+            f.write(json.dumps(summary_dict))
+
         return summary_dict
 
     @Plotter
