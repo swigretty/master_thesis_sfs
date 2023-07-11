@@ -73,18 +73,21 @@ class GPEvaluator:
         term3 = d.T @ solve(d)
         return (term1 + term2 + term3 - len(d)) / 2.
 
-    def kl_div_fun(self):
-        m_to = self.f_true.y_mean
-        S_to = self.f_true.y_cov
-
-        m_fr = self.f_pred.y_mean
-        S_fr = self.f_pred.y_cov
-        return self.kl_div((m_to, S_to), (m_fr, S_fr))
+    # def kl_div_fun(self):
+    # """
+    # This does not make sense. f_true.y_mean is the zero vector
+    # """
+    #     m_to = self.f_true.y_mean
+    #     S_to = self.f_true.y_cov
+    #
+    #     m_fr = self.f_pred.y_mean
+    #     S_fr = self.f_pred.y_cov
+    #     return self.kl_div((m_to, S_to), (m_fr, S_fr))
 
     @property
     def ci_covered_meanfun(self):
-        return (self.f_pred.ci["ci_lb"] < self.f_true.y_mean) & (
-                self.f_true.y_mean < self.f_pred.ci["ci_ub"])
+        return (self.f_pred.ci["ci_lb"] < self.f_true.y) & (
+                self.f_true.y < self.f_pred.ci["ci_ub"])
 
     @property
     def ci_covered_yfun(self):
@@ -93,14 +96,14 @@ class GPEvaluator:
 
     def evaluate_fun(self):
         return {"covered_fraction_fun": np.mean(self.ci_covered_meanfun),
-                "covered_fraction_yfun": np.mean(self.ci_covered_yfun), "kl_fun": self.kl_div_fun(),
+                "covered_fraction_yfun": np.mean(self.ci_covered_yfun),
                 "pred_logprob": self.get_predictive_logprob_y(), "mse": self.mse()}
 
     def evaluate_overall_mean(self):
         covered = 0
         se_pred = se_overall_mean_from_cov(self.f_pred.y_cov)
         mean_pred = np.mean(self.f_pred.y_mean)
-        mean_true = np.mean(self.f_true.y_mean)
+        mean_true = np.mean(self.f_true.y)
         ci = calculate_ci(se_pred, mean_pred)
         if ci[0] < mean_true < ci[1]:
             covered = 1
@@ -132,7 +135,7 @@ class GPEvaluator:
 
         plot_posterior(self.f_pred.x, self.f_pred.y_mean, y_post_std=self.f_pred.y_std,
                        x_red=error_data_true.x, y_red=error_data_true.y_mean,
-                       y_true=self.f_true.y_mean, ax=ax)
+                       y_true=self.f_true.y, ax=ax)
 
 
 

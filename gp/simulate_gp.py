@@ -72,6 +72,9 @@ class GPSimulator():
         self.f_true = f_true
         self.meas_noise = meas_noise
 
+        # Fit the true GP once. This is needed for the true mean decomposition
+        self.gpm_sim.fit(self.y_true.x, self.f_true.y)
+
         self.session_name = session_name
         if self.session_name is None:
             self.session_name = self.kernel_sim.__class__.__name__
@@ -107,19 +110,21 @@ class GPSimulator():
         return data
 
     def data_fraction_weights_seasonal(self):
-        self.gpm_sim.fit(self.y_true.x, self.y_true.y)
         true_dec = self.gpm_sim.predict_mean_decomposed(self.x)
         fun = [fun for name, fun in true_dec.items() if "ExpSineSquared" in name]
         assert len(fun) == 1, "cannot extract seasonal pattern"
         weights = fun[0] - min(fun[0])
         return weights * 0.1
 
-    @cached_property
-    def f_true_post(self):
-        self.gpm_sim.fit(self.f_true.x, self.f_true.y)
-        f_post_mean, f_post_cov = self.gpm_sim.predict(self.y_true.x, return_cov=True)
-        assert np.mean((self.f_true.y - f_post_mean) ** 2) < 10 ** (-4)
-        return GPData(x=self.f_true.x, y_mean=f_post_mean, y_cov=f_post_cov)
+    # @cached_property
+    # def f_true_post(self):
+    #     """
+    #     this is simply f_true with Cov = 0 everywhere
+    #     """
+    #     self.gpm_sim.fit(self.f_true.x, self.f_true.y)
+    #     f_post_mean, f_post_cov = self.gpm_sim.predict(self.y_true.x, return_cov=True)
+    #     assert np.mean((self.f_true.y - f_post_mean) ** 2) < 10 ** (-4)
+    #     return GPData(x=self.f_true.x, y_mean=f_post_mean, y_cov=f_post_cov)
 
     @property
     def meas_noise(self):
@@ -300,7 +305,7 @@ class GPSimulator():
     @Plotter
     def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
         data_dict = {"f_post": self.f_post, "y_true_subsampled": self.y_true_train,
-                     "f_true": self.f_true_post}
+                     "f_true": self.f_true}
         if add_offset:
             data_dict = {k: v + self.offset for k, v in data_dict}
 
@@ -396,7 +401,7 @@ class GPSimulator():
 
     @property
     def eval_data(self):
-        return {"y_true": self.y_true.y, "f_true": self.f_true_post, "f_pred": self.f_post}
+        return {"y_true": self.y_true.y, "f_true": self.f_true, "f_pred": self.f_post}
 
     def evaluate(self):
         eval_base_kwargs = {"meas_noise_var": self.meas_noise_var}
@@ -413,7 +418,7 @@ class GPSimulator():
             output_dict[k] = getattr(gpe, v["fun"])()
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
-        output_dict["overall_perf_mean"] = GPEvaluator(self.y_true.y, self.f_true_post,
+        output_dict["overall_perf_mean"] = GPEvaluator(self.y_true.y, self.f_true,
                                                        self.data_mean, meas_noise_var=0).evaluate()
 
         return output_dict
@@ -442,16 +447,14 @@ class GPSimulator():
 
     @Plotter
     def mean_decomposition_plot(self, ax=None):
-        y_post_mean = self.f_true_post.y_mean
-        assert np.all(y_post_mean - self.y_true.y < 0.00000001)
         decomposed_dict_sim = self.gpm_sim.predict_mean_decomposed(self.x)
-        ax.plot(self.y_true.x, self.y_true.y)
+        ax.plot(self.f_true.x, self.f_true.y)
         sum_of_v = np.zeros(len(self.x))
         for k, v in decomposed_dict_sim.items():
             ax.plot(self.x, v, label=k, linestyle="dashed")
             sum_of_v += v
 
-        assert np.all(sum_of_v - y_post_mean < 0.00000001)
+        assert np.all(sum_of_v - self.f_true.y < 0.00000001)
         # ax.plot(data.x, sum_of_v, label="sum")
         # ax.plot(data.x, y_post_mean, label="post_mean")
         ax.legend()
