@@ -445,7 +445,7 @@ class GPSimulator():
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 
-        output_dict["overall_perf_mean"] = GPEvaluator(self.y_true.y, self.f_true,
+        output_dict["overall_perf_baseline0"] = GPEvaluator(self.y_true.y, self.f_true,
                                                        self.pred_empirical_mean, meas_noise_var=0).evaluate()
 
         return output_dict
