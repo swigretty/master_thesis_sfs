@@ -35,8 +35,7 @@ class GPSimulator():
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
                  data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None,
-                 rng=None, normalize_kernel=False,
-                 session_name=None):
+                 rng=None, normalize_kernel=False):
 
         self.sim_time = datetime.datetime.utcnow()
 
@@ -75,17 +74,13 @@ class GPSimulator():
 
         # Fit the true GP once. This is needed for the true mean decomposition
         self.gpm_sim.fit(self.y_true.x, self.f_true.y)
-
-        self.session_name = session_name
-        if self.session_name is None:
-            self.session_name = self.kernel_sim.__class__.__name__
         # self.figname_suffix = f"{self.session_name}_mn{self.meas_noise_var:.2f}_df{self.data_fraction:.2f}"
         self.figname_suffix = ""
 
         self.output_path = output_path
         if self.output_path is not None:
             if callable(self.output_path):
-                self.output_path = self.output_path(self.sim_time, session_name=self.session_name)
+                self.output_path = self.output_path(self.sim_time)
             self.output_path.mkdir(parents=True)
             with (self.output_path/"config.json").open("w") as f:
                 f.write(json.dumps({k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)},
@@ -93,7 +88,8 @@ class GPSimulator():
 
             self.df.to_csv(self.output_path / f"data.csv")
 
-        logger.info(f"Initialized {self.__class__.__name__} with \n {kernel_sim=} \n {kernel_fit=}")
+        init_kwargs = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
+        logger.info(f"Initialized {self.__class__.__name__} with: \n {init_kwargs=}")
 
     # def sim_gp(self, n_samples=5):
     #     # samples with measurement noise if predict_y=True
@@ -478,7 +474,7 @@ class GPSimulator():
             v["kernel_fit"] = gps.gpm_fit.kernel_
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
-            v["session_name"] = gps.session_name
+            v["output_path"] = self.output_path
 
         with (self.output_path / "eval_summary.json").open("w") as f:
             f.write(json.dumps(summary_dict, default=str))

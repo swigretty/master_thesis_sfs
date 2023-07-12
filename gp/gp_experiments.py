@@ -8,7 +8,7 @@ from log_setup import setup_logging
 import numpy as np
 import pandas as pd
 from constants.constants import get_output_path
-
+from functools import partial
 from datetime import datetime
 
 
@@ -21,22 +21,17 @@ MODES = {
                                        **base_config}}}
 
 
-def plot_gp_regression_sample(session_name=None, nplots=1, rng=None, normalize_kernel=False, **kwargs):
-    mode_name_suffix = ""
+def plot_gp_regression_sample(nplots=1, rng=None, normalize_kernel=False, **kwargs):
     if rng is None:
         rng = np.random.default_rng(11)
     for i in range(nplots):
         if nplots > 1:
             rng = np.random.default_rng(i)
-            mode_name_suffix = f"_{i}"
-        if session_name is not None:
-            session_name = f"{session_name}{mode_name_suffix}"
-        gps = GPSimulator(rng=rng, normalize_kernel=normalize_kernel, session_name=session_name, **kwargs)
+        gps = GPSimulator(rng=rng, normalize_kernel=normalize_kernel, **kwargs)
         gps.plot_true_with_samples()
         gps.plot()
         gps.plot_errors()
         gps.plot_overall_mean()
-
     return gps
 
 
@@ -47,15 +42,15 @@ def evaluate_multisample(gps=None, n_samples=10, **gps_kwargs):
     return eval_dict
 
 
-def plot_evaluate_multisample(session_name=None, nplots=1, n_samples=100, normalize_kernel=False, **gps_kwargs):
+def plot_evaluate_multisample(nplots=1, n_samples=100, **gps_kwargs):
     # return evaluate_multisample(n_samples=n_samples, session_name=session_name, **gps_kwargs)
-    gps = plot_gp_regression_sample(session_name=session_name, nplots=nplots, normalize_kernel=normalize_kernel,
-                                    **gps_kwargs)
+    gps = plot_gp_regression_sample(nplots=nplots, **gps_kwargs)
     return evaluate_multisample(gps=gps, n_samples=n_samples), gps
 
 
-def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10), n_samples=100):
-    output_path = get_output_path()
+def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10),
+                           n_samples=100, experiment_name="test"):
+    output_path = get_output_path(experiment_name=experiment_name)
 
     eval_row = 0
     for nv in meas_noise_var:
@@ -63,12 +58,14 @@ def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=
             for k_name, k in mode_config["kernels"].items():
                 session_name = f"{mode_name}_{k_name}"
                 kernel, nv = GPSimulator.get_normalized_kernel(kernel=k, meas_noise_var=nv)
-                for df in data_fraction:
-                    logger.info(f"Simulation started for {session_name=}, {df=} and {nv=} ")
+                output_path_gp_sim = partial(get_output_path, session_name=session_name,
+                                             experiment_name=experiment_name)
+                for frac in data_fraction:
+                    logger.info(f"Simulation started for {experiment_name=}.{session_name=}, {frac=} and {nv=} ")
                     rng = np.random.default_rng(11)
                     eval_dict, gps = plot_evaluate_multisample(
-                        session_name=session_name, rng=rng, kernel_sim=kernel, data_fraction=df, n_samples=n_samples,
-                        normalize_kernel=False, meas_noise_var=nv, **mode_config["config"])
+                        output_path=output_path_gp_sim, rng=rng, kernel_sim=kernel, data_fraction=frac,
+                        n_samples=n_samples, normalize_kernel=False, meas_noise_var=nv, **mode_config["config"])
                     for k, v in eval_dict.items():
                         df = pd.DataFrame([v])
                         df["mode"] = mode_name
@@ -111,7 +108,6 @@ if __name__ == "__main__":
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     # plot_sample()
-    evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1)
+    evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1,
+                           experiment_name="test_meas_noise")
 
-    for split in ["overall", "train", "test"]:
-        perf_plot(split=split, file_path=get_output_path())
