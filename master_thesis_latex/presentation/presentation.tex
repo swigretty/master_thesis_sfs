@@ -646,8 +646,8 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Performance Asessment}
-		for i in $1 \dots n$:
+	\frametitle{Simulation and Evaluation}
+		for i in $1 \dots n_{simulations}$:
 		\begin{enumerate}
 			\item Simulate from true GP (adversarial add non-gaussian noise)
 			\item subsample data (adversarial: different densities, non-uniform sampling)
@@ -657,10 +657,11 @@ as a collection of multivariate normally distributed random variables and thus a
 					\item If distribution can not be calculated analytically (e.g. TTR) we can
 					sample from the posterior distribution (Multivariate Gaussian) to approx. it.
 				\end{itemize}
-			\item Calculate performance metric, comparing true to predicted
+			\item Calculate performance metric between true and predicted values.
+			\item Compare performance of GP Regression to baseline methods
 		\end{enumerate}
 	\smallskip
-	Calculate mean performance over n simulations
+	Calculate mean performance over $n_{simulations}$
 
 	\bigskip % Vertical whitespace
 
@@ -679,68 +680,102 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Simulation of BP Time Series}
+	\frametitle{Simulation and GP Regression}
 	Simulation of true BP signal and measurements:
 		\begin{itemize}
-			\item $X=\{x_1, \dots x_n\}$: The input time points of interest. We are interested in a time span of 1 week
-			with 10 BP values per hour.
-			\item $f_X := f([x_1 \dots x_n])$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
-			\item $y_X := y([x_1 \dots x_n])$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
+			\item $X=\{x_1, \dots x_n\}$: The input time points of interest, i.e. 1 week with 10 BP values per hour.
+			\item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
+			\item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
 		\end{itemize}
 	\bigskip
-	Based on subsampling scheme choose $X_{train} = \{x_1, \dots x_m\} \subset X$ and $X_{test} = X \setminus X_{train}$.
+	Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
+	\begin{itemize}
+		\item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
+		\item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
+	\end{itemize}
 
 	\bigskip
 
-	Fit GP regression model to training data $y_{train} := y_{X_{train}}$:
+	Fit GP regression model to training data $y_{train}$, $X_{train}$:
 			\begin{itemize}
 				\item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
 				$p(y_{train}| \theta)$
-				\item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}_X, \bar{\Sigma}_X)$:
-				The posterior (predictive) probability density of $f_X$. The posterior mean vecor
-				$\bar{\mu}_X$ contains the point estimates.
+				\item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
+				The posterior (predictive) probability density of $f_X$. The posterior mean vector
+				$\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
+				\begin{itemize}
+					\item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
+					\item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
+
+				\end{itemize}
 			\end{itemize}
 	\bigskip
-	Evaluate predictive probabilities $p(f_{X_{train}}| y_{train})$,
-		$p(f_{X_{test}}| y_{train})$ and $p(f_{X}| y_{train})$
+	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
+		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
 			\begin{itemize}
-				\item $\bar{\mu}_{X_{train}} != f(X_{train})$ due to the measurement error. If
-				$f_{train} := f(X_{train})$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
+				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
+				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
 				\bar{\Sigma}_{X_{train}})$
-				with $\bar{\mu}_{X_{train}} = f_{train}$ and $\bar{\Sigma}_{X_{train}} = {\displaystyle O}$
+				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
 			\end{itemize}
 
 \end{frame}
 
 
-
-
 \begin{frame}
-	\frametitle{Evaluate Performance}
-	Evaluate predictive probabilities $p(f_{X_{train}}| y_{train})$,
-		$p(f_{X_{test}}| y_{train})$ and $p(f_{X}| y_{train})$
+	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\framesubtitle{Hourly/Daily/Weekly Mean} % Optional subtitle
+
+	Calculate hourly/daily/weekly mean:
 	\begin{itemize}
-		\item hourly/daily/weekly mean:
+		\item True: mean($f_{X}$)
+		\item GP Regression: mean($\bar{\mu}$) with standard error
+		$1 / n * \sqrt {\sum_{i=1}^{n}\sum_{j=1}^{n} \bar{\Sigma}_{i,j}}$ or sample from posterior
+		\item Baseline Methods:
 		\begin{itemize}
-			\item True: mean($f_{X}$)
-			\item GP Regression: mean($\bar{\mu}_{X}$) with standard error
-			$1 / n * \sqrt {\sum_{i=1}^{i=n}\sum_{j=1}^{j=n} \bar{\Sigma}_{X, (i,j)}}$ or sample from posterior
 			\item Empirical mean: mean($y_{train}$) with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
 			\item Linear Regression
 			\item Kernel Regression/ Smoothing Spline
 		\end{itemize}
-		\item TTR (Time in Target Range)
-		\begin{itemize}
+	\end{itemize}
+
+	\bigskip
+
+	Performance Metrics:
+	\begin{itemize}
+		\item CI coverage + CI width
+	\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\framesubtitle{Time in Target Range (TTR)} % Optional subtitle
+
+	Calculate TTR:
+	\begin{itemize}
 			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
 			\item GP: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
 			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
-		\end{itemize}
-		\item Day vs Night
+	\end{itemize}
+
+	Performance Metrics:
+	\begin{itemize}
+		\item CI coverage + CI width
 	\end{itemize}
 
 \end{frame}
 
 
+
+\begin{frame}
+	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\framesubtitle{Day vs Night BP} % Optional subtitle
+	\begin{itemize}
+			\item True: Tbd
+	\end{itemize}
+
+\end{frame}
 
 
 
