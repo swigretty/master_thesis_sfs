@@ -134,7 +134,7 @@ class GPEvaluator:
             error_data_true = self.f_true[error_idx]
 
         plot_posterior(self.f_pred.x, self.f_pred.y_mean, y_post_std=self.f_pred.y_std,
-                       x_red=error_data_true.x, y_red=error_data_true.y_mean,
+                       x_red=error_data_true.x, y_red=error_data_true.y,
                        y_true=self.f_true.y, ax=ax)
 
 

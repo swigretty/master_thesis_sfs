@@ -108,6 +108,6 @@ if __name__ == "__main__":
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     # plot_sample()
-    evaluate_data_fraction(modes, meas_noise_var=(0.1, 1), data_fraction=(0.2,), n_samples=1,
+    evaluate_data_fraction(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
                            experiment_name="test_meas_noise")
 
