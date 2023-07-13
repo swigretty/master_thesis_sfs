@@ -35,13 +35,16 @@ class GPSimulator():
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
                  data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None,
-                 rng=None, normalize_kernel=False):
+                 rng=None, normalize_kernel=False, baseline_methods=None):
 
         self.sim_time = datetime.datetime.utcnow()
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         self.x = x
+        if baseline_methods is None:
+            baseline_methods = []
+        self.baseline_methods = baseline_methods
 
         self.rng = rng
         if self.rng is None:

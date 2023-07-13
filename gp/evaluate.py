@@ -11,6 +11,8 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+# TODO add baseline methods here and remove from simulate_gp
+
 
 class GPEvaluator:
 
