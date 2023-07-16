@@ -14,9 +14,8 @@ class Plotter():
 
     def __call__(self, instance, *args, ax=None, **kwargs):
         fig = None
-
-        output_path = instance.output_path
-        figname_suffix = instance.figname_suffix
+        output_path = getattr(instance, "output_path", None)
+        figname_suffix = getattr(instance, "figname_suffix", "")
 
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
@@ -28,8 +27,9 @@ class Plotter():
 
         if fig is not None:
             fig.tight_layout()
-            fig.savefig(output_path / f"{self.func.__name__}{figname_suffix}.pdf")
-            plt.close()
+            if output_path:
+                fig.savefig(output_path / f"{self.func.__name__}{figname_suffix}.pdf")
+                plt.close()
         return value
 
     def __get__(self, instance, owner):

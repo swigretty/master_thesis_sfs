@@ -35,17 +35,14 @@ class GPSimulator():
 
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
-                 data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None,
-                 rng=None, normalize_kernel=False, baseline_methods=None):
+                 data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None, rng=None,
+                 normalize_kernel=False):
 
         self.sim_time = datetime.datetime.utcnow()
 
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         self.x = x
-        if baseline_methods is None:
-            baseline_methods = []
-        self.baseline_methods = baseline_methods
 
         self.rng = rng
         if self.rng is None:
@@ -73,13 +70,13 @@ class GPSimulator():
                            alpha=0)
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var, rng=rng)
 
-        self.f_true = f_true
+        self.f_true = f_true  # Noise free BP values, if None, samples from self.gpm_sim
+        # Vector of measurement noise values for every input in x.
+        # If None, draws iid samples from normal dist with var=self.meas_noise_var
         self.meas_noise = meas_noise
 
         # Fit the true GP once. This is needed for the true mean decomposition
         self.gpm_sim.fit(self.y_true.x, self.f_true.y)
-        # self.figname_suffix = f"{self.session_name}_mn{self.meas_noise_var:.2f}_df{self.data_fraction:.2f}"
-        self.figname_suffix = ""
 
         self.output_path = output_path
         if self.output_path is not None:
@@ -95,14 +92,6 @@ class GPSimulator():
         init_kwargs = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
         logger.info(f"Initialized {self.__class__.__name__} with: \n {init_kwargs=}")
 
-    # def sim_gp(self, n_samples=5):
-    #     # samples with measurement noise if predict_y=True
-    #     y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
-    #         self.x, n_samples=n_samples, predict_y=True)  # mean_f=self.mean_f
-    #     data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov)
-    #             for idx in range(n_samples)]
-    #
-    #     return data
     @property
     def df(self):
         is_training_data = [idx in self.train_idx for idx in range(len(self.x))]
@@ -110,15 +99,13 @@ class GPSimulator():
                              "training_data": is_training_data})
 
     def sim_gp(self, n_samples=5, sim_y=True):
-        # samples without measurement noise
-        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
-            self.x, n_samples=n_samples)  # mean_f=self.mean_f
-        # TODO should this be scaled as well ?
-        # y_prior = y_prior + self.meas_noise * np.std(y_prior, axis=0) * np.random.standard_normal((y_prior.shape))
-        y_prior_noisy = y_prior + self.meas_noise_var * self.rng.standard_normal((y_prior.shape))
-        y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
+        # samples without measurement noise and without mean function
+        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(self.x, n_samples=n_samples)
 
         if sim_y:
+            # samples with noise
+            y_prior_noisy = y_prior + self.meas_noise_var * self.rng.standard_normal((y_prior.shape))
+            y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
             data = [GPData(x=self.x, y=y_prior_noisy[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov_noisy) for idx in
                     range(n_samples)]
         else:
@@ -350,17 +337,6 @@ class GPSimulator():
         ax.plot(data_true.x, data_true.y, "r:")
         ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
 
-    @Plotter
-    def plot_overall_mean(self, ax=None):
-        self.plot_true_with_samples(ax=ax, add_offset=True)
-        plot_lines_dict = {"sample mean":  self.pred_empirical_mean.y_mean, "true mean": self.y_true.y_mean,
-                           "predicted_mean": self.f_post.y_mean}
-        # loosely dashed, dashed dotted, dotted
-        linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
-        for i, (k, v) in enumerate(plot_lines_dict.items()):
-            ax.plot(self.x, np.repeat(np.mean(v) + self.offset, len(self.x)), label=k, linestyle=linestyles[i])
-        ax.legend()
-
     def plot(self, add_offset=False):
         nrows = 3
         ncols = 2
@@ -388,11 +364,11 @@ class GPSimulator():
 
         fig.tight_layout()
         figfile = "fit"
-        # figfile = f"fit_{self.figname_suffix}"
-        fig.savefig(self.output_path / f"{figfile}.pdf")
-        plt.close()
         eval_df = pd.DataFrame([eval_dict])
-        eval_df.to_csv(self.output_path / f"{figfile}.csv")
+        if self.output_path:
+            fig.savefig(self.output_path / f"{figfile}.pdf")
+            plt.close()
+            eval_df.to_csv(self.output_path / f"{figfile}.csv")
         return eval_df
 
     def plot_errors(self):
@@ -417,9 +393,9 @@ class GPSimulator():
 
         fig.tight_layout()
         figfile = "err"
-        # figfile = f"err_{self.figname_suffix}"
-        fig.savefig(self.output_path / f"{figfile}.pdf")
-        plt.close()
+        if self.output_path:
+            fig.savefig(self.output_path / f"{figfile}.pdf")
+            plt.close()
 
     @property
     def eval_config(self):
@@ -448,40 +424,11 @@ class GPSimulator():
             output_dict[k] = getattr(gpe, v["fun"])()
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
-
-
         return output_dict
 
     @property
     def current_init_kwargs(self):
         return {k: v for k, v in vars(self).items() if k in inspect.signature(self.__init__).parameters.keys()}
-
-    def evaluate_multisample(self, n_samples=100):
-        current_init_kwargs = copy(self.current_init_kwargs)
-        current_init_kwargs["normalize_kernel"] = False
-        current_init_kwargs["output_path"] = None
-
-        eval_dict = {}
-
-        for i in range(n_samples):
-            gps = self.__class__(**current_init_kwargs)
-            gps.fit()
-            eval_sample = gps.evaluate()
-            eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
-
-        summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
-        for v in summary_dict.values():
-            v["data_fraction"] = gps.data_fraction
-            v["kernel_sim"] = gps.kernel_sim
-            v["kernel_fit"] = gps.gpm_fit.kernel_
-            v["n_samples"] = n_samples
-            v["meas_noise_var"] = gps.meas_noise_var
-            v["output_path"] = self.output_path
-
-        with (self.output_path / "eval_summary.json").open("w") as f:
-            f.write(json.dumps(summary_dict, default=str))
-
-        return summary_dict
 
     @Plotter
     def mean_decomposition_plot(self, ax=None):
@@ -526,20 +473,33 @@ class GPSimulationEvaluator():
             self._gps = GPSimulator(**self.gps_kwargs)
         return self._gps
 
+    def _get_pred_baseline(self, gps):
+        pred_baseline = {}
+        for eval_name, eval_fun in self.baseline_methods:
+            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y)
+        return pred_baseline
+
+    @property
+    def pred_baseline(self):
+        if not hasattr(self, "_pred_baseline"):
+            self._pred_baseline = self.get_pred_baseline(self.gps)
+        return self._pred_baseline
+
     def evaluate_baseline(self, gps=None):
         output_dict = {}
         if gps is None:
             gps = self.gps
+            pred_baseline = self.pred_baseline
+        else:
+            pred_baseline = self._get_pred_baseline()
 
-        for eval_name, eval_fun in self.baseline_methods.items():
-            pred = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y)
-            output_dict[f"overall_perf_{eval_name}"] = GPEvaluator(
+        for baseline_name, pred in pred_baseline.items():
+            output_dict[f"overall_perf_{baseline_name}"] = GPEvaluator(
                 gps.y_true.y, gps.f_true, pred["data"], meas_noise_var=pred["meas_noise_var"]).evaluate()
         return output_dict
 
     def evaluate_multisample(self, n_samples=100):
-        current_init_kwargs = copy(self.current_init_kwargs)
-        current_init_kwargs["normalize_kernel"] = False
+        current_init_kwargs = self.gps_kwargs
         current_init_kwargs["output_path"] = None
 
         eval_dict = {}
@@ -558,15 +518,27 @@ class GPSimulationEvaluator():
             v["kernel_fit"] = gps.gpm_fit.kernel_
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
-            v["output_path"] = self.output_path
+            v["output_path"] = self.gps.output_path
 
-        with (self.output_path / "eval_summary.json").open("w") as f:
+        with (self.gps.output_path / "eval_summary.json").open("w") as f:
             f.write(json.dumps(summary_dict, default=str))
 
         return summary_dict
 
+    @Plotter
+    def plot_overall_mean(self, ax=None):
+        self.gps.plot_true_with_samples(ax=ax, add_offset=True)
+        plot_lines_dict = {"true_mean": self.gps.y_true.y_mean,
+                           "gp_mean": self.gps.f_post.y_mean}
 
+        for k, v in self.pred_baseline.items():
+            plot_lines_dict[f"{k}_mean"] = v["data"]
 
+        # loosely dashed, dashed dotted, dotted
+        linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
+        for i, (k, v) in enumerate(plot_lines_dict.items()):
+            ax.plot(self.gps.x, np.repeat(np.mean(v) + self.offset, len(self.gps.x)), label=k, linestyle=linestyles[i])
+        ax.legend()
 
 
 
