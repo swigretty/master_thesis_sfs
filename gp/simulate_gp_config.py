@@ -25,9 +25,11 @@ class GPSimulatorConfig():
     n_days: int = 7
     samples_per_hour: int = 10
 
+    meas_noise_var = 62  # Meas noise std = 7.9
+
     mean_f: callable = mean_fun_const
 
-    simulation_config_keys = ["mean_f", "x"]
+    simulation_config_keys = ["mean_f", "x", "meas_noise_var"]
 
     @property
     def x(self):
@@ -53,6 +55,7 @@ simple_kernel_config = {
     "sin_day": {"kernel": ExpSineSquared, "params": {
         "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {"periodicity_bounds": "fixed"},
                 "var": 100, "var_bounds": (10, 1000)},  # var of 100 leads to sample ampl of 5 (overall max-min = 10)
+    #
     # "sin_week": {"kernel": ExpSineSquared, "params": {
     #            "length_scale": 3, "periodicity": PERIOD_WEEK}, "bound_params": {"periodicity_bounds": "fixed"},
     #              "var": 5},
