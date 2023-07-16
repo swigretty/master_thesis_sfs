@@ -15,6 +15,7 @@ from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
+from gp.baseline_methods import pred_empirical_mean
 from constants.constants import get_output_path
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
@@ -448,8 +449,6 @@ class GPSimulator():
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
 
-        output_dict["overall_perf_baseline0"] = GPEvaluator(self.y_true.y, self.f_true,
-                                                       self.pred_empirical_mean, meas_noise_var=0).evaluate()
 
         return output_dict
 
@@ -497,6 +496,81 @@ class GPSimulator():
         # ax.plot(data.x, sum_of_v, label="sum")
         # ax.plot(data.x, y_post_mean, label="post_mean")
         ax.legend()
+
+
+class GPSimulationEvaluator():
+
+    def __int__(self,  kernel_sim=None, baseline_methods=None, normalize_kernel=True,
+                meas_noise_var=0, **gps_kwargs):
+
+        if kernel_sim is None:
+            kernel_sim = 1 * Matern(nu=0.5, length_scale=1)
+        self.kernel_sim_orig = kernel_sim
+        self.meas_noise_var_orig = meas_noise_var
+        self.gps_kwargs_orig = gps_kwargs
+
+        if normalize_kernel:
+            self.kernel_sim, self.meas_noise_var = GPSimulator.get_normalized_kernel(
+                kernel=self.kernel_sim_orig, meas_noise_var=self.meas_noise_var_orig)
+
+        self.gps_kwargs = {"kernel_sim": self.kernel_sim, "meas_noise_var": self.meas_noise_var,
+                           "normalize_kernel": False, **self.gps_kwargs_orig}
+
+        if baseline_methods is None:
+            baseline_methods = {"naive": pred_empirical_mean}
+        self.baseline_methods = baseline_methods
+
+    @property
+    def gps(self):
+        if not hasattr(self, "_gps"):
+            self._gps = GPSimulator(**self.gps_kwargs)
+        return self._gps
+
+    def evaluate_baseline(self, gps=None):
+        output_dict = {}
+        if gps is None:
+            gps = self.gps
+
+        for eval_name, eval_fun in self.baseline_methods.items():
+            pred = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y)
+            output_dict[f"overall_perf_{eval_name}"] = GPEvaluator(
+                gps.y_true.y, gps.f_true, pred["data"], meas_noise_var=pred["meas_noise_var"]).evaluate()
+        return output_dict
+
+    def evaluate_multisample(self, n_samples=100):
+        current_init_kwargs = copy(self.current_init_kwargs)
+        current_init_kwargs["normalize_kernel"] = False
+        current_init_kwargs["output_path"] = None
+
+        eval_dict = {}
+
+        for i in range(n_samples):
+            gps = GPSimulator(**self.gps_kwargs)
+            gps.fit()
+            eval_sample = gps.evaluate()
+            eval_sample.update(self.evaluate_baseline(gps))
+            eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
+
+        summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
+        for v in summary_dict.values():
+            v["data_fraction"] = gps.data_fraction
+            v["kernel_sim"] = gps.kernel_sim
+            v["kernel_fit"] = gps.gpm_fit.kernel_
+            v["n_samples"] = n_samples
+            v["meas_noise_var"] = gps.meas_noise_var
+            v["output_path"] = self.output_path
+
+        with (self.output_path / "eval_summary.json").open("w") as f:
+            f.write(json.dumps(summary_dict, default=str))
+
+        return summary_dict
+
+
+
+
+
+
+
 
 
 def plot_mean_decompose(kernel="sin_rbf"):
