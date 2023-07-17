@@ -1,6 +1,6 @@
 import copy
 
-from gp.simulate_gp import GPSimulator
+from gp.simulate_gp import GPSimulator, GPSimulationEvaluator
 from gp.simulate_gp_config import OU_KERNELS, base_config
 from gp.post_sim_analysis import perf_plot, perf_plot_split
 from logging import getLogger
@@ -21,64 +21,49 @@ MODES = {
                                        **base_config}}}
 
 
-def plot_gp_regression_sample(nplots=1, rng=None, normalize_kernel=False, **kwargs):
-    if rng is None:
-        rng = np.random.default_rng(11)
-    for i in range(nplots):
-        if nplots > 1:
-            rng = np.random.default_rng(i)
-        gps = GPSimulator(rng=rng, normalize_kernel=normalize_kernel, **kwargs)
-        gps.plot_true_with_samples()
-        gps.plot()
-        gps.plot_errors()
-        gps.plot_overall_mean()
-    return gps
-
-
-def evaluate_multisample(gps=None, n_samples=10, **gps_kwargs):
-    if gps is None:
-        gps = GPSimulator(normalize_kernel=True, **gps_kwargs)
-    eval_dict = gps.evaluate_multisample(n_samples=n_samples)
-    return eval_dict
-
-
-def plot_evaluate_multisample(nplots=1, n_samples=100, **gps_kwargs):
-    # return evaluate_multisample(n_samples=n_samples, session_name=session_name, **gps_kwargs)
-    gps = plot_gp_regression_sample(nplots=nplots, **gps_kwargs)
-    return evaluate_multisample(gps=gps, n_samples=n_samples), gps
-
-
-def evaluate_data_fraction(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10),
+def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4),
                            n_samples=100, experiment_name="test"):
-    output_path = get_output_path(experiment_name=experiment_name)
+    mode_config = copy.copy(mode_config)
+    meas_noise_var = mode_config["config"].pop("meas_noise_var")
+    experiment_output_path = get_output_path(experiment_name=experiment_name)
 
-    eval_row = 0
+    for k_name, k in mode_config["kernels"].items():
+        session_name = f"{mode_name}_{k_name}"
+        kernel, nv = GPSimulator.get_normalized_kernel(kernel=k, meas_noise_var=meas_noise_var)
+        output_path_gp_sim = partial(get_output_path, session_name=session_name,
+                                     experiment_name=experiment_name)
+        for frac in data_fraction:
+            logger.info(f"Simulation started for {experiment_name=}.{session_name=}, {frac=} and {nv=} ")
+            rng = np.random.default_rng(11)
+            simulator = GPSimulationEvaluator(
+                output_path=output_path_gp_sim, rng=rng, kernel_sim=kernel, data_fraction=frac, normalize_kernel=False,
+                meas_noise_var=nv, **mode_config["config"])
+            simulator.plot_gp_regression_sample(nplots=1)
+            eval_dict = simulator.evaluate_multisample(n_samples)
+            for k, v in eval_dict.items():
+                df = pd.DataFrame([v])
+                df["mode"] = mode_name
+                df["kernel_name"] = k_name
+                if not (experiment_output_path / f"{k}.csv").exists():
+                    df.to_csv(experiment_output_path / f"{k}.csv", index=None)
+                else:
+                    df.to_csv(experiment_output_path / f"{k}.csv", mode='a', header=False, index=None)
+
+    return df
+
+
+def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10),
+                                 n_samples=100, experiment_name="test"):
+    experiment_output_path = get_output_path(experiment_name=experiment_name)
+
     for nv in meas_noise_var:
         for mode_name, mode_config in modes.items():
-            for k_name, k in mode_config["kernels"].items():
-                session_name = f"{mode_name}_{k_name}"
-                kernel, nv = GPSimulator.get_normalized_kernel(kernel=k, meas_noise_var=nv)
-                output_path_gp_sim = partial(get_output_path, session_name=session_name,
-                                             experiment_name=experiment_name)
-                for frac in data_fraction:
-                    logger.info(f"Simulation started for {experiment_name=}.{session_name=}, {frac=} and {nv=} ")
-                    rng = np.random.default_rng(11)
-                    eval_dict, gps = plot_evaluate_multisample(
-                        output_path=output_path_gp_sim, rng=rng, kernel_sim=kernel, data_fraction=frac,
-                        n_samples=n_samples, normalize_kernel=False, meas_noise_var=nv, **mode_config["config"])
-                    for k, v in eval_dict.items():
-                        df = pd.DataFrame([v])
-                        df["mode"] = mode_name
-                        df["kernel_name"] = k_name
-                        if not (output_path / f"{k}.csv").exists() and eval_row == 0:
-                            df.to_csv(output_path / f"{k}.csv", index=None)
-                        else:
-                            df.to_csv(output_path / f"{k}.csv", mode='a', header=False, index=None)
-
-                    eval_row += 1
+            mode_config["config"]["meas_noise_var"] = nv
+            evaluate_data_fraction(mode_name, mode_config, data_fraction=data_fraction, n_samples=n_samples,
+                                   experiment_name=experiment_name)
 
     for split in ["overall", "train", "test"]:
-        perf_plot(split=split, mode=mode_name, file_path=output_path)
+        perf_plot(split=split, file_path=experiment_output_path)
 
 
 def get_limited_modes(kernels_limited=None, modes_limited=None):
@@ -108,6 +93,6 @@ if __name__ == "__main__":
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     # plot_sample()
-    evaluate_data_fraction(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
-                           experiment_name="test_meas_noise")
+    evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
+                                 experiment_name="test_meas_noise")
 

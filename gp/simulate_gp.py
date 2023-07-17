@@ -445,50 +445,43 @@ class GPSimulator():
         ax.legend()
 
 
-class GPSimulationEvaluator():
+class GPSimulationEvaluator(GPSimulator):
 
-    def __int__(self,  kernel_sim=None, baseline_methods=None, normalize_kernel=True,
-                meas_noise_var=0, **gps_kwargs):
+    def __init__(self,  kernel_sim=None, baseline_methods=None, normalize_kernel=True, meas_noise_var=0,
+                 **gps_kwargs):
 
-        if kernel_sim is None:
-            kernel_sim = 1 * Matern(nu=0.5, length_scale=1)
         self.kernel_sim_orig = kernel_sim
         self.meas_noise_var_orig = meas_noise_var
-        self.gps_kwargs_orig = gps_kwargs
+        self.gps_kwargs_orig = {"kernel_sim": self.kernel_sim_orig, "meas_noise_var": self.meas_noise_var_orig,
+                                "normalize_kernel": normalize_kernel, **gps_kwargs}
 
-        if normalize_kernel:
-            self.kernel_sim, self.meas_noise_var = GPSimulator.get_normalized_kernel(
-                kernel=self.kernel_sim_orig, meas_noise_var=self.meas_noise_var_orig)
+        super().__init__(**self.gps_kwargs_orig)
 
-        self.gps_kwargs = {"kernel_sim": self.kernel_sim, "meas_noise_var": self.meas_noise_var,
-                           "normalize_kernel": False, **self.gps_kwargs_orig}
+        self.gps_kwargs_normalized = {"kernel_sim": self.kernel_sim, "meas_noise_var": self.meas_noise_var,
+                                      "normalize_kernel": False, **gps_kwargs}
 
         if baseline_methods is None:
             baseline_methods = {"naive": pred_empirical_mean}
         self.baseline_methods = baseline_methods
 
-    @property
-    def gps(self):
-        if not hasattr(self, "_gps"):
-            self._gps = GPSimulator(**self.gps_kwargs)
-        return self._gps
-
-    def _get_pred_baseline(self, gps):
+    def _get_pred_baseline(self, gps=None):
+        if gps is None:
+            gps = self
         pred_baseline = {}
-        for eval_name, eval_fun in self.baseline_methods:
+        for eval_name, eval_fun in self.baseline_methods.items():
             pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y)
         return pred_baseline
 
     @property
     def pred_baseline(self):
         if not hasattr(self, "_pred_baseline"):
-            self._pred_baseline = self.get_pred_baseline(self.gps)
+            self._pred_baseline = self._get_pred_baseline()
         return self._pred_baseline
 
     def evaluate_baseline(self, gps=None):
         output_dict = {}
         if gps is None:
-            gps = self.gps
+            gps = self
             pred_baseline = self.pred_baseline
         else:
             pred_baseline = self._get_pred_baseline()
@@ -499,13 +492,13 @@ class GPSimulationEvaluator():
         return output_dict
 
     def evaluate_multisample(self, n_samples=100):
-        current_init_kwargs = self.gps_kwargs
+        current_init_kwargs = self.gps_kwargs_normalized
         current_init_kwargs["output_path"] = None
 
         eval_dict = {}
 
         for i in range(n_samples):
-            gps = GPSimulator(**self.gps_kwargs)
+            gps = GPSimulator(**self.gps_kwargs_normalized)
             gps.fit()
             eval_sample = gps.evaluate()
             eval_sample.update(self.evaluate_baseline(gps))
@@ -518,31 +511,47 @@ class GPSimulationEvaluator():
             v["kernel_fit"] = gps.gpm_fit.kernel_
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
-            v["output_path"] = self.gps.output_path
+            v["output_path"] = self.output_path
 
-        with (self.gps.output_path / "eval_summary.json").open("w") as f:
+        with (self.output_path / "eval_summary.json").open("w") as f:
             f.write(json.dumps(summary_dict, default=str))
 
         return summary_dict
 
     @Plotter
-    def plot_overall_mean(self, ax=None):
-        self.gps.plot_true_with_samples(ax=ax, add_offset=True)
-        plot_lines_dict = {"true_mean": self.gps.y_true.y_mean,
-                           "gp_mean": self.gps.f_post.y_mean}
+    def plot_overall_mean(self, ax=None, gps=None):
+        if gps is None:
+            gps = self
+        if gps is self:
+            pred_baseline = self.pred_baseline
+        else:
+            pred_baseline = self._get_pred_baseline(gps)
 
-        for k, v in self.pred_baseline.items():
-            plot_lines_dict[f"{k}_mean"] = v["data"]
+        gps.plot_true_with_samples(ax=ax, add_offset=True)
+        plot_lines_dict = {"true_mean": gps.f_true.y,
+                           "gp_mean": gps.f_post.y_mean}
+
+        for k, v in pred_baseline.items():
+            plot_lines_dict[f"{k}_mean"] = v["data"].y_mean
 
         # loosely dashed, dashed dotted, dotted
         linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
         for i, (k, v) in enumerate(plot_lines_dict.items()):
-            ax.plot(self.gps.x, np.repeat(np.mean(v) + self.offset, len(self.gps.x)), label=k, linestyle=linestyles[i])
+            ax.plot(gps.x, np.repeat(np.mean(v) + gps.offset, len(gps.x)), label=k, linestyle=linestyles[i])
         ax.legend()
 
-
-
-
+    def plot_gp_regression_sample(self, nplots=1):
+        gps_kwargs = self.gps_kwargs_normalized
+        gps = self
+        for i in range(nplots):
+            if nplots > 1:
+                gps_kwargs["rng"] = np.random.default_rng(i)
+                gps = GPSimulator(**gps_kwargs)
+            gps.plot_true_with_samples()
+            gps.plot()
+            gps.plot_errors()
+            self.plot_overall_mean(gps=gps)
+        return
 
 
 def plot_mean_decompose(kernel="sin_rbf"):
