@@ -25,7 +25,7 @@ class GPSimulatorConfig():
     n_days: int = 7
     samples_per_hour: int = 10
 
-    meas_noise_var = 62  # Meas noise std = 7.9
+    meas_noise_var = 62  # Meas noise std = 7.9, leads to noise_var=62
 
     mean_f: callable = mean_fun_const
 
@@ -45,17 +45,20 @@ PARAM_NAMES = ["noise_level", "length_scale", "constant_value", "periodicity", "
 simple_kernel_config = {
     "white": {"kernel": WhiteKernel, "params": {"noise_level": 1}, "bound_params": {}, "var": 1, "var_bounds": (0.1, 10)},
     "ou": {"kernel": Matern, "params": {"length_scale": 3, "nu": 0.5}, "bound_params": {"length_scale_bounds": (1, 10)},
-           "var": 1, "var_bounds": (0.1, 10)},
+           "var": 5, "var_bounds": (1, 100)},
     "rbf_long": {"kernel": RBF, "params": {"length_scale": 50}, "bound_params": {"length_scale_bounds": (1, 200)},
-                 "var": 1, "var_bounds": (0.1, 10)},
+                 "var": 5, "var_bounds": (0.1, 10)},
     "rbf_short": {"kernel": RBF, "params": {"length_scale": 3}, "bound_params": {"length_scale_bounds": (1, 200)},
                   "var": 1, "var_bounds": (0.1, 10)},
     "rbf_medium": {"kernel": RBF, "params": {"length_scale": 25}, "bound_params": {"length_scale_bounds": (1, 200)},
                   "var": 1, "var_bounds": (0.1, 10)},
     "sin_day": {"kernel": ExpSineSquared, "params": {
         "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {"periodicity_bounds": "fixed"},
-                "var": 100, "var_bounds": (10, 1000)},  # var of 100 leads to sample ampl of 5 (overall max-min = 10)
-    #
+                "var": 14**2, "var_bounds": (10, 1000)},
+    # Note sample_ampl = sqrt(2*sample_var)
+    # var of 100 leads to sample_var: 4.17, sample_ampl: 2.89 (overall max-min = 5.78)
+    # var of 198 (=14.1**2) leads to sample_var: 13.28, sample_ampl: 5.15 (overall max-min = 5.78)
+
     # "sin_week": {"kernel": ExpSineSquared, "params": {
     #            "length_scale": 3, "periodicity": PERIOD_WEEK}, "bound_params": {"periodicity_bounds": "fixed"},
     #              "var": 5},

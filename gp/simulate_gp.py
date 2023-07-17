@@ -104,7 +104,7 @@ class GPSimulator():
 
         if sim_y:
             # samples with noise
-            y_prior_noisy = y_prior + self.meas_noise_var * self.rng.standard_normal((y_prior.shape))
+            y_prior_noisy = y_prior + np.sqrt(self.meas_noise_var) * self.rng.standard_normal((y_prior.shape))
             y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
             data = [GPData(x=self.x, y=y_prior_noisy[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov_noisy) for idx in
                     range(n_samples)]
@@ -139,7 +139,7 @@ class GPSimulator():
     def meas_noise(self, data=None):
         self._meas_noise = data
         if data is None:
-            self._meas_noise = self.meas_noise_var * self.rng.standard_normal(len(self.x))
+            self._meas_noise = np.sqrt(self.meas_noise_var) * self.rng.standard_normal(len(self.x))
 
     @property
     def y_true(self):
@@ -255,8 +255,8 @@ class GPSimulator():
         return {k: v for k, v in kernel.get_params().items() if ("__" in k) and ("bounds" not in k) and any(
             [pn in k for pn in PARAM_NAMES])}
 
-    @classmethod
-    def get_normalized_kernel(cls, kernel, meas_noise_var=0):
+    @staticmethod
+    def get_normalized_kernel(kernel, meas_noise_var=0):
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
 
@@ -269,8 +269,8 @@ class GPSimulator():
                 std_range[1] < y_std):
 
             kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
-            gps = cls(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
-                      rng=np.random.default_rng(11), output_path=None)
+            gps = GPSimulator(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
+                              rng=np.random.default_rng(11), output_path=None, normalize_kernel=False)
             data_sim = gps.sim_gp(n_samples=100)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std
@@ -428,7 +428,7 @@ class GPSimulator():
 
     @property
     def current_init_kwargs(self):
-        return {k: v for k, v in vars(self).items() if k in inspect.signature(self.__init__).parameters.keys()}
+        return {k: v for k, v in vars(self).items() if k in inspect.signature(GPSimulator.__init__).parameters.keys()}
 
     @Plotter
     def mean_decomposition_plot(self, ax=None):

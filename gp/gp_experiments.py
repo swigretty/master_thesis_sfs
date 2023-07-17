@@ -76,13 +76,15 @@ def get_limited_modes(kernels_limited=None, modes_limited=None):
     return modes
 
 
-def plot_sample(k_name="sin_rbf", mode_name="ou_bounded_seasonal", data_fraction=0.2, meas_noise_var=1,
-                normalize_kernel=True):
+def plot_sample(k_name="sin_rbf", mode_name="ou_bounded_seasonal", data_fraction=0.2,
+                normalize_kernel=True, experiment_name="test_single_sample"):
     mode = MODES[mode_name]
     session_name = f"{mode_name}_{k_name}"
-    return plot_gp_regression_sample(session_name=session_name, kernel_sim=mode["kernels"][k_name],
-                                     data_fraction=data_fraction, meas_noise_var=meas_noise_var, **mode["config"],
-                                     normalize_kernel=normalize_kernel)
+    output_path_gp_sim = partial(get_output_path, session_name=session_name, experiment_name=experiment_name)
+    simulator = GPSimulationEvaluator(
+        output_path=output_path_gp_sim, kernel_sim=mode["kernels"][k_name], data_fraction=data_fraction,
+        normalize_kernel=normalize_kernel, **mode["config"])
+    simulator.plot_gp_regression_sample(nplots=1)
 
 
 if __name__ == "__main__":
@@ -92,7 +94,10 @@ if __name__ == "__main__":
     modes_limited = ["ou_bounded"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
-    # plot_sample()
-    evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
-                                 experiment_name="test_meas_noise")
+    plot_sample(normalize_kernel=False)
+    evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
+                           n_samples=10, experiment_name="data_fraction")
+    # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
+    #                              experiment_name="test_meas_noise")
+
 

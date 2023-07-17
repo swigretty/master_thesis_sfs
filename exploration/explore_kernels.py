@@ -59,7 +59,7 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
         plot_file = f"{first_kernel.__class__.__name__}"
     plot_file = f"{plot_file}_{mode_name}.pdf"
 
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(8*ncols, 8*nrows))
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12*ncols, 8*nrows))
     try:
         max_length_scale = max([k.length_scale for k in kernels])
         t_max = max_length_scale * 5
@@ -106,6 +106,7 @@ if __name__ == "__main__":
     samples_per_hour = 20
     t = np.linspace(0, days * h_per_day, days * h_per_day * samples_per_hour)
     var = [1, 10, 100, 200, 500, 800, 1000]
+    var = [5, 62, 14**2]
     length_scale = [1, 10, 100]
 
     # kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
@@ -120,12 +121,26 @@ if __name__ == "__main__":
     # #
     # kernels = [c * RBF(length_scale=1) for c in [0.1, 1, 10, 100]]
     # plot_kernels(kernels, plot_file="RBF_scale.pdf", t=t)
-
-    kernels = [RBF(length_scale=ls) for ls in length_scale]
-    plot_kernels(kernels, t=t, mode_name="length_scale", mode_values=length_scale)
     #
-    # kernels = [c * Matern(length_scale=1, nu=0.5) for c in [0.1, 1, 10, 100]]
-    # plot_kernels(kernels, plot_file="OU_scale.pdf", t=t)
+    # kernels = [RBF(length_scale=ls) for ls in length_scale]
+    # plot_kernels(kernels, t=t, mode_name="length_scale", mode_values=length_scale)
+    #
+    # kernels = [RBF(length_scale=50) * c for c in var]
+    # plot_kernels(kernels, t=t, mode_name="rbf50_var", mode_values=var)
+    # #
+    # kernels = [Matern(length_scale=1, nu=0.5) * c for c in var]
+    # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
+    #
+    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
+    # plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var)
 
-    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    plot_kernels(kernels, t=t, mode_name="Kvar", mode_values=var)
+    kernels = [WhiteKernel(noise_level=c)for c in var]
+    plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
+
+    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * 14**2 + Matern(
+        length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5 + WhiteKernel(noise_level=c) for c in var]
+    plot_kernels(kernels, t=t, mode_name="sin_rbf_ou_white", mode_values=var)
+
+
+
+
