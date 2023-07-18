@@ -608,8 +608,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}[fragile]
-	\frametitle{Population Level Time Series Characteristics}
-	Time Series characteristics from David
+	\frametitle{Aktiia Population Level Time Series Characteristics}
 
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
@@ -632,7 +631,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.7\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\includegraphics[width=0.7\linewidth]{weekly_var}
 				\end{figure}
 
 		\end{column}
@@ -643,29 +642,36 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 
-
 \begin{frame}
-	\frametitle{Population Level Time Series Characteristics}
+	\frametitle{Aktiia Population Level Time Series Characteristics}
 
 	\begin{itemize}
-		\item Within subject weekly BP sample variance (): \\
-		(This is also biased since we assume iid data and since we have
-		non-uniform sampling)
-		\item measurement noise (Gaussian White noise with var=62 mmHg)
-		\item cyclic pattern amplitude (5 mmHg or a range ?)
-		\item cyclic pattern period (=24h)
-		\item AR(1) component
-		\item long term trend
+		\item Within subject weekly BP sample variance $\approx 49$ mmHg
+		\begin{itemize}
+			\item This is biased estimate of signal variance due to non-uniform sampling. In case
+			of periodic sampling pattern, variance would be underestimated.
+		\end{itemize}
+		\item measurement (gaussian white) noise variance $=31$ mmHg
+		\begin{itemize}
+			\item Var($BP_{Ref} - BP_{Aktiia}$) = 62 mmHg = Var($Noise_{Ref} - Noise_{Aktiia}$) = Var($Noise_{Ref}$) + Var($Noise_{Aktiia}$) - 2COV($Noise_{Ref}$,
+			$Noise_{Aktiia}$)
+		\end{itemize}
+		\item cyclic pattern amplitude $\approx 5$ mmHg
+		\item cyclic pattern period $= 24$ h
+		\item AR(1) component with length scale 3 h and Sample Path Variance $\approx 3.97$ mmHg
+		\item long term trend Var $\approx 0.14$ mmHg
 		\item data density (0.1 to 3 per hour, i.e. 2.4 to 72 per day)
 		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
 	\end{itemize}
 
-	\begin{block}{Block Title}
-		Do we want to simulate the whole population (i.e. sample from the population level distribution
-		over data density, meas noise, cycle amplitude etc.) ? \\
-		If so do we want to put priors also on GP hyperparameters e.g. meas noise, cycle amplitude based on
-		the population level distribution ? \\
-		Or do we just look at ranges to tell  when methods fail?
+	\begin{block}{Questions}
+		\begin{itemize}
+			\item Do we want to simulate the whole population (i.e. sample from the population level distribution
+		over data density, meas noise, cycle amplitude etc.) ?
+			\item If so do we want to put priors also on GP hyperparameters e.g. meas noise, cycle amplitude based on
+		the population level distribution ?
+			\item Or do we just look at realistic ranges to tell when methods fail?
+		\end{itemize}
 	\end{block}
 
 
@@ -678,16 +684,25 @@ as a collection of multivariate normally distributed random variables and thus a
 
 	\begin{verbatim}
 
-		Kernel = 1.02**2 * 1**2 * Matern(length_scale=3, nu=0.5)
-				+ 3.16**2 * ExpSineSquared(length_scale=3, periodicity=24)
-				+ 1**2 * RBF(length_scale=50) + WhiteKernel(noise_level=0.0001)
+		Kernel = 2.24**2 * Matern(length_scale=3, nu=0.5)
+				+ 14**2 * ExpSineSquared(length_scale=3, periodicity=24)
+				+ 2.24**2 * RBF(length_scale=50)
 
 	\end{verbatim}
 
-	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{true_decomposed}
-%			\caption{Periodic Kernel with different length scale}
-	\end{figure}
+		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.45\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{true_decomposed_rescaled}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{plot_true_with_samples}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
 
 
 \end{frame}
