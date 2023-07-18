@@ -17,6 +17,8 @@ def mean_fun_const(x):
     # physiological:  60 to 300
     return 120
 
+# TODO add Final Config and document (meas_noise_var, kernels and parameters chosen)
+
 
 # measuring time in hours
 @dataclass()
@@ -25,7 +27,8 @@ class GPSimulatorConfig():
     n_days: int = 7
     samples_per_hour: int = 10
 
-    meas_noise_var = 62  # Meas noise std = 7.9, leads to noise_var=62
+    meas_noise_var = 62/2  # Meas noise std = 7.9, leads to noise_var=62.
+    # Var(Noise_CUFF - Noise_Aktiia) = Var(Noise_CUFF) + Var(Noise_Aktiia) - 2COV(Noise_CUFF - Noise_Aktiia)
 
     mean_f: callable = mean_fun_const
 
