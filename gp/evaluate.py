@@ -17,9 +17,9 @@ logger = getLogger(__name__)
 @dataclass
 class SimpleEvaluator:
 
-    f_true: float | np.array
-    f_pred: float | np.array
-    f_pred_ci: dict | pd.DataFrame
+    f_true: float
+    f_pred: float
+    f_pred_ci: dict
 
     @property
     def ci_width(self):

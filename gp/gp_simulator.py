@@ -526,16 +526,19 @@ class GPSimulationEvaluator(GPSimulator):
     #     return output_dict
 
     def evaluate_multisample(self, n_samples=100):
-        current_init_kwargs = self.gps_kwargs_normalized
-        current_init_kwargs["output_path"] = None
+        current_config = copy(self.gps_kwargs_normalized)
+        current_config["output_path"] = None
+        current_config["baseline_methods"] = self.baseline_methods
+        current_config["target_measures"] = self.target_measures
 
         eval_dict = {}
 
         for i in range(n_samples):
-            gps = GPSimulator(**self.gps_kwargs_normalized)
+            gps = GPSimulationEvaluator(**current_config)
             gps.fit()
             eval_sample = gps.evaluate()
-            eval_sample.update(self.evaluate_baseline(gps))
+            eval_measures_sample = gps.evaluate_target_measures()
+
             eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
 
         summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
@@ -584,7 +587,7 @@ class GPSimulationEvaluator(GPSimulator):
             gps.plot_true_with_samples()
             gps.plot()
             gps.plot_errors()
-            self.plot_overall_mean(gps=gps)
+            # self.plot_overall_mean(gps=gps)
         return
 
     def bootstrap(self, pred_fun, theta_fun, n_samples=100, alpha=0.05):

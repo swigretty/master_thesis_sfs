@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     plot_sample(normalize_kernel=False)
     evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
-                           n_samples=10, experiment_name="data_fraction")
+                           n_samples=2, experiment_name="data_fraction")
     # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
     #                              experiment_name="test_meas_noise")
 
