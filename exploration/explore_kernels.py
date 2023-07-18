@@ -128,11 +128,11 @@ if __name__ == "__main__":
     # kernels = [RBF(length_scale=50) * c for c in var]
     # plot_kernels(kernels, t=t, mode_name="rbf50_var", mode_values=var)
     # #
-    # kernels = [Matern(length_scale=1, nu=0.5) * c for c in var]
-    # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
-    #
-    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    # plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var)
+    kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
+    plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
+
+    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
+    plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var)
 
     kernels = [WhiteKernel(noise_level=c)for c in var]
     plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
