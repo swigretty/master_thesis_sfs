@@ -94,7 +94,7 @@ if __name__ == "__main__":
     modes_limited = ["ou_bounded"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
-    plot_sample(normalize_kernel=False)
+    # plot_sample(normalize_kernel=False)
     evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
                            n_samples=2, experiment_name="data_fraction")
     # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,

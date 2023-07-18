@@ -126,8 +126,8 @@ class GPData():
     @cached_property
     def ci(self):
         df = self.to_df()
-        df[["ci_lb", "ci_ub"]] = df.apply(lambda row: self.calculate_ci_row(row), axis=1).to_list()
-        return df[["ci_lb", "ci_ub"]]
+        ci = pd.DataFrame(df.apply(lambda row: self.calculate_ci_row(row), axis=1).to_list())
+        return ci
 
     def get_samples(self, n_samples=10, rng=None) -> list:
         samples_list = []

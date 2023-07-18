@@ -13,7 +13,7 @@ def pred_empirical_mean(x_pred, x_train, y_train):
     y_cov = np.zeros((len(x_pred), len(x_pred)), float)
     np.fill_diagonal(y_cov, sigma_mean)  # iid assumption
     y = np.repeat(np.mean(y_train), len(x_pred))
-    return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "meas_noise_var": 0}
+    return GPData(x=x_pred, y_mean=y, y_cov=y_cov)
 
 
 def linear_regression(x_pred, x_train, y_train):
@@ -32,7 +32,7 @@ def linear_regression(x_pred, x_train, y_train):
 
     var_y = sigma_squared_hat * np.sqrt(X_pred.T @ XtXinv @ X_pred)
     y_cov = np.diag(np.repeat(var_y), X_pred.shape[0])
-    return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "meas_noise_var": 0}
+    return GPData(x=x_pred, y_mean=y, y_cov=y_cov)
 
 
 def linear_regression_statsmodel():
