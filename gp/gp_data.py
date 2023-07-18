@@ -51,11 +51,11 @@ class GPData():
         self.check_dimensions()
 
     def check_dimensions(self):
-        if self.x.ndim == 1:
+        if self.x is not None and self.x.ndim == 1:
             self.x = self.x.reshape(-1, 1)
-        if self.y.ndim == 2:
+        if self.y is not None and self.y.ndim == 2:
             self.y = self.y.reshape(-1)
-        if self.y_mean.ndim == 2:
+        if self.y_mean is not None and self.y_mean.ndim == 2:
             self.y_mean = self.y_mean.reshape(-1)
 
         arrays = [self.x, self.y, self.y_mean]
@@ -105,11 +105,11 @@ class GPData():
         return self[self.index - 1]
 
     def __add__(self, value):
-        new_fields = {k: (v + value if k in ["y_mean", "y"] else v) for k, v in asdict(self).items()}
+        new_fields = {k: (v + value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
     def __sub__(self, value):
-        new_fields = {k: (v - value if k in ["y_mean", "y"] else v) for k, v in asdict(self).items()}
+        new_fields = {k: (v - value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
     @property
