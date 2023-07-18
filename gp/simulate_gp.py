@@ -553,6 +553,22 @@ class GPSimulationEvaluator(GPSimulator):
             self.plot_overall_mean(gps=gps)
         return
 
+    def bootstrap(self, pred_fun, theta_fun, n_samples=100, alpha=0.05):
+        thetas = []
+        train_y = self.y_true_train.y
+        train_x = self.y_true_train.x
+
+        for i in range(n_samples):
+            idx = self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True)
+            y_sub = train_y[idx]
+            x_sub = train_x[idx]
+            pred = pred_fun(self.x, x_sub, y_sub)
+            thetas.append(theta_fun(pred))
+
+        theta_hat = np.mean(thetas)
+        ci = (2*theta_hat-np.quantile(thetas, 1-(alpha/2)), 2*theta_hat-np.quantile(thetas, (alpha/2)))
+        return theta_hat, ci
+
 
 def plot_mean_decompose(kernel="sin_rbf"):
     gpm = GPSimulator(kernel_sim=OU_KERNELS["fixed"][kernel], **base_config)

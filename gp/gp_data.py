@@ -33,19 +33,19 @@ class GPData():
     y_cov: np.array = None  # The cov function values evaluated at the input x
 
     def __post_init__(self):
-        signal = self.y
+        # signal = self.y
 
         if self.y is None:
             if self.y_mean is None:
                 raise ValueError("Either y_mean or y need to be specified")
-            signal = self.y_mean
-            self.y = np.full((len(signal)), np.nan)
-        if self.x is None:
-            self.x = np.arange(len(signal))
-        if self.y_mean is None:
-            self.y_mean = np.full((len(signal)), np.nan)
-        if self.y_cov is None:
-            self.y_cov = np.full((len(signal), len(signal)), np.nan)
+            # signal = self.y_mean
+            # self.y = np.full((len(signal)), np.nan)
+        # if self.x is None:
+        #     self.x = np.arange(len(signal))
+        # if self.y_mean is None:
+        #     self.y_mean = np.full((len(signal)), np.nan)
+        # if self.y_cov is None:
+        #     self.y_cov = np.full((len(signal), len(signal)), np.nan)
 
         self.index = 0
         self.check_dimensions()
@@ -58,14 +58,17 @@ class GPData():
         if self.y_mean.ndim == 2:
             self.y_mean = self.y_mean.reshape(-1)
 
-        assert self.x.shape[0] == self.y.shape[0] == self.y_mean.shape[0]
-        assert self.y_cov.shape == (len(self.x), len(self.x))
+        arrays = [self.x, self.y, self.y_mean]
+        arrays = [arr for arr in arrays if arr is not None]
+        assert all([arrays[i].shape[0] == arrays[i+1].shape[0] for i in range(len(arrays)-1)])
+        if self.y_cov is not None:
+            assert self.y_cov.shape == (len(self.x), len(self.x))
 
     def __len__(self):
         return len(self.x)
 
     def to_df(self):
-        df = pd.DataFrame({k: v for k, v in asdict(self).items() if k not in ["y_cov", "x"]})
+        df = pd.DataFrame({k: v for k, v in asdict(self).items() if k not in ["y_cov", "x"] and v is not None})
         df["y_var"] = np.diag(self.y_cov)
         if self.x.shape[1] > 1:
             for i in self.x.shape[1]:
