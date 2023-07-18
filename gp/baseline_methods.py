@@ -30,9 +30,9 @@ def linear_regression(x_pred, x_train, y_train):
     X_pred = np.vstack(np.repeat(1, len(x_pred)), x_pred, np.sin(t_freq_pred), np.cos(t_freq_pred))
     y = reg.predict(X_pred)
 
-    var_y = sigma_squared_hat * np.sqrt(X_pred.T @ XtXinv @ X_pred)
-    y_cov = np.diag(np.repeat(var_y), X_pred.shape[0])
-    return GPData(x=x_pred, y_mean=y, y_cov=y_cov)
+    # var_y = sigma_squared_hat * np.sqrt(X_pred.T @ XtXinv @ X_pred)
+    # y_cov = np.diag(np.repeat(var_y), X_pred.shape[0])
+    return GPData(x=x_pred, y_mean=y, y_cov=None)
 
 
 def linear_regression_statsmodel():
