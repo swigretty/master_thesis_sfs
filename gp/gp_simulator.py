@@ -15,11 +15,12 @@ from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
-from gp.baseline_methods import pred_empirical_mean
+from gp.baseline_methods import BASELINE_METHODS
+from gp.target_measures import TARGET_MEASURES
 from constants.constants import get_output_path
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
-from gp.evaluate import GPEvaluator
+from gp.evaluate import GPEvaluator, SimpleEvaluator
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -364,16 +365,12 @@ class GPSimulator():
         for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
             ax[2, 1].plot(self.x, v, label=k)
 
-        eval_dict = self.evaluate()
-
         fig.tight_layout()
         figfile = "fit"
-        eval_df = pd.DataFrame([eval_dict])
         if self.output_path:
             fig.savefig(self.output_path / f"{figfile}.pdf")
             plt.close()
-            eval_df.to_csv(self.output_path / f"{figfile}.csv")
-        return eval_df
+        return fig
 
     def plot_errors(self):
         nrows = 2
@@ -428,6 +425,10 @@ class GPSimulator():
             output_dict[k] = getattr(gpe, v["fun"])()
 
         output_dict["train_perf"]["log_marginal_likelihood"] = self.gpm_fit.log_marginal_likelihood()
+
+        eval_df = pd.DataFrame([output_dict])
+        if self.output_path:
+            eval_df.to_csv(self.output_path / f"evaluate.csv")
         return output_dict
 
     @property
@@ -452,7 +453,7 @@ class GPSimulator():
 class GPSimulationEvaluator(GPSimulator):
 
     def __init__(self,  kernel_sim=None, baseline_methods=None, normalize_kernel=True, meas_noise_var=0,
-                 **gps_kwargs):
+                 target_measures=None, **gps_kwargs):
 
         self.kernel_sim_orig = kernel_sim
         self.meas_noise_var_orig = meas_noise_var
@@ -465,8 +466,11 @@ class GPSimulationEvaluator(GPSimulator):
                                       "normalize_kernel": False, **gps_kwargs}
 
         if baseline_methods is None:
-            baseline_methods = {"naive": pred_empirical_mean}
+            baseline_methods = BASELINE_METHODS
         self.baseline_methods = baseline_methods
+        if target_measures is None:
+            target_measures = TARGET_MEASURES
+        self.target_measures = target_measures
 
     def _get_pred_baseline(self, gps=None):
         if gps is None:
@@ -482,18 +486,44 @@ class GPSimulationEvaluator(GPSimulator):
             self._pred_baseline = self._get_pred_baseline()
         return self._pred_baseline
 
-    def evaluate_baseline(self, gps=None):
-        output_dict = {}
-        if gps is None:
-            gps = self
-            pred_baseline = self.pred_baseline
-        else:
-            pred_baseline = self._get_pred_baseline()
+    @property
+    def predictions(self):
+        return {"gp": self.f_post, **self.pred_baseline}
 
-        for baseline_name, pred in pred_baseline.items():
-            output_dict[f"overall_perf_{baseline_name}"] = GPEvaluator(
-                gps.y_true.y, gps.f_true, pred["data"], meas_noise_var=pred["meas_noise_var"]).evaluate()
-        return output_dict
+    def get_target_measure_performance(self, target_measure: callable):
+        target_measure_dict = {"true": target_measure(self.f_true.y)}
+        for pred_name, pred in self.predictions.items():
+            est, ci = target_measure(pred["data"].y_mean, pred["data"].y_cov)
+            if ci is None and pred_name != "gp":
+                est, ci = self.bootstrap(self.baseline_methods[pred_name], lambda x: target_measure(x)[0])
+            # TODO sample from posterior
+            # if ci is None and pred_name == "gp"
+            eval = SimpleEvaluator(f_true=target_measure_dict["true"], f_pred=est, f_pred_ci=ci)
+            target_measure_dict[pred_name] = eval.to_dict()
+
+        return target_measure_dict
+
+    def evaluate_target_measures(self):
+        perf = {}
+        for measure in self.target_measures:
+            perf[measure.__name__] = self.get_target_measure_performance(measure)
+        perf_df = pd.DataFrame([perf])
+        if self.output_path:
+            perf_df.to_csv(self.output_path / f"evaluate_target_measures.csv")
+        return perf
+
+    # def evaluate_baseline(self, gps=None):
+    #     output_dict = {}
+    #     if gps is None:
+    #         gps = self
+    #         pred_baseline = self.pred_baseline
+    #     else:
+    #         pred_baseline = self._get_pred_baseline(gps=gps)
+    #
+    #     for baseline_name, pred in pred_baseline.items():
+    #         output_dict[f"overall_perf_{baseline_name}"] = GPEvaluator(
+    #             gps.y_true.y, gps.f_true, pred["data"], meas_noise_var=pred["meas_noise_var"]).evaluate()
+    #     return output_dict
 
     def evaluate_multisample(self, n_samples=100):
         current_init_kwargs = self.gps_kwargs_normalized

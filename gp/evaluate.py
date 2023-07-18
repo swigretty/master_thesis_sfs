@@ -1,6 +1,8 @@
+import pandas as pd
 import scipy
 import numpy as np
 from copy import copy
+from dataclasses import dataclass, asdict
 from scipy.stats import norm, multivariate_normal
 from gp.evalutation_utils import calculate_ci, se_overall_mean_from_cov
 import matplotlib.pyplot as plt
@@ -11,7 +13,28 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-# TODO add baseline methods here and remove from simulate_gp
+
+@dataclass
+class SimpleEvaluator:
+
+    f_true: float | np.array
+    f_pred: float | np.array
+    f_pred_ci: dict | pd.DataFrame
+
+    @property
+    def ci_width(self):
+        return self.f_pred_ci["ci_ub"] - self.f_pred_ci["ci_lb"]
+
+    @property
+    def ci_coverd(self):
+        return int(self.f_pred_ci["ci_lb"] < self.f_true) & (self.f_true < self.f_pred_ci["ci_ub"])
+
+    @property
+    def mse(self):
+        return np.mean((self.f_true - self.f_pred)**2)
+
+    def to_dict(self):
+        return {"ci_width": self.ci_width, "ci_covered": self.ci_coverd, "mse": self.mse, **asdict(self)}
 
 
 class GPEvaluator:
@@ -123,8 +146,9 @@ class GPEvaluator:
 
     def evaluate(self):
         eval_fun_dict = self.evaluate_fun()
-        overall_mean = self.evaluate_overall_mean()
-        return {**overall_mean, **eval_fun_dict}
+        return eval_fun_dict
+        # overall_mean = self.evaluate_overall_mean()
+        # return {**overall_mean, **eval_fun_dict}
 
     def plot_errors(self, ax=None):
         error_data_true = GPData(np.array([]))

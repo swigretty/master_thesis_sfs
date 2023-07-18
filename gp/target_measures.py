@@ -11,7 +11,7 @@ def overall_mean(y_pred, y_cov=None, dist=norm, alpha=0.05):
     return np.mean(y_pred), ci
 
 
-
+TARGET_MEASURES = [overall_mean]
 
 
 

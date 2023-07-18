@@ -6,7 +6,8 @@ def calculate_ci(se, mean, alpha=0.05, dist=norm):
     """
     General method to calculate the confidence/credible intervals from the mean and standard error (se).
     """
-    return (mean - se * dist.ppf(1 - alpha / 2), mean + se * dist.ppf(1 - alpha / 2))
+    return {"ci_lb": mean - se * dist.ppf(1 - alpha / 2),
+            "ci_ub": mean + se * dist.ppf(1 - alpha / 2)}
 
 
 def se_overall_mean_from_cov(y_cov):

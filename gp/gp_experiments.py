@@ -1,6 +1,6 @@
 import copy
 
-from gp.simulate_gp import GPSimulator, GPSimulationEvaluator
+from gp.gp_simulator import GPSimulator, GPSimulationEvaluator
 from gp.simulate_gp_config import OU_KERNELS, base_config
 from gp.post_sim_analysis import perf_plot, perf_plot_split
 from logging import getLogger
@@ -76,7 +76,7 @@ def get_limited_modes(kernels_limited=None, modes_limited=None):
     return modes
 
 
-def plot_sample(k_name="sin_rbf", mode_name="ou_bounded_seasonal", data_fraction=0.2,
+def plot_sample(k_name="sin_rbf", mode_name="ou_bounded", data_fraction=0.2,
                 normalize_kernel=True, experiment_name="test_single_sample"):
     mode = MODES[mode_name]
     session_name = f"{mode_name}_{k_name}"
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     modes_limited = ["ou_bounded"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
-    # plot_sample(normalize_kernel=False)
+    plot_sample(normalize_kernel=False)
     evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
                            n_samples=10, experiment_name="data_fraction")
     # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,

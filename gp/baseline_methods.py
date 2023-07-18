@@ -42,3 +42,6 @@ def linear_regression_statsmodel():
     return
 
 
+BASELINE_METHODS = {"naive": pred_empirical_mean}
+
+
