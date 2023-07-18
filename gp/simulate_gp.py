@@ -67,7 +67,7 @@ class GPSimulator():
         self.kernel_fit = kernel_fit
         self.normalize_y = normalize_y
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
-                           alpha=0)
+                           alpha=0)  # No Variance for fitting the gpm_sim and getting true decomposed
         self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var, rng=rng)
 
         self.f_true = f_true  # Noise free BP values, if None, samples from self.gpm_sim
@@ -98,11 +98,13 @@ class GPSimulator():
         return pd.DataFrame({"x": self.x.reshape(-1), "f_true": self.f_true.y, "meas_noise": self.meas_noise,
                              "training_data": is_training_data})
 
-    def sim_gp(self, n_samples=5, sim_y=True):
-        # samples without measurement noise and without mean function
-        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(self.x, n_samples=n_samples)
+    def sim_gp(self, n_samples=5, predict_y=False):
 
-        if sim_y:
+        # Predict noise free in any case, since gpm_sim will be initialized with alpha=0 and
+        # measurment noise later if predict_y=True
+        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(self.x, n_samples=n_samples,
+                                                                            predict_y=False)
+        if predict_y:
             # samples with noise
             y_prior_noisy = y_prior + np.sqrt(self.meas_noise_var) * self.rng.standard_normal((y_prior.shape))
             y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
@@ -165,7 +167,7 @@ class GPSimulator():
             raise Exception("f_true is already set")
         self._f_true = data
         if data is None:
-            self._f_true = self.sim_gp(n_samples=1, sim_y=False)[0]
+            self._f_true = self.sim_gp(n_samples=1, predict_y=False)[0]
 
     @property
     def train_idx(self):
@@ -202,7 +204,7 @@ class GPSimulator():
     @property
     def y_true_samples(self):
         if not hasattr(self, "_y_true_samples"):
-            self._y_true_samples = self.sim_gp(n_samples=5) + [self.y_true]
+            self._y_true_samples = self.sim_gp(n_samples=5, predict_y=True) + [self.y_true]
         return self._y_true_samples
 
     @property
@@ -334,8 +336,10 @@ class GPSimulator():
             data_true += self.offset
             data += self.offset
         ax.set_title("True Time Series with Samples")
-        ax.plot(data_true.x, data_true.y, "r:")
-        ax.scatter(data.x, data.y, color="red", zorder=5, label="Observations")
+        ax.plot(data_true.x, data_true.y, "r:",
+                label=f"var(f_true): {np.var(self.f_true.y)}, var(y_true): {np.var(self.y_true.y)}")
+        ax.scatter(data.x, data.y, color="red", zorder=5, label=f"{np.var(data.y)=}")
+        ax.legend()
 
     def plot(self, add_offset=False):
         nrows = 3
