@@ -207,7 +207,7 @@
 \begin{frame}
 	\frametitle{Problem Statement}
 
-		Extracting Time Series characteristics such as
+		Extracting Time Series characteristics (target measures) such as
 		\begin{itemize}
 		\item hourly/daily/weekly mean
 		\item time in target range
@@ -232,8 +232,8 @@
 
 	Ideally:
 	\begin{itemize}
-		\item unbiased estimates of the BP value as a function of time (from which all the
-		characteristics of interest can be extracted)
+		\item unbiased estimates of the BP value as a function of time (from which all target
+		measures can be extracted)
 		\item uncertainty estimates, that can capture the uncertainty due to the lack of data
 	\end{itemize}
 \end{frame}
@@ -741,7 +741,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Performance Evaluation}
 
 	\begin{itemize}
-		\item For statistics of interest compare performance of GP regression to baseline method:
+		\item For target measure compare performance of GP regression to baseline method:
 		\begin{itemize}
 			\item weekly/daily/hourly mean to empirical average over sample points or to mean of linear regression line
 		\end{itemize}
@@ -774,7 +774,7 @@ as a collection of multivariate normally distributed random variables and thus a
 				\item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
 				\item Fit Baseline Method
 			\end{itemize}
-			\item Extract time series characteristics of interest including its distribution.
+			\item Extract target measure including its distribution.
 				\begin{itemize}
 					\item GP: If distribution cannot be calculated analytically (e.g. TTR) we can
 					sample from the posterior distribution (Multivariate Gaussian) to approx. it.
@@ -847,7 +847,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\frametitle{Extract Target Measures and Evaluate}
 	\framesubtitle{Hourly/Daily/Weekly Mean} % Optional subtitle
 
 	Calculate hourly/daily/weekly mean:
@@ -873,7 +873,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\frametitle{Extract Target Measures and Evaluate}
 	\framesubtitle{Time in Target Range (TTR)} % Optional subtitle
 
 	Calculate TTR:
@@ -903,7 +903,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Extract Time Series Characteristics of Interest and Evaluate}
+	\frametitle{Extract Target Measures and Evaluate}
 	\framesubtitle{Day vs Night BP} % Optional subtitle
 	\begin{itemize}
 			\item True: Tbd
@@ -947,7 +947,7 @@ as a collection of multivariate normally distributed random variables and thus a
 \begin{frame}
 	\frametitle{Outlook}
 
-	Time Series characteristics of interest ?
+	Target measures ?
 	\begin{itemize}
 		\item TTR
 		\item day/night BP (fit trapez model to extracted cyclic pattern, weighting based on cyclic pattern)
