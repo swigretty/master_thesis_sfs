@@ -491,7 +491,7 @@ class GPSimulationEvaluator(GPSimulator):
         return {"gp": self.f_post, **self.pred_baseline}
 
     def get_target_measure_performance(self, target_measure: callable):
-        target_measure_dict = {"true": target_measure(self.f_true.y)}
+        target_measure_dict = {"true": target_measure(self.f_true.y)[0]}
         for pred_name, pred in self.predictions.items():
             est, ci = target_measure(pred.y_mean, pred.y_cov)
             if ci is None and pred_name != "gp":
