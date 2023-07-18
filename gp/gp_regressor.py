@@ -150,7 +150,8 @@ class GPR(GaussianProcessRegressor):
             y_samples = np.hstack(y_samples)
         return y_samples, y_mean, y_cov
 
-    def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0, predict_y=True):
+    def sample_from_prior(self, x, n_samples, mean_f=lambda x: 0, predict_y=False):
+        # TODO remove predict_y ?
         """
         If predict_y = False, does return a sample, y_mean, and y_cov without considering the
         measurement noise alpha.
