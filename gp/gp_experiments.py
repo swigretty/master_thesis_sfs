@@ -34,7 +34,7 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
                                      experiment_name=experiment_name)
         for frac in data_fraction:
             logger.info(f"Simulation started for {experiment_name=}.{session_name=}, {frac=} and {nv=} ")
-            rng = np.random.default_rng(11)
+            rng = np.random.default_rng(15)
             simulator = GPSimulationEvaluator(
                 output_path=output_path_gp_sim, rng=rng, kernel_sim=kernel, data_fraction=frac, normalize_kernel=False,
                 meas_noise_var=nv, **mode_config["config"])
@@ -90,13 +90,13 @@ def get_limited_modes(kernels_limited=None, modes_limited=None):
 
 
 def plot_sample(k_name="sin_rbf", mode_name="ou_bounded", data_fraction=0.2,
-                normalize_kernel=True, experiment_name="test_single_sample"):
+                normalize_kernel=True, experiment_name="test_single_sample", rng=None):
     mode = MODES[mode_name]
     session_name = f"{mode_name}_{k_name}"
     output_path_gp_sim = partial(get_output_path, session_name=session_name, experiment_name=experiment_name)
     simulator = GPSimulationEvaluator(
         output_path=output_path_gp_sim, kernel_sim=mode["kernels"][k_name], data_fraction=data_fraction,
-        normalize_kernel=normalize_kernel, **mode["config"])
+        normalize_kernel=normalize_kernel, **mode["config"], rng=rng)
     simulator.plot_gp_regression_sample(nplots=1)
 
 
@@ -107,9 +107,10 @@ if __name__ == "__main__":
     modes_limited = ["ou_bounded", "ou_bounded_seasonal"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
-    # plot_sample(normalize_kernel=False)
+    rng = np.random.default_rng(15)
+    plot_sample(normalize_kernel=False, rng=rng, experiment_name="data_fraction_test_ou5")
     # evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
     #                        n_samples=2, experiment_name="data_fraction_test_2")
-    evaluate_data_fraction_modes(modes, n_samples=10, experiment_name="data_fraction_test_3")
+    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name="data_fraction_test_ou5")
 
 

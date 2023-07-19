@@ -273,7 +273,7 @@ class GPSimulator():
 
             kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
             gps = GPSimulator(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
-                              rng=np.random.default_rng(11), output_path=None, normalize_kernel=False)
+                              rng=np.random.default_rng(15), output_path=None, normalize_kernel=False)
             data_sim = gps.sim_gp(n_samples=100)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std

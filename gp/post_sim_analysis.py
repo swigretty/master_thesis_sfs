@@ -78,7 +78,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 if __name__ == "__main__":
 
-    output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/data_fraction_test_2")
+    output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/data_fraction_test_3")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 
     df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("seasonal")]
