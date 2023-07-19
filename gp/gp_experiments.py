@@ -26,7 +26,7 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
     mode_config = copy.copy(mode_config)
     meas_noise_var = mode_config["config"].pop("meas_noise_var")
     experiment_output_path = get_output_path(experiment_name=experiment_name)
-
+    target_measures_path = experiment_output_path / f"target_measures_eval.csv"
     for k_name, k in mode_config["kernels"].items():
         session_name = f"{mode_name}_{k_name}"
         kernel, nv = GPSimulator.get_normalized_kernel(kernel=k, meas_noise_var=meas_noise_var)
@@ -41,7 +41,17 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
             simulator.plot_gp_regression_sample(nplots=1)
             simulator.evaluate()
             simulator.evaluate_target_measures()
-            eval_dict = simulator.evaluate_multisample(n_samples)
+            eval_dict, measure_sum_df = simulator.evaluate_multisample(n_samples)
+
+            for k, v in simulator.gps_kwargs_normalized.items():
+                if not isinstance(v, np.ndarray):
+                    measure_sum_df[k] = v
+
+            if not (target_measures_path).exists():
+                measure_sum_df.to_csv(target_measures_path, index=None)
+            else:
+                measure_sum_df.to_csv(target_measures_path, mode='a', header=False, index=None)
+
             for k, v in eval_dict.items():
                 df = pd.DataFrame([v])
                 df["mode"] = mode_name
@@ -93,12 +103,12 @@ if __name__ == "__main__":
     setup_logging()
 
     kernels_limited = ["sin_rbf"]
-    modes_limited = ["ou_bounded"]
+    modes_limited = ["ou_bounded", "ou_bounded_seasonal"]
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     # plot_sample(normalize_kernel=False)
     evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
-                           n_samples=2, experiment_name="data_fraction")
+                           n_samples=2, experiment_name="data_fraction_test_1")
     # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
     #                              experiment_name="test_meas_noise")
 

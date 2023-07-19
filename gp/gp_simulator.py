@@ -549,7 +549,8 @@ class GPSimulationEvaluator(GPSimulator):
             v["output_path"] = self.output_path
 
         eval_measure_df = pd.DataFrame(eval_target_measure)
-        eval_measure_sum = eval_measure_df.groupby(["method", "target_measure"]).agg("mean")
+        eval_measure_sum = eval_measure_df.groupby(["method", "target_measure"]).agg("mean").reset_index(drop=False)
+        eval_measure_sum["n_samples"] = n_samples
         eval_measure_sum.to_csv(self.output_path / "eval_measure_summary.csv")
 
         with (self.output_path / "eval_summary.json").open("w") as f:
