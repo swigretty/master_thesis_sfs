@@ -477,7 +477,7 @@ class GPSimulationEvaluator(GPSimulator):
             gps = self
         pred_baseline = {}
         for eval_name, eval_fun in self.baseline_methods.items():
-            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y)
+            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_y_cov=True)
         return pred_baseline
 
     @property
@@ -494,8 +494,11 @@ class GPSimulationEvaluator(GPSimulator):
         target_measure_dict = {"true": target_measure(self.f_true.y)[0]}
         for pred_name, pred in self.predictions.items():
             est, ci = target_measure(pred.y_mean, pred.y_cov)
-            if ci is None and pred_name != "gp":
-                est, ci = self.bootstrap(self.baseline_methods[pred_name], lambda x: target_measure(x)[0])
+            # if ci is None and pred_name != "gp":
+            if pred_name != "gp":
+                est_boot, ci_boot = self.bootstrap(self.baseline_methods[pred_name], target_measure)
+                logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
+
             # TODO sample from posterior
             # if ci is None and pred_name == "gp"
             eval = SimpleEvaluator(f_true=target_measure_dict["true"], f_pred=est, f_pred_ci=ci)
@@ -600,7 +603,8 @@ class GPSimulationEvaluator(GPSimulator):
             y_sub = train_y[idx]
             x_sub = train_x[idx]
             pred = pred_fun(self.x, x_sub, y_sub)
-            thetas.append(theta_fun(pred))
+            theta, _ = theta_fun(pred.y_mean)
+            thetas.append(theta)
 
         theta_hat = np.mean(thetas)
         ci = (2*theta_hat-np.quantile(thetas, 1-(alpha/2)), 2*theta_hat-np.quantile(thetas, (alpha/2)))
