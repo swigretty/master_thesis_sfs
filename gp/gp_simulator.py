@@ -493,9 +493,9 @@ class GPSimulationEvaluator(GPSimulator):
                 **self.pred_baseline}
 
     def get_target_measure_performance(self, target_measure: callable):
-        target_measure_dict = {"true": target_measure(self.f_true.y)}
+        true_measure = target_measure(self.f_true.y)
+        eval_output = []
         for pred_name, pred in self.predictions.items():
-            ci = None
             data = pred["data"]
             est = target_measure(data.y_mean)
             ci = pred.get(f"ci_{target_measure.__name__}")
@@ -505,19 +505,19 @@ class GPSimulationEvaluator(GPSimulator):
                 # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
             # TODO sample from posterior
             # if ci is None and pred_name == "gp"
-            eval = SimpleEvaluator(f_true=target_measure_dict["true"], f_pred=est, f_pred_ci=ci)
-            target_measure_dict[pred_name] = eval.to_dict()
-
-        return target_measure_dict
+            eval = SimpleEvaluator(f_true=true_measure, f_pred=est, f_pred_ci=ci)
+            eval_output.append({"method": pred_name, "target_measure": target_measure.__name__,
+                                **eval.to_dict()})
+        return eval_output
 
     def evaluate_target_measures(self):
-        perf = {}
+        perf_all = []
         for measure in self.target_measures:
-            perf[measure.__name__] = self.get_target_measure_performance(measure)
-        perf_df = pd.DataFrame([perf])
+            perf_all.append(self.get_target_measure_performance(measure))
         if self.output_path:
-            perf_df.to_csv(self.output_path / f"evaluate_target_measures.csv")
-        return perf
+            pd.DataFrame(perf_all).to_csv(self.output_path / f"evaluate_target_measures.csv")
+
+        return perf_all
 
     # def evaluate_baseline(self, gps=None):
     #     output_dict = {}
@@ -539,12 +539,13 @@ class GPSimulationEvaluator(GPSimulator):
         current_config["target_measures"] = self.target_measures
 
         eval_dict = {}
+        eval_target_measure = []
 
         for i in range(n_samples):
             gps = GPSimulationEvaluator(**current_config)
             gps.fit()
             eval_sample = gps.evaluate()
-            eval_measures_sample = gps.evaluate_target_measures()
+            eval_target_measure.append(gps.evaluate_target_measures())
 
             eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
 
@@ -556,6 +557,14 @@ class GPSimulationEvaluator(GPSimulator):
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
             v["output_path"] = self.output_path
+
+        eval_measure_df = pd.DataFrame(eval_target_measure)
+        eval_measure_sum = eval_measure_df.groupby(["method", "target_measure"]).agg("mean")
+        # for meas in self.target_measures:
+        #     for method_name, _ in ["gp", self.baseline_methods]:
+        #
+        #         eval_target_measure_summary = eval_measure_df[ (eval_measure_df["method"] == method_name)
+        eval_measure_sum.to_csv(self.output_path / "eval_measure_summary")
 
         with (self.output_path / "eval_summary.json").open("w") as f:
             f.write(json.dumps(summary_dict, default=str))
