@@ -19,22 +19,22 @@ class SimpleEvaluator:
 
     f_true: float
     f_pred: float
-    f_pred_ci_: dict
+    ci_lb: float
+    ci_ub: float
 
     @property
     def ci_width(self):
-        return self.f_pred_ci["ci_ub"] - self.f_pred_ci["ci_lb"]
+        return self.ci_ub - self.ci_lb
 
     @property
     def ci_coverd(self):
-        return int(self.f_pred_ci["ci_lb"] < self.f_true) & (self.f_true < self.f_pred_ci["ci_ub"])
+        return int(self.ci_lb < self.f_true) & (self.f_true < self.ci_ub)
 
     @property
     def mse(self):
         return np.mean((self.f_true - self.f_pred)**2)
 
     def to_dict(self):
-        # TODO ci_lb and ci_up exploded
         return {"ci_width": self.ci_width, "ci_covered": self.ci_coverd, "mse": self.mse, **asdict(self)}
 
 
