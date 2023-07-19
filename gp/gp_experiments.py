@@ -39,6 +39,8 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
                 output_path=output_path_gp_sim, rng=rng, kernel_sim=kernel, data_fraction=frac, normalize_kernel=False,
                 meas_noise_var=nv, **mode_config["config"])
             simulator.plot_gp_regression_sample(nplots=1)
+            simulator.evaluate()
+            simulator.evaluate_target_measures()
             eval_dict = simulator.evaluate_multisample(n_samples)
             for k, v in eval_dict.items():
                 df = pd.DataFrame([v])

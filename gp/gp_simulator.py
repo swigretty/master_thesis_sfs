@@ -1,6 +1,6 @@
 import datetime
 import inspect
-from functools import cached_property
+from functools import partial
 from copy import copy
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
 from gp.baseline_methods import BASELINE_METHODS
-from gp.target_measures import TARGET_MEASURES
+from gp.target_measures import TARGET_MEASURES, ci_overall_mean_gp
 from constants.constants import get_output_path
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
@@ -477,7 +477,7 @@ class GPSimulationEvaluator(GPSimulator):
             gps = self
         pred_baseline = {}
         for eval_name, eval_fun in self.baseline_methods.items():
-            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_y_cov=True)
+            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_ci=True)
         return pred_baseline
 
     @property
@@ -488,17 +488,21 @@ class GPSimulationEvaluator(GPSimulator):
 
     @property
     def predictions(self):
-        return {"gp": self.f_post, **self.pred_baseline}
+        return {"gp": {"data": self.f_post, "ci_overall_mean": ci_overall_mean_gp(
+            self.f_post.y_mean, y_cov=self.f_post.y_cov)},
+                **self.pred_baseline}
 
     def get_target_measure_performance(self, target_measure: callable):
-        target_measure_dict = {"true": target_measure(self.f_true.y)[0]}
+        target_measure_dict = {"true": target_measure(self.f_true.y)}
         for pred_name, pred in self.predictions.items():
-            est, ci = target_measure(pred.y_mean, pred.y_cov)
-            # if ci is None and pred_name != "gp":
-            if pred_name != "gp":
-                est_boot, ci_boot = self.bootstrap(self.baseline_methods[pred_name], target_measure)
-                logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
+            ci = None
+            data = pred["data"]
+            est = target_measure(data.y_mean)
+            ci = pred.get(f"ci_{target_measure.__name__}")
 
+            if ci is None and pred_name != "gp":
+                est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
+                # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
             # TODO sample from posterior
             # if ci is None and pred_name == "gp"
             eval = SimpleEvaluator(f_true=target_measure_dict["true"], f_pred=est, f_pred_ci=ci)
@@ -603,11 +607,12 @@ class GPSimulationEvaluator(GPSimulator):
             y_sub = train_y[idx]
             x_sub = train_x[idx]
             pred = pred_fun(self.x, x_sub, y_sub)
-            theta, _ = theta_fun(pred.y_mean)
+            theta = theta_fun(pred["data"].y_mean)
             thetas.append(theta)
 
         theta_hat = np.mean(thetas)
-        ci = (2*theta_hat-np.quantile(thetas, 1-(alpha/2)), 2*theta_hat-np.quantile(thetas, (alpha/2)))
+        ci = {"ci_lb": 2*theta_hat-np.quantile(thetas, 1-(alpha/2)),
+              "ci_ub": 2*theta_hat-np.quantile(thetas, (alpha/2))}
         return theta_hat, ci
 
 
