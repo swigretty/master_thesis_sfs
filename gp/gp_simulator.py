@@ -556,7 +556,7 @@ class GPSimulationEvaluator(GPSimulator):
         with (self.output_path / "eval_summary.json").open("w") as f:
             f.write(json.dumps(summary_dict, default=str))
 
-        return summary_dict, eval_measure_df
+        return summary_dict, eval_measure_sum
 
     @Plotter
     def plot_overall_mean(self, ax=None, gps=None):

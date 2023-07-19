@@ -43,7 +43,7 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
             simulator.evaluate_target_measures()
             eval_dict, measure_sum_df = simulator.evaluate_multisample(n_samples)
 
-            for k, v in simulator.gps_kwargs_normalized.items():
+            for k, v in simulator.current_init_kwargs.items():
                 if not isinstance(v, np.ndarray):
                     measure_sum_df[k] = v
 
@@ -64,18 +64,19 @@ def evaluate_data_fraction(mode_name, mode_config, data_fraction=(0.1, 0.2, 0.4)
     return df
 
 
-def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(0.1, 1, 10),
+def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(None,),
                                  n_samples=100, experiment_name="test"):
     experiment_output_path = get_output_path(experiment_name=experiment_name)
 
     for nv in meas_noise_var:
         for mode_name, mode_config in modes.items():
-            mode_config["config"]["meas_noise_var"] = nv
+            if nv is not None:
+                mode_config["config"]["meas_noise_var"] = nv
             evaluate_data_fraction(mode_name, mode_config, data_fraction=data_fraction, n_samples=n_samples,
                                    experiment_name=experiment_name)
 
-    for split in ["overall", "train", "test"]:
-        perf_plot(split=split, file_path=experiment_output_path)
+    # for split in ["overall", "train", "test"]:
+    #     perf_plot(split=split, file_path=experiment_output_path)
 
 
 def get_limited_modes(kernels_limited=None, modes_limited=None):
@@ -107,9 +108,8 @@ if __name__ == "__main__":
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     # plot_sample(normalize_kernel=False)
-    evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
-                           n_samples=2, experiment_name="data_fraction_test_1")
-    # evaluate_data_fraction_modes(modes, meas_noise_var=(1,), data_fraction=(0.2,), n_samples=1,
-    #                              experiment_name="test_meas_noise")
+    # evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
+    #                        n_samples=2, experiment_name="data_fraction_test_2")
+    evaluate_data_fraction_modes(modes, n_samples=10, experiment_name="data_fraction_test_3")
 
 

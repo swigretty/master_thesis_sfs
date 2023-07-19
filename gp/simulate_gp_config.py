@@ -48,7 +48,7 @@ PARAM_NAMES = ["noise_level", "length_scale", "constant_value", "periodicity", "
 simple_kernel_config = {
     "white": {"kernel": WhiteKernel, "params": {"noise_level": 1}, "bound_params": {}, "var": 1, "var_bounds": (0.1, 10)},
     "ou": {"kernel": Matern, "params": {"length_scale": 3, "nu": 0.5}, "bound_params": {"length_scale_bounds": (1, 10)},
-           "var": 5, "var_bounds": (1, 100)},
+           "var": 25, "var_bounds": (1, 100)},
     "rbf_long": {"kernel": RBF, "params": {"length_scale": 50}, "bound_params": {"length_scale_bounds": (1, 200)},
                  "var": 5, "var_bounds": (0.1, 10)},
     "rbf_short": {"kernel": RBF, "params": {"length_scale": 3}, "bound_params": {"length_scale_bounds": (1, 200)},
