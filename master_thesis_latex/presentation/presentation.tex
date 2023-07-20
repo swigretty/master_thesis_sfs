@@ -572,41 +572,6 @@ as a collection of multivariate normally distributed random variables and thus a
 \section{Simulations} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 
-
-\subsection{Population Level Time Series Characteristics}
-
-
-\begin{frame}[fragile]
-	\frametitle{Population Level Time Series Characteristics}
-
-%	\begin{verbatim}
-%
-%	Kernel = 1.02**2 * 1**2 * Matern(length_scale=3, nu=0.5)
-%			+ 3.16**2 * ExpSineSquared(length_scale=3, periodicity=24)
-%			+ 1**2 * RBF(length_scale=50) + WhiteKernel(noise_level=0.0001)
-%
-%	\end{verbatim}
-
-	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{true_decomposed}
-%			\caption{Periodic Kernel with different length scale}
-	\end{figure}
-
-
-	Time Series characteristics assumed so far ?
-	\begin{itemize}
-		\item measurement noise (Gaussian White noise with var=0.0001)
-		\item cyclic pattern amplitude (~ 5 mmHg)
-		\item cyclic pattern period (=24h)
-		\item AR(1) component
-		\item long term trend
-		\item data density (0-3 per hour)
-		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
-	\end{itemize}
-\end{frame}
-
-
-
 \begin{frame}[fragile]
 	\frametitle{Aktiia Population Level Time Series Characteristics}
 
@@ -857,7 +822,10 @@ as a collection of multivariate normally distributed random variables and thus a
 		$1 / n * \sqrt {\sum_{i=1}^{n}\sum_{j=1}^{n} \bar{\Sigma}_{i,j}}$ or sample from posterior
 		\item Baseline Methods:
 		\begin{itemize}
-			\item Empirical mean: mean($y_{train}$) with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
+			\item Naive:
+			\begin{itemize}
+				\item Empirical mean of $y_{train}$ with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
+			\end{itemize}
 			\item Linear Regression:
 			\begin{itemize}
 				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
@@ -946,9 +914,23 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 	\end{columns}
 
+\end{frame}
 
+
+\begin{frame}
+	\frametitle{Extract Target Measures and Evaluate}
+	\framesubtitle{Weekly Mean} % Optional subtitle
+
+	In the case of seasonal sampling pattern, GP Regression does not perform better than Linear Regression
+
+	\begin{itemize}
+		\item Measurement noise variance $\approx 0.6 *$ total variance
+		\item AR(1) component variance $\approx 0.1 *$ measurement noise variance
+		\item GP can assess local uncertainty due to missing value, which is not needed when evaluating 1 week mean
+	\end{itemize}
 
 \end{frame}
+
 
 
 
@@ -994,48 +976,50 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 
-\begin{frame}
-	\frametitle{Outlook - Weekly BP Mean}
-	\begin{figure}
-		\includegraphics[width=0.7\linewidth]{plot_overall_mean_ou_bounded_seasonal_sin_rbf_0.20}
-%			\caption{Periodic Kernel with different length scale}
-	\end{figure}
 
 
-	\begin{table}
-		\begin{tabular}{l l l}
-			\toprule
-			\textbf{metric} & \textbf{GP Predicted Mean} & \textbf{Sample Mean}\\
-			\midrule
-			ci covered & True & False \\
-			predictive probability dens. & 0.25904 & $<$ 0.00001 \\
-			mse & 0.0030 & 4.3988 \\
-			ci width &  0.231 & 0.012 \\
-			\bottomrule
-		\end{tabular}
-%		\caption{}
-
-%		{'ci_overall_mean_lb': -13.305443087675325, 'ci_overall_mean_ub': -13.07422728777426, 'overall_mean_covered': 1, 'ci_overall_width': 0.2312157999010651, 'pred_prob_overall_mean': 0.25903971192446634, 'mse_overll_mean': 0.0030048794026204416, 'covered_fraction_fun': 0.9678571428571429, 'kl_fun': 189561702.44658434, 'pred_logprob': 1182.5772622643588, 'mse': 0.1775464329777053}
-%		{'ci_overall_mean_lb': -11.043858712746218, 'ci_overall_mean_ub': -11.031493422441432, 'overall_mean_covered': 0, 'ci_overall_width': 0.012365290304785503, 'pred_prob_overall_mean': 0.0, 'mse_overll_mean': 4.39884489044144, 'covered_fraction_fun': 0.05476190476190476, 'kl_fun': 11412263.566746384, 'pred_logprob': -720975.0783134875, 'mse': 14.386045805246933}
-
-	\end{table}
-
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Outlook}
-
-	Target measures ?
-	\begin{itemize}
-		\item TTR
-		\item day/night BP (fit trapez model to extracted cyclic pattern, weighting based on cyclic pattern)
-		\item $\dots$
-	\end{itemize}
-
-\end{frame}
-
+%\begin{frame}
+%	\frametitle{Outlook - Weekly BP Mean}
+%	\begin{figure}
+%		\includegraphics[width=0.7\linewidth]{plot_overall_mean_ou_bounded_seasonal_sin_rbf_0.20}
+%%			\caption{Periodic Kernel with different length scale}
+%	\end{figure}
+%
+%
+%	\begin{table}
+%		\begin{tabular}{l l l}
+%			\toprule
+%			\textbf{metric} & \textbf{GP Predicted Mean} & \textbf{Sample Mean}\\
+%			\midrule
+%			ci covered & True & False \\
+%			predictive probability dens. & 0.25904 & $<$ 0.00001 \\
+%			mse & 0.0030 & 4.3988 \\
+%			ci width &  0.231 & 0.012 \\
+%			\bottomrule
+%		\end{tabular}
+%%		\caption{}
+%
+%%		{'ci_overall_mean_lb': -13.305443087675325, 'ci_overall_mean_ub': -13.07422728777426, 'overall_mean_covered': 1, 'ci_overall_width': 0.2312157999010651, 'pred_prob_overall_mean': 0.25903971192446634, 'mse_overll_mean': 0.0030048794026204416, 'covered_fraction_fun': 0.9678571428571429, 'kl_fun': 189561702.44658434, 'pred_logprob': 1182.5772622643588, 'mse': 0.1775464329777053}
+%%		{'ci_overall_mean_lb': -11.043858712746218, 'ci_overall_mean_ub': -11.031493422441432, 'overall_mean_covered': 0, 'ci_overall_width': 0.012365290304785503, 'pred_prob_overall_mean': 0.0, 'mse_overll_mean': 4.39884489044144, 'covered_fraction_fun': 0.05476190476190476, 'kl_fun': 11412263.566746384, 'pred_logprob': -720975.0783134875, 'mse': 14.386045805246933}
+%
+%	\end{table}
+%
+%
+%\end{frame}
+%
+%
+%\begin{frame}
+%	\frametitle{Outlook}
+%
+%	Target measures ?
+%	\begin{itemize}
+%		\item TTR
+%		\item day/night BP (fit trapez model to extracted cyclic pattern, weighting based on cyclic pattern)
+%		\item $\dots$
+%	\end{itemize}
+%
+%\end{frame}
+%
 
 
 \begin{frame}
@@ -1047,6 +1031,8 @@ as a collection of multivariate normally distributed random variables and thus a
 	\end{itemize}
 
 \end{frame}
+
+
 %%------------------------------------------------
 %
 %\begin{frame}
@@ -1072,247 +1058,247 @@ as a collection of multivariate normally distributed random variables and thus a
 %\end{frame}
 %
 %%------------------------------------------------
-
-\subsection{Blocks}
-
-\begin{frame}
-	\frametitle{Blocks of Highlighted Text}
-
-	\begin{block}{Block Title}
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer lectus nisl, ultricies in feugiat rutrum, porttitor sit amet augue.
-	\end{block}
-
-	\begin{exampleblock}{Example Block Title}
-		Aliquam ut tortor mauris. Sed volutpat ante purus, quis accumsan.
-	\end{exampleblock}
-
-	\begin{alertblock}{Alert Block Title}
-		Pellentesque sed tellus purus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.
-	\end{alertblock}
-
-	\begin{block}{} % Block without title
-		Suspendisse tincidunt sagittis gravida. Curabitur condimentum, enim sed venenatis rutrum, ipsum neque consectetur orci.
-	\end{block}
-\end{frame}
-
-%------------------------------------------------
-
-\subsection{Columns}
-
-\begin{frame}
-	\frametitle{Multiple Columns}
-	\framesubtitle{Subtitle} % Optional subtitle
-
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-			\textbf{Heading}
-			\begin{enumerate}
-				\item Statement
-				\item Explanation
-				\item Example
-			\end{enumerate}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-			Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer lectus nisl, ultricies in feugiat rutrum, porttitor sit amet augue. Aliquam ut tortor mauris. Sed volutpat ante purus, quis accumsan dolor.
-		\end{column}
-	\end{columns}
-\end{frame}
-
-%------------------------------------------------
-
-\section{Table and Figure Examples}
-
-\subsection{Table}
-
-\begin{frame}
-	\frametitle{Table}
-	\framesubtitle{Subtitle} % Optional subtitle
-
-	\begin{table}
-		\begin{tabular}{l l l}
-			\toprule
-			\textbf{Treatments} & \textbf{Response 1} & \textbf{Response 2}\\
-			\midrule
-			Treatment 1 & 0.0003262 & 0.562 \\
-			Treatment 2 & 0.0015681 & 0.910 \\
-			Treatment 3 & 0.0009271 & 0.296 \\
-			\bottomrule
-		\end{tabular}
-		\caption{Table caption}
-	\end{table}
-\end{frame}
-
-%------------------------------------------------
-
-%\subsection{Figure}
+%
+%\subsection{Blocks}
 %
 %\begin{frame}
-%	\frametitle{Figure}
+%	\frametitle{Blocks of Highlighted Text}
 %
-%	\begin{figure}
-%		\includegraphics[width=0.8\linewidth]{creodocs_logo.pdf}
-%		\caption{Creodocs logo.}
-%	\end{figure}
-%\end{frame}
-
-%------------------------------------------------
-
-\section{Mathematics}
-
-\begin{frame}
-	\frametitle{Definitions \& Examples}
-
-	\begin{definition}
-		A \alert{prime number} is a number that has exactly two divisors.
-	\end{definition}
-
-	\smallskip % Vertical whitespace
-
-	\begin{example}
-		\begin{itemize}
-			\item 2 is prime (two divisors: 1 and 2).
-			\item 3 is prime (two divisors: 1 and 3).
-			\item 4 is not prime (\alert{three} divisors: 1, 2, and 4).
-		\end{itemize}
-	\end{example}
-
-	\smallskip % Vertical whitespace
-
-	You can also use the \texttt{theorem}, \texttt{lemma}, \texttt{proof} and \texttt{corollary} environments.
-\end{frame}
-
-%------------------------------------------------
-
-\begin{frame}
-	\frametitle{Theorem, Corollary \& Proof}
-
-	\begin{theorem}[Mass--energy equivalence]
-		$E = mc^2$
-	\end{theorem}
-
-	\begin{corollary}
-		$x + y = y + x$
-	\end{corollary}
-
-	\begin{proof}
-		$\omega + \phi = \epsilon$
-	\end{proof}
-\end{frame}
-
-%------------------------------------------------
-
-\begin{frame}
-	\frametitle{Equation}
-
-	\begin{equation}
-		\cos^3 \theta =\frac{1}{4}\cos\theta+\frac{3}{4}\cos 3\theta
-	\end{equation}
-\end{frame}
-
-%------------------------------------------------
-
-\begin{frame}[fragile] % Need to use the fragile option when verbatim is used in the slide
-	\frametitle{Verbatim}
-
-	\begin{example}[Theorem Slide Code]
-		\begin{verbatim}
-			\begin{frame}
-				\frametitle{Theorem}
-				\begin{theorem}[Mass--energy equivalence]
-					$E = mc^2$
-				\end{theorem}
-		\end{frame}\end{verbatim} % Must be on the same line
-	\end{example}
-\end{frame}
-
-%------------------------------------------------
-
-\begin{frame}
-	Slide without title.
-\end{frame}
-
-%------------------------------------------------
-
-\section{Referencing}
-
-\begin{frame}
-	\frametitle{Citing References}
-
-	An example of the \texttt{\textbackslash cite} command to cite within the presentation:
-
-	\bigskip % Vertical whitespace
-
-	This statement requires citation \cite{p1,p2}.
-\end{frame}
-
-%------------------------------------------------
-
-\begin{frame} % Use [allowframebreaks] to allow automatic splitting across slides if the content is too long
-	\frametitle{References}
-
-	\begin{thebibliography}{99} % Beamer does not support BibTeX so references must be inserted manually as below, you may need to use multiple columns and/or reduce the font size further if you have many references
-		\footnotesize % Reduce the font size in the bibliography
-
-		\bibitem[Smith, 2022]{p1}
-			John Smith (2022)
-			\newblock Publication title
-			\newblock \emph{Journal Name} 12(3), 45 -- 678.
-
-		\bibitem[Kennedy, 2023]{p2}
-			Annabelle Kennedy (2023)
-			\newblock Publication title
-			\newblock \emph{Journal Name} 12(3), 45 -- 678.
-	\end{thebibliography}
-\end{frame}
-
-%----------------------------------------------------------------------------------------
-%	ACKNOWLEDGMENTS SLIDE
-%----------------------------------------------------------------------------------------
-
-\begin{frame}
-	\frametitle{Acknowledgements}
-
-	\begin{columns}[t] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-			\textbf{Smith Lab}
-			\begin{itemize}
-				\item Alice Smith
-				\item Devon Brown
-			\end{itemize}
-			\textbf{Cook Lab}
-			\begin{itemize}
-				\item Margaret
-				\item Jennifer
-				\item Yuan
-			\end{itemize}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-			\textbf{Funding}
-			\begin{itemize}
-				\item British Royal Navy
-				\item Norwegian Government
-			\end{itemize}
-		\end{column}
-	\end{columns}
-\end{frame}
-
-%%----------------------------------------------------------------------------------------
-%%	CLOSING SLIDE
-%%----------------------------------------------------------------------------------------
+%	\begin{block}{Block Title}
+%		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer lectus nisl, ultricies in feugiat rutrum, porttitor sit amet augue.
+%	\end{block}
 %
-%\begin{frame}[plain] % The optional argument 'plain' hides the headline and footline
-%	\begin{center}
-%		{\Huge The End}
+%	\begin{exampleblock}{Example Block Title}
+%		Aliquam ut tortor mauris. Sed volutpat ante purus, quis accumsan.
+%	\end{exampleblock}
 %
-%		\bigskip\bigskip % Vertical whitespace
+%	\begin{alertblock}{Alert Block Title}
+%		Pellentesque sed tellus purus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.
+%	\end{alertblock}
 %
-%		{\LARGE Questions? Comments?}
-%	\end{center}
+%	\begin{block}{} % Block without title
+%		Suspendisse tincidunt sagittis gravida. Curabitur condimentum, enim sed venenatis rutrum, ipsum neque consectetur orci.
+%	\end{block}
 %\end{frame}
 %
+%%------------------------------------------------
+%
+%\subsection{Columns}
+%
+%\begin{frame}
+%	\frametitle{Multiple Columns}
+%	\framesubtitle{Subtitle} % Optional subtitle
+%
+%	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+%		\begin{column}{0.45\textwidth} % Left column width
+%			\textbf{Heading}
+%			\begin{enumerate}
+%				\item Statement
+%				\item Explanation
+%				\item Example
+%			\end{enumerate}
+%		\end{column}
+%		\begin{column}{0.5\textwidth} % Right column width
+%			Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer lectus nisl, ultricies in feugiat rutrum, porttitor sit amet augue. Aliquam ut tortor mauris. Sed volutpat ante purus, quis accumsan dolor.
+%		\end{column}
+%	\end{columns}
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\section{Table and Figure Examples}
+%
+%\subsection{Table}
+%
+%\begin{frame}
+%	\frametitle{Table}
+%	\framesubtitle{Subtitle} % Optional subtitle
+%
+%	\begin{table}
+%		\begin{tabular}{l l l}
+%			\toprule
+%			\textbf{Treatments} & \textbf{Response 1} & \textbf{Response 2}\\
+%			\midrule
+%			Treatment 1 & 0.0003262 & 0.562 \\
+%			Treatment 2 & 0.0015681 & 0.910 \\
+%			Treatment 3 & 0.0009271 & 0.296 \\
+%			\bottomrule
+%		\end{tabular}
+%		\caption{Table caption}
+%	\end{table}
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%%\subsection{Figure}
+%%
+%%\begin{frame}
+%%	\frametitle{Figure}
+%%
+%%	\begin{figure}
+%%		\includegraphics[width=0.8\linewidth]{creodocs_logo.pdf}
+%%		\caption{Creodocs logo.}
+%%	\end{figure}
+%%\end{frame}
+%
+%%------------------------------------------------
+%
+%\section{Mathematics}
+%
+%\begin{frame}
+%	\frametitle{Definitions \& Examples}
+%
+%	\begin{definition}
+%		A \alert{prime number} is a number that has exactly two divisors.
+%	\end{definition}
+%
+%	\smallskip % Vertical whitespace
+%
+%	\begin{example}
+%		\begin{itemize}
+%			\item 2 is prime (two divisors: 1 and 2).
+%			\item 3 is prime (two divisors: 1 and 3).
+%			\item 4 is not prime (\alert{three} divisors: 1, 2, and 4).
+%		\end{itemize}
+%	\end{example}
+%
+%	\smallskip % Vertical whitespace
+%
+%	You can also use the \texttt{theorem}, \texttt{lemma}, \texttt{proof} and \texttt{corollary} environments.
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\begin{frame}
+%	\frametitle{Theorem, Corollary \& Proof}
+%
+%	\begin{theorem}[Mass--energy equivalence]
+%		$E = mc^2$
+%	\end{theorem}
+%
+%	\begin{corollary}
+%		$x + y = y + x$
+%	\end{corollary}
+%
+%	\begin{proof}
+%		$\omega + \phi = \epsilon$
+%	\end{proof}
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\begin{frame}
+%	\frametitle{Equation}
+%
+%	\begin{equation}
+%		\cos^3 \theta =\frac{1}{4}\cos\theta+\frac{3}{4}\cos 3\theta
+%	\end{equation}
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\begin{frame}[fragile] % Need to use the fragile option when verbatim is used in the slide
+%	\frametitle{Verbatim}
+%
+%	\begin{example}[Theorem Slide Code]
+%		\begin{verbatim}
+%			\begin{frame}
+%				\frametitle{Theorem}
+%				\begin{theorem}[Mass--energy equivalence]
+%					$E = mc^2$
+%				\end{theorem}
+%		\end{frame}\end{verbatim} % Must be on the same line
+%	\end{example}
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\begin{frame}
+%	Slide without title.
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\section{Referencing}
+%
+%\begin{frame}
+%	\frametitle{Citing References}
+%
+%	An example of the \texttt{\textbackslash cite} command to cite within the presentation:
+%
+%	\bigskip % Vertical whitespace
+%
+%	This statement requires citation \cite{p1,p2}.
+%\end{frame}
+%
+%%------------------------------------------------
+%
+%\begin{frame} % Use [allowframebreaks] to allow automatic splitting across slides if the content is too long
+%	\frametitle{References}
+%
+%	\begin{thebibliography}{99} % Beamer does not support BibTeX so references must be inserted manually as below, you may need to use multiple columns and/or reduce the font size further if you have many references
+%		\footnotesize % Reduce the font size in the bibliography
+%
+%		\bibitem[Smith, 2022]{p1}
+%			John Smith (2022)
+%			\newblock Publication title
+%			\newblock \emph{Journal Name} 12(3), 45 -- 678.
+%
+%		\bibitem[Kennedy, 2023]{p2}
+%			Annabelle Kennedy (2023)
+%			\newblock Publication title
+%			\newblock \emph{Journal Name} 12(3), 45 -- 678.
+%	\end{thebibliography}
+%\end{frame}
+%
+%%----------------------------------------------------------------------------------------
+%%	ACKNOWLEDGMENTS SLIDE
 %%----------------------------------------------------------------------------------------
 %
+%\begin{frame}
+%	\frametitle{Acknowledgements}
+%
+%	\begin{columns}[t] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+%		\begin{column}{0.45\textwidth} % Left column width
+%			\textbf{Smith Lab}
+%			\begin{itemize}
+%				\item Alice Smith
+%				\item Devon Brown
+%			\end{itemize}
+%			\textbf{Cook Lab}
+%			\begin{itemize}
+%				\item Margaret
+%				\item Jennifer
+%				\item Yuan
+%			\end{itemize}
+%		\end{column}
+%		\begin{column}{0.5\textwidth} % Right column width
+%			\textbf{Funding}
+%			\begin{itemize}
+%				\item British Royal Navy
+%				\item Norwegian Government
+%			\end{itemize}
+%		\end{column}
+%	\end{columns}
+%\end{frame}
+%
+%%%----------------------------------------------------------------------------------------
+%%%	CLOSING SLIDE
+%%%----------------------------------------------------------------------------------------
+%%
+%%\begin{frame}[plain] % The optional argument 'plain' hides the headline and footline
+%%	\begin{center}
+%%		{\Huge The End}
+%%
+%%		\bigskip\bigskip % Vertical whitespace
+%%
+%%		{\LARGE Questions? Comments?}
+%%	\end{center}
+%%\end{frame}
+%%
+%%%----------------------------------------------------------------------------------------
+%%
 \end{document}
-%
+%%
 
 
