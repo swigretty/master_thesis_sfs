@@ -698,7 +698,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{plot_true_with_samples}
+					\includegraphics[width=\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_36_plot_true_with_samples}
 				\end{figure}
 
 		\end{column}
@@ -712,7 +712,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{gp_sin_rbf_ou_bounded_seasonal_0.20}
+			\includegraphics[width=0.7\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_36_fit}
 %			\caption{Periodic Kernel with different length scale}
 	\end{figure}
 
@@ -724,7 +724,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Simulation}
 
 	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{gp_sin_rbf_ou_bounded_seasonal_4_0.20}
+			\includegraphics[width=0.7\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_18_fit}
 %			\caption{Periodic Kernel with different length scale}
 	\end{figure}
 
@@ -858,7 +858,11 @@ as a collection of multivariate normally distributed random variables and thus a
 		\item Baseline Methods:
 		\begin{itemize}
 			\item Empirical mean: mean($y_{train}$) with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
-			\item Linear Regression
+			\item Linear Regression:
+			\begin{itemize}
+				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
+
+			\end{itemize}
 			\item Kernel Regression/ Smoothing Spline
 		\end{itemize}
 	\end{itemize}
@@ -870,6 +874,82 @@ as a collection of multivariate normally distributed random variables and thus a
 		\item CI coverage + CI width
 	\end{itemize}
 \end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Extract Target Measures and Evaluate}
+	\framesubtitle{Weekly Mean} % Optional subtitle
+
+	Simulation over a 100 samples from true GP
+
+	\begin{figure}
+			\includegraphics[width=0.7\linewidth]{target_measures_eval_uniform}
+			\caption{Uniform Sampling}
+	\end{figure}
+
+		\begin{figure}
+			\includegraphics[width=0.7\linewidth]{target_measures_eval_seasonal}
+			\caption{Seasonal Sampling}
+	\end{figure}
+
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Extract Target Measures and Evaluate}
+	\framesubtitle{Weekly Mean} % Optional subtitle
+
+	Uniform Sampling
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.45\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{plot_posterior_gp_uniform}
+					\caption{GP}
+
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{plot_posterior_linear_uniform}
+					\caption{Linear Regression}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+
+
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Extract Target Measures and Evaluate}
+	\framesubtitle{Weekly Mean} % Optional subtitle
+
+	Uniform Sampling
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.45\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{plot_posterior_gp_seasonal}
+					\caption{GP}
+
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{plot_posterior_linear_seasonal}
+					\caption{Linear Regression}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+
+
+\end{frame}
+
 
 
 \begin{frame}

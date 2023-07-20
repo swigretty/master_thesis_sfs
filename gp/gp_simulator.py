@@ -318,8 +318,10 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None):
-        data_dict = {"f_post": self.f_post, "y_true_subsampled": self.y_true_train,
+    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, pred_data=None):
+        if pred_data is None:
+            pred_data = self.f_post
+        data_dict = {"f_post": pred_data, "y_true_subsampled": self.y_true_train,
                      "f_true": self.f_true}
         if add_offset:
             data_dict = {k: v + self.offset for k, v in data_dict}
@@ -519,6 +521,15 @@ class GPSimulationEvaluator(GPSimulator):
 
         return perf_all
 
+    def plot(self, add_offset=False):
+        super().plot(add_offset=add_offset)
+        figname_suffix_orig = getattr(self, "figname_suffix", "")
+
+        for method, pred in self.pred_baseline.items():
+            self.figname_suffix = f"{method}"
+            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}")
+        self.figname_suffix = figname_suffix_orig
+
     def evaluate_multisample(self, n_samples=100):
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
@@ -586,7 +597,7 @@ class GPSimulationEvaluator(GPSimulator):
         for i in range(nplots):
             if nplots > 1:
                 gps_kwargs["rng"] = np.random.default_rng(i)
-                gps = GPSimulator(**gps_kwargs)
+                gps = GPSimulationEvaluator(**gps_kwargs)
             gps.plot_true_with_samples()
             gps.plot()
             gps.plot_errors()

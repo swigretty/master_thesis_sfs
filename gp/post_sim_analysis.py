@@ -17,12 +17,17 @@ def target_measure_perf_plot(target_measures_df):
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
 
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(9, 2))
+    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
         ax[i].set_title(f"{data_fraction=}")
         for method, df in dff.groupby("method"):
             ax[i].scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
-        ax[0].legend()
+            ax[i].set_ylim(max(np.min(dff["ci_covered"]) - 0.1, 0), 1)
+        # ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
+        ax[i].hlines(0.95, xmin=np.min(dff["ci_width"]), xmax=np.max(dff["ci_width"]), color="black", linestyles='dashed')
+    ax[0].legend()
+    ax[1].set_xlabel("ci width")
+    ax[0].set_ylabel("ci coverage")
     return fig
 
 
@@ -78,7 +83,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 if __name__ == "__main__":
 
-    output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/data_fraction_test_3")
+    output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/data_fraction_test_ou5")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 
     df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("seasonal")]

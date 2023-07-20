@@ -114,10 +114,14 @@ class GPData():
 
     @property
     def y_var(self):
+        if self.y_cov is None:
+            return None
         return np.diag(self.y_cov)
 
     @property
     def y_std(self):
+        if self.y_var is None:
+            return None
         return np.sqrt(self.y_var)
 
     def calculate_ci_row(self, row):
