@@ -318,7 +318,7 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, pred_data=None):
+    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, pred_data=None, **kwargs):
         if pred_data is None:
             pred_data = self.f_post
         data_dict = {"f_post": pred_data, "y_true_subsampled": self.y_true_train,
@@ -523,12 +523,8 @@ class GPSimulationEvaluator(GPSimulator):
 
     def plot(self, add_offset=False):
         super().plot(add_offset=add_offset)
-        figname_suffix_orig = getattr(self, "figname_suffix", "")
-
         for method, pred in self.pred_baseline.items():
-            self.figname_suffix = f"{method}"
-            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}")
-        self.figname_suffix = figname_suffix_orig
+            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
 
     def evaluate_multisample(self, n_samples=100):
         current_config = copy(self.gps_kwargs_normalized)

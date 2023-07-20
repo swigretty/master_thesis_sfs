@@ -108,7 +108,7 @@ if __name__ == "__main__":
     modes = get_limited_modes(kernels_limited=kernels_limited, modes_limited=modes_limited)
 
     rng = np.random.default_rng(18)
-    plot_sample(normalize_kernel=False, rng=rng, experiment_name="data_fraction_test2_ou5", nplots=10)
+    plot_sample(normalize_kernel=False, rng=rng, experiment_name="data_fraction_test4", nplots=1)
     # evaluate_data_fraction(mode_name="ou_bounded", mode_config=modes["ou_bounded"],
     #                        n_samples=2, experiment_name="data_fraction_test_2")
     # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name="data_fraction_test_ou5")

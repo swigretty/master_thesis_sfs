@@ -12,10 +12,9 @@ class Plotter():
     def __init__(self, f):
         self.func = f
 
-    def __call__(self, instance, *args, ax=None, **kwargs):
+    def __call__(self, instance, *args, figname_suffix="", ax=None, **kwargs):
         fig = None
         output_path = getattr(instance, "output_path", None)
-        figname_suffix = getattr(instance, "figname_suffix", "")
 
         if ax is None:
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
