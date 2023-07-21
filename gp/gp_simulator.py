@@ -11,7 +11,7 @@ import json
 import scipy
 import matplotlib as mpl
 from scipy.stats import norm, multivariate_normal
-from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel, Product
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
@@ -263,7 +263,7 @@ class GPSimulator():
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
 
-        std_range = (0.95, 1.05)
+        std_range = (0.99, 1.01)
         i = 0
         scale = 1
         y_std = 2
@@ -274,18 +274,18 @@ class GPSimulator():
             kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
             gps = GPSimulator(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
                               rng=np.random.default_rng(15), output_path=None, normalize_kernel=False)
-            data_sim = gps.sim_gp(n_samples=100)
+            data_sim = gps.sim_gp(n_samples=1000, predict_y=True)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std
             i += 1
-            if i > 20:
+            if i > 100:
                 break
 
         logger.setLevel(previousloglevel)
 
         logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
 
-        return kernel_, 1 / scale * meas_noise_var
+        return kernel_, meas_noise_var / scale ** 2
 
     def choose_sample_from_prior(self, data_index: int = 0):
         data_single = copy(self.y_true_samples)
@@ -413,6 +413,9 @@ class GPSimulator():
 
     def get_decomposed_variance(self):
         variance_out = {}
+        # if isinstance(self.kernel_sim, Product) and isinstance(self.kernel_sim.k1, ConstantKernel):
+        #     scale_kernel = self.kernel_sim.k1
+
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             variance_out[k] = np.var(v)
         variance_out["f_true"] = np.var(self.f_true.y)
@@ -535,9 +538,7 @@ class GPSimulationEvaluator(GPSimulator):
         for method, pred in self.pred_baseline.items():
             self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
 
-    def evaluate_multisample(self, n_samples=100):
-        # TODO distribution of variances produced by the different kernels
-
+    def evaluate_multisample(self, n_samples=100, only_var=False):
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
         current_config["baseline_methods"] = self.baseline_methods
@@ -551,22 +552,16 @@ class GPSimulationEvaluator(GPSimulator):
         logger.setLevel(logging.WARNING)
         for i in range(n_samples):
             gps = GPSimulationEvaluator(**current_config)
-            gps.fit()
-            # TODO eval_dict as df with group by and aggregate
-            eval_sample = gps.evaluate()
-            eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
-            eval_target_measure.extend(gps.evaluate_target_measures())
-            variances.append(self.get_decomposed_variance())
+
+            if not only_var:
+                gps.fit()
+                # TODO eval_dict as df with group by and aggregate
+                eval_sample = gps.evaluate()
+                eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
+                eval_target_measure.extend(gps.evaluate_target_measures())
+            variances.append(gps.get_decomposed_variance())
 
         logger.setLevel(previousloglevel)
-        summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
-        for v in summary_dict.values():
-            v["data_fraction"] = gps.data_fraction
-            v["kernel_sim"] = gps.kernel_sim
-            v["kernel_fit"] = gps.gpm_fit.kernel_
-            v["n_samples"] = n_samples
-            v["meas_noise_var"] = gps.meas_noise_var
-            v["output_path"] = self.output_path
 
         variance_df = pd.DataFrame(variances)
         variance_df.describe().to_csv(self.output_path / f"variance_summary.csv")
@@ -574,17 +569,27 @@ class GPSimulationEvaluator(GPSimulator):
         for col in variance_df.columns:
             fig, ax = plt.subplots(nrows=1, ncols=1)
             ax.hist(variance_df[col])
-            fig.savefig(self.output_path / f"variance_{col}.pdf")
+            fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
 
-        eval_measure_df = pd.DataFrame(eval_target_measure)
-        eval_measure_sum = eval_measure_df.groupby(["method", "target_measure"]).agg("mean").reset_index(drop=False)
-        eval_measure_sum["n_samples"] = n_samples
-        eval_measure_sum.to_csv(self.output_path / "eval_measure_summary.csv")
+        if eval_dict:
+            eval_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
+            for v in eval_dict.values():
+                v["data_fraction"] = gps.data_fraction
+                v["kernel_sim"] = gps.kernel_sim
+                v["kernel_fit"] = gps.gpm_fit.kernel_
+                v["n_samples"] = n_samples
+                v["meas_noise_var"] = gps.meas_noise_var
+                v["output_path"] = self.output_path
+            with (self.output_path / "eval_summary.json").open("w") as f:
+                f.write(json.dumps(eval_dict, default=str))
 
-        with (self.output_path / "eval_summary.json").open("w") as f:
-            f.write(json.dumps(summary_dict, default=str))
+        if eval_target_measure:
+            eval_target_measure = pd.DataFrame(eval_target_measure).groupby(["method", "target_measure"]).agg(
+                "mean").reset_index(drop=False)
+            eval_target_measure["n_samples"] = n_samples
+            eval_target_measure.to_csv(self.output_path / "eval_measure_summary.csv")
 
-        return summary_dict, eval_measure_sum
+        return eval_dict, eval_target_measure
 
     @Plotter
     def plot_overall_mean(self, ax=None, gps=None):

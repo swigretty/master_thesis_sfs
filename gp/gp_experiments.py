@@ -28,6 +28,21 @@ logger = getLogger(__name__)
 # }
 
 
+def get_info(sample):
+    return {"var": np.var(sample), "max-min": np.max(sample) - np.min(sample)}
+
+
+def get_sample_path_variance_kernel(kernel, t, nsim=1000):
+    mu = np.zeros(len(t))
+    K = kernel(np.array(t).reshape(-1, 1))
+    sim_info = []
+    y_sim = np.random.multivariate_normal(mean=mu, cov=K, size=nsim)
+    for sample in y_sim:
+        sim_info.append(get_info(sample))
+    sim_info_mean = pd.DataFrame(sim_info).mean().to_dict()
+    return sim_info_mean["var"]
+
+
 def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
                            n_samples=100, experiment_name="test"):
     mode_config_orig = mode_config.to_dict()
@@ -39,6 +54,10 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
     session_name = f"{mode_config.kernel_sim_name}"
     output_path_gp_sim = partial(get_output_path, session_name=session_name,
                                  experiment_name=experiment_name)
+
+    orig_scale = get_sample_path_variance_kernel(mode_config.kernel_sim, mode_config.x)
+    orig_scale += mode_config.meas_noise_var
+    logger.info(f"{orig_scale=}")
 
     mode_config_norm["kernel_sim"], mode_config_norm["meas_noise_var"] = GPSimulator.get_normalized_kernel(
         kernel=mode_config.kernel_sim, meas_noise_var=mode_config.meas_noise_var)
@@ -118,10 +137,10 @@ if __name__ == "__main__":
     rng = np.random.default_rng(18)
     experiment_name = "data_fraction_default"
 
-    plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
-                config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.2)
+    # plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
+    #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.2)
     evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf"),
-                           experiment_name=experiment_name)
+                           experiment_name=experiment_name, n_samples=100, data_fraction=(0.1, ))
     # evaluate_data_fraction_modes(modes, n_samples=2, experiment_name="default_modes")
 
 

@@ -136,15 +136,15 @@ if __name__ == "__main__":
     # kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
     # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
 
-    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=100)
+    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
+    # plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=100)
 
     # kernels = [WhiteKernel(noise_level=c)for c in var]
     # plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
     #
-    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * 14**2 + Matern(
-    #     length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5 + WhiteKernel(noise_level=c) for c in var]
-    # plot_kernels(kernels, t=t, mode_name="sin_rbf_ou_white", mode_values=var)
+    kernels = [14**2 * ExpSineSquared(length_scale=3, periodicity=h_per_day) + Matern(
+        length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5]
+    plot_kernels(kernels, t=t, mode_name="sin_rbf", nsim=10000)
 
 
 
