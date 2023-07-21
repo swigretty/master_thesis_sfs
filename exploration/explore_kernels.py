@@ -13,19 +13,24 @@ import pandas as pd
 logger = getLogger(__name__)
 
 
+def get_info(sample):
+    return {"var": np.var(sample), "max-min": np.max(sample) - np.min(sample)}
+
+
 def plot_sample_path(t, kernel, ax=None, nsim=1):
     mu = np.zeros(len(t))
     K = kernel(np.array(t).reshape(-1, 1))
     sim_info = []
     y_sim = np.random.multivariate_normal(mean=mu, cov=K, size=nsim)
 
+    plot_sample = y_sim[0]
+    if ax is not None:
+        ax.set_title("Sample Path")
+        ax.plot(t, plot_sample, label=f"var: {get_info(plot_sample)['var']:.2f}, "
+                                      f"max-min: {get_info(plot_sample)['max-min']}")
+
     for sample in y_sim:
-        # sample = sample.reshape(-1, 1)
-        info = {"var": np.var(sample), "max-min": np.max(sample) - np.min(sample)}
-        sim_info.append(info)
-        if ax is not None:
-            ax.set_title("Sample Path")
-            ax.plot(t, sample, label=f"var: {info['var']:.2f}")
+        sim_info.append(get_info(sample))
 
     sim_info_mean = pd.DataFrame(sim_info).mean().to_dict()
     sim_info_mean = {k: np.round(v, decimals=4) for k, v in sim_info_mean.items()}
@@ -40,11 +45,11 @@ def plot_kernel(t, kernel, ax):
     K = kernel(np.array(t).reshape(-1, 1))
     k_1d = K[0, :]
     ax.plot(t, k_1d, label=f"{kernel}")
-    logger.info(kernel)
-    logger.info(f"Kmax-Kmin: {np.max(K) - np.min(K)}")
+    # logger.info(kernel)
+    # logger.info(f"Kmax-Kmin: {np.max(K) - np.min(K)}")
 
 
-def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values=None, mode_name="mode"):
+def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values=None, mode_name="mode", nsim=1):
     nrows = 1
     ncols = 2
     if mode_values is not None:
@@ -74,7 +79,7 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
     for i, k in enumerate(kernels):
         # color = CSS4_COLORS[i * 3]
         plot_kernel(t[:idx_max], k, ax[0])
-        plot_sample_path(t, k, ax=ax[1], nsim=1)
+        plot_sample_path(t, k, ax=ax[1], nsim=nsim)
 
     if mode_values is not None:
         plot_sim_info(kernels, mode_values=mode_values, mode_name=mode_name, t=t, ax=ax[2])
@@ -128,18 +133,18 @@ if __name__ == "__main__":
     # kernels = [RBF(length_scale=50) * c for c in var]
     # plot_kernels(kernels, t=t, mode_name="rbf50_var", mode_values=var)
     # #
-    kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
-    plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
+    # kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
+    # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
 
     kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var)
+    plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=100)
 
-    kernels = [WhiteKernel(noise_level=c)for c in var]
-    plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
-
-    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * 14**2 + Matern(
-        length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5 + WhiteKernel(noise_level=c) for c in var]
-    plot_kernels(kernels, t=t, mode_name="sin_rbf_ou_white", mode_values=var)
+    # kernels = [WhiteKernel(noise_level=c)for c in var]
+    # plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
+    #
+    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * 14**2 + Matern(
+    #     length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5 + WhiteKernel(noise_level=c) for c in var]
+    # plot_kernels(kernels, t=t, mode_name="sin_rbf_ou_white", mode_values=var)
 
 
 

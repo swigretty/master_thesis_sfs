@@ -17,30 +17,6 @@ def mean_fun_const(x):
     # physiological:  60 to 300
     return 120
 
-# TODO add Final Config and document (meas_noise_var, kernels and parameters chosen)
-
-
-# measuring time in hours
-@dataclass()
-class GPSimulatorConfig():
-
-    n_days: int = 7
-    samples_per_hour: int = 10
-
-    meas_noise_var = 62/2  # Meas noise std = 7.9, leads to noise_var=62.
-    # Var(Noise_CUFF - Noise_Aktiia) = Var(Noise_CUFF) + Var(Noise_Aktiia) - 2COV(Noise_CUFF - Noise_Aktiia)
-
-    mean_f: callable = mean_fun_const
-
-    simulation_config_keys = ["mean_f", "x", "meas_noise_var"]
-
-    @property
-    def x(self):
-        return np.linspace(0, PERIOD_DAY * self.n_days, PERIOD_DAY * self.n_days * self.samples_per_hour)
-
-    def to_dict(self):
-        return {k: getattr(self, k) for k in self.simulation_config_keys}
-
 
 PARAM_NAMES = ["noise_level", "length_scale", "constant_value", "periodicity", "sigma_0", "nu"]
 
@@ -101,6 +77,67 @@ for mode in ["fixed", "bounded", "unbounded"]:
 
     KERNELS[mode] = _kernels
     OU_KERNELS[mode] = ou_kernels
+
+
+# measuring time in hours
+@dataclass()
+class GPSimulatorConfig():
+
+    n_days: int = 7
+    samples_per_hour: int = 10
+    meas_noise_var = 62 / 2  # Meas noise std = 7.9, leads to noise_var=62.
+    # Var(Noise_CUFF - Noise_Aktiia) = Var(Noise_CUFF) + Var(Noise_Aktiia) - 2COV(Noise_CUFF - Noise_Aktiia)
+    mean_f: callable = mean_fun_const
+    kernel_sim_name: str = "sin_rbf"
+
+    sin_var: float = 14**2
+    sin_var_bounds: tuple = (10, 1000)
+    _sin_kernel = simple_kernel_config["sin_day"]
+
+    ou_var: float = 5
+    ou_var_bounds: tuple = (0.5, 50)
+    _ou_kernel = simple_kernel_config["ou"]
+
+    rbf_var: float = 5
+    rbf_var_bounds: float = (1, 10)
+    _rbf_kernel = simple_kernel_config["rbf_long"]
+
+    data_fraction_weights = None
+
+    kwargs: dict = None
+
+    simulation_config_keys = ["mean_f", "x", "meas_noise_var", "kernel_sim", "data_fraction_weights"]
+
+    def __post_init__(self):
+        for k_name in ["sin", "rbf", "ou"]:
+            base_config = getattr(self, f"_{k_name}_kernel")
+            kernel = ConstantKernel(constant_value=getattr(self, f"{k_name}_var"),
+                                    constant_value_bounds=getattr(self, f"{k_name}_var_bounds")) * \
+                     base_config["kernel"](**base_config["bound_params"], **base_config["params"])
+            setattr(self, f"{k_name}_kernel", kernel)
+
+    @property
+    def kernel_sim(self):
+        if self.kernel_sim_name == "sin_rbf":
+            return self.ou_kernel + self.sin_kernel + self.rbf_kernel
+
+        elif self.kernel_sim_name == "sinrbf_rbf":
+            return self.ou_kernel + self.sin_kernel * self.rbf_kernel + self.rbf_kernel
+
+        else:
+            raise ValueError(f"{self.kernel_sim_name=} does not exist")
+
+    @property
+    def x(self):
+        return np.linspace(0, PERIOD_DAY * self.n_days, PERIOD_DAY * self.n_days * self.samples_per_hour)
+
+    def to_dict(self):
+        kwargs = self.kwargs
+        if kwargs is None:
+            kwargs = {}
+        base_dict = {k: getattr(self, k) for k in self.simulation_config_keys}
+        return {**base_dict, **kwargs}
+
 
 base_config = GPSimulatorConfig().to_dict()
 

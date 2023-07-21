@@ -117,12 +117,12 @@ class GPSimulator():
 
         return data
 
-    def data_fraction_weights_seasonal(self):
+    def get_seasonality(self):
         true_dec = self.gpm_sim.predict_mean_decomposed(self.x)
         fun = [fun for name, fun in true_dec.items() if "ExpSineSquared" in name]
         assert len(fun) == 1, "cannot extract seasonal pattern"
         weights = fun[0] - min(fun[0])
-        return weights * 0.1
+        return weights
 
     # @cached_property
     # def f_true_post(self):
@@ -174,9 +174,9 @@ class GPSimulator():
     def train_idx(self):
         if not hasattr(self, "_train_idx"):
             if callable(self.data_fraction_weights):
-                weights = self.data_fraction_weights(self.y_true)
+                weights = self.data_fraction_weights(self.get_seasonality())
             elif self.data_fraction_weights == "seasonal":
-                weights = self.data_fraction_weights_seasonal()
+                weights = self.get_seasonality()
             else:
                 weights = self.data_fraction_weights
 
@@ -411,6 +411,15 @@ class GPSimulator():
     def eval_data(self):
         return {"y_true": self.y_true.y, "f_true": self.f_true, "f_pred": self.f_post}
 
+    def get_decomposed_variance(self):
+        variance_out = {}
+        for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
+            variance_out[k] = np.var(v)
+        variance_out["f_true"] = np.var(self.f_true.y)
+        variance_out["y_true"] = np.var(self.y_true.y)
+        variance_out["y_true_train"] = np.var(self.y_true_train.y)
+        return variance_out
+
     def evaluate(self):
         eval_base_kwargs = {"meas_noise_var": self.meas_noise_var}
 
@@ -527,6 +536,8 @@ class GPSimulationEvaluator(GPSimulator):
             self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
 
     def evaluate_multisample(self, n_samples=100):
+        # TODO distribution of variances produced by the different kernels
+
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
         current_config["baseline_methods"] = self.baseline_methods
@@ -534,6 +545,7 @@ class GPSimulationEvaluator(GPSimulator):
 
         eval_dict = {}
         eval_target_measure = []
+        variances = []
 
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
@@ -544,6 +556,7 @@ class GPSimulationEvaluator(GPSimulator):
             eval_sample = gps.evaluate()
             eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
             eval_target_measure.extend(gps.evaluate_target_measures())
+            variances.append(self.get_decomposed_variance())
 
         logger.setLevel(previousloglevel)
         summary_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
@@ -554,6 +567,14 @@ class GPSimulationEvaluator(GPSimulator):
             v["n_samples"] = n_samples
             v["meas_noise_var"] = gps.meas_noise_var
             v["output_path"] = self.output_path
+
+        variance_df = pd.DataFrame(variances)
+        variance_df.describe().to_csv(self.output_path / f"variance_summary.csv")
+
+        for col in variance_df.columns:
+            fig, ax = plt.subplots(nrows=1, ncols=1)
+            ax.hist(variance_df[col])
+            fig.savefig(self.output_path / f"variance_{col}.pdf")
 
         eval_measure_df = pd.DataFrame(eval_target_measure)
         eval_measure_sum = eval_measure_df.groupby(["method", "target_measure"]).agg("mean").reset_index(drop=False)
