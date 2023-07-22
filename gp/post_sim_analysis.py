@@ -82,17 +82,22 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 
 if __name__ == "__main__":
-
-    output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/data_fraction_ou5sin10")
+    experiment_name = "data_fraction_seasonal"
+    output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 
-    df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("seasonal")]
+    df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("sin_rbf_seasonal")]
     fig = target_measure_perf_plot(df_uniform.copy())
     fig.savefig(output_path / "target_measures_eval_uniform.pdf")
 
-    df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("seasonal")]
+    df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_default")]
     fig = target_measure_perf_plot(df_seasonal.copy())
-    fig.savefig(output_path / "target_measures_eval_seasonal.pdf")
+    fig.savefig(output_path / "target_measures_eval_seasonal_default.pdf")
+
+    df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_extreme")]
+    fig = target_measure_perf_plot(df_seasonal.copy())
+    fig.savefig(output_path / "target_measures_eval_seasonal_extreme.pdf")
+
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)

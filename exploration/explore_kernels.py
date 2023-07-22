@@ -82,11 +82,12 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
         plot_sample_path(t, k, ax=ax[1], nsim=nsim)
 
     if mode_values is not None:
-        plot_sim_info(kernels, mode_values=mode_values, mode_name=mode_name, t=t, ax=ax[2])
+        sim_info = plot_sim_info(kernels, mode_values=mode_values, mode_name=mode_name, t=t, ax=ax[2])
 
     [a.legend() for a in ax]
 
     fig.savefig(plot_path / plot_file)
+    return sim_info
 
 
 def plot_sim_info(kernels, mode_values, mode_name="mode", t=np.linspace(0, 20, 200), nsim=1000, ax=None):
@@ -101,7 +102,7 @@ def plot_sim_info(kernels, mode_values, mode_name="mode", t=np.linspace(0, 20, 2
         ax.plot(sim_info_df[mode_name], sim_info_df["max-min"], label="max-min")
         ax.set_xlabel(mode_name)
 
-    return sim_info_df
+    return sim_info
 
 
 if __name__ == "__main__":
@@ -136,15 +137,16 @@ if __name__ == "__main__":
     # kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
     # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
 
-    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    # plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=100)
+    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
+    sim_info = plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=1000)
+    print("Hello")
 
     # kernels = [WhiteKernel(noise_level=c)for c in var]
     # plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
     #
-    kernels = [14**2 * ExpSineSquared(length_scale=3, periodicity=h_per_day) + Matern(
-        length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5]
-    plot_kernels(kernels, t=t, mode_name="sin_rbf", nsim=10000)
+    # kernels = [14**2 * ExpSineSquared(length_scale=3, periodicity=h_per_day) + Matern(
+    #     length_scale=1, nu=0.5) * 5 + RBF(length_scale=50) * 5]
+    # plot_kernels(kernels, t=t, mode_name="sin_rbf", nsim=10000)
 
 
 

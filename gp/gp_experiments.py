@@ -51,7 +51,7 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
     experiment_output_path = get_output_path(experiment_name=experiment_name)
     target_measures_path = experiment_output_path / f"target_measures_eval.csv"
 
-    session_name = f"{mode_config.kernel_sim_name}"
+    session_name = f"{mode_config.session_name}"
     output_path_gp_sim = partial(get_output_path, session_name=session_name,
                                  experiment_name=experiment_name)
 
@@ -97,7 +97,7 @@ def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_nois
     experiment_output_path = get_output_path(experiment_name=experiment_name)
 
     for nv in meas_noise_var:
-        for mode_config in modes():
+        for mode_config in modes:
             if nv is not None:
                 mode_config = mode_config(meas_noise_var=nv)
             else:
@@ -131,16 +131,22 @@ def plot_sample(normalize_kernel=True, experiment_name="test_single_sample", rng
 if __name__ == "__main__":
     setup_logging()
 
-    modes = [partial(GPSimulatorConfig, kernel_sim_name="sin_rbf"),
-             partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1)]
+    modes = [
+        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
+        #              session_name="sin_rbf_default"),
+             partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
+                     session_name="sin_rbf_seasonal_default"),
+             partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 2,
+                     session_name="sin_rbf_seasonal_extreme")
+             ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "data_fraction_default"
+    experiment_name = "data_fraction_seasonal"
 
     # plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
     #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.2)
-    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf"),
-                           experiment_name=experiment_name, n_samples=100, data_fraction=(0.1, ))
-    # evaluate_data_fraction_modes(modes, n_samples=2, experiment_name="default_modes")
+    # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf"),
+    #                        experiment_name=experiment_name, n_samples=100, data_fraction=(0.1, ))
+    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name)
 
 

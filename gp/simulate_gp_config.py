@@ -85,7 +85,7 @@ class GPSimulatorConfig():
 
     n_days: int = 7
     samples_per_hour: int = 10
-    meas_noise_var = 62 / 2  # Meas noise std = 7.9, leads to noise_var=62.
+    meas_noise_var: float = 62 / 2  # Meas noise std = 7.9, leads to noise_var=62.
     # Var(Noise_CUFF - Noise_Aktiia) = Var(Noise_CUFF) + Var(Noise_Aktiia) - 2COV(Noise_CUFF - Noise_Aktiia)
     mean_f: callable = mean_fun_const
     kernel_sim_name: str = "sin_rbf"
@@ -102,7 +102,9 @@ class GPSimulatorConfig():
     rbf_var_bounds: float = (1, 10)
     _rbf_kernel = simple_kernel_config["rbf_long"]
 
-    data_fraction_weights = None
+    data_fraction_weights: callable = None
+
+    session_name: str = None
 
     kwargs: dict = None
 
@@ -115,6 +117,10 @@ class GPSimulatorConfig():
                                     constant_value_bounds=getattr(self, f"{k_name}_var_bounds")) * \
                      base_config["kernel"](**base_config["bound_params"], **base_config["params"])
             setattr(self, f"{k_name}_kernel", kernel)
+        if self.session_name is None:
+            self.session_name = self.kernel_sim_name
+            if self.data_fraction_weights is not None:
+                self.session_name = f"{self.session_name}_seasonal"
 
     @property
     def kernel_sim(self):
