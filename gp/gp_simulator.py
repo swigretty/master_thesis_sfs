@@ -416,9 +416,16 @@ class GPSimulator():
 
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             variance_out[k] = np.var(v)
+            if "Sine" in k:
+                variance_out["ampl"] = np.sqrt(2 * variance_out[k])
+
         variance_out["f_true"] = np.var(self.f_true.y)
         variance_out["y_true"] = np.var(self.y_true.y)
         variance_out["y_true_train"] = np.var(self.y_true_train.y)
+
+        variance_out["y_true_std"] = np.sqrt(variance_out["y_true"])
+        variance_out["y_true_train_std"] = np.sqrt(variance_out["y_true_train"])
+
         return variance_out
 
     def evaluate(self):
