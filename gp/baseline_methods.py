@@ -6,8 +6,10 @@ from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 from target_measures import overall_mean
 from gp.evalutation_utils import calculate_ci
+from sklearn.model_selection import LeaveOneOut
+from logging import getLogger
 
-
+logger = getLogger(__name__)
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     """
     Using the overall mean as prediction.
@@ -57,6 +59,52 @@ def linear_regression_statsmodel():
     return
 
 
-BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression}
+def spline_reg(x_pred, x_train, y_train, **kwargs):
+
+    lambs = np.array([0.001, 0.005, 0.1, 0.25, 0.5])
+    mse = []
+    loo = LeaveOneOut()
+    x_train = x_train.reshape(-1)
+    y_train = y_train.reshape(-1)
+    x_pred = x_pred.reshape(-1)
+
+    for i in lambs:
+        error = []
+        for trg, tst in loo.split(x_train):
+            try:
+                spl = scipy.interpolate.splrep(x_train[trg], y_train[trg], s=i)
+            except ValueError as e:
+                logger.warning(f"Could not fit spline: {e}")
+                break
+            pred = scipy.interpolate.splev(x_train[tst], spl)[0]
+            if np.isnan(pred):
+                break
+            true = y_train[tst][0]
+            error.append((pred - true) ** 2)
+
+        mse.append(np.mean(error))
+    lamb_best = lambs[np.where(mse == np.min(mse))][0]
+
+    spl = scipy.interpolate.splrep(x_train, y_train, s=lamb_best)
+    y_pred = scipy.interpolate.splev(x_pred, spl)
+
+    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None)}
+
+
+BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg}
+
+
+if __name__ == "__main__":
+
+    # x = np.arange(100)
+    # y = np.sin(x)
+    x = np.linspace(0, 100, 200)
+    y = np.sin(x)
+    train_idx = np.sort(np.random.choice(np.arange(len(x)), size=int(len(x) * 0.8), replace=False))
+    # test_idx = np.setdiff1d(x, train_idx)
+
+    pred = spline_reg(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
+    print(pred.y_mean)
+
 
 
