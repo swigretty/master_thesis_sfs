@@ -112,6 +112,11 @@ class GPData():
         new_fields = {k: (v - value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
+    def __mul__(self, value):
+        new_fields = {k: (v * value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
+        new_fields["y_cov"] *= value**2
+        return self.__class__(**new_fields)
+
     @property
     def y_var(self):
         if self.y_cov is None:

@@ -37,7 +37,7 @@ class GPSimulator():
     def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
                  meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
                  data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None, rng=None,
-                 normalize_kernel=False):
+                 normalize_kernel=False, scale=1):
 
         self.sim_time = datetime.datetime.utcnow()
 
@@ -52,6 +52,7 @@ class GPSimulator():
         self.mean_f = mean_f
         self.meas_noise_var = meas_noise_var
         self.offset = np.mean([mean_f(xi) for xi in self.x])
+        self.scale = scale
 
         self.data_fraction_weights = data_fraction_weights
         self.data_fraction = data_fraction
@@ -59,8 +60,8 @@ class GPSimulator():
         self.kernel_sim = kernel_sim
         self.normalize_kernel = normalize_kernel
         if normalize_kernel:
-            self.kernel_sim, self.meas_noise_var = self.get_normalized_kernel(kernel_sim,
-                                                                              meas_noise_var=self.meas_noise_var)
+            self.kernel_sim, self.meas_noise_var, self.scale = self.get_normalized_kernel(kernel_sim,
+                                                                                     meas_noise_var=self.meas_noise_var)
 
         if kernel_fit is None:
             kernel_fit = self.kernel_sim
@@ -69,15 +70,19 @@ class GPSimulator():
         self.normalize_y = normalize_y
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
                            alpha=0)  # No Variance for fitting the gpm_sim and getting true decomposed
-        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var, rng=rng)
 
         self.f_true = f_true  # Noise free BP values, if None, samples from self.gpm_sim
         # Vector of measurement noise values for every input in x.
         # If None, draws iid samples from normal dist with var=self.meas_noise_var
         self.meas_noise = meas_noise
-
         # Fit the true GP once. This is needed for the true mean decomposition
         self.gpm_sim.fit(self.y_true.x, self.f_true.y)
+
+        self.meas_noise_var_fit = self.meas_noise_var
+        if self.normalize_y:
+            self._y_train_std = np.std(self.y_true_train.y)
+            self.meas_noise_var_fit = self.meas_noise_var_fit / self._y_train_std**2
+        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var_fit, rng=rng)
 
         self.output_path = output_path
         if self.output_path is not None:
@@ -85,9 +90,7 @@ class GPSimulator():
                 self.output_path = self.output_path(self.sim_time)
             self.output_path.mkdir(parents=True)
             with (self.output_path/"config.json").open("w") as f:
-                f.write(json.dumps({k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)},
-                                   default=str))
-
+                f.write(json.dumps(self.current_config, default=str))
             self.df.to_csv(self.output_path / f"data.csv")
 
         init_kwargs = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
@@ -285,7 +288,7 @@ class GPSimulator():
 
         logger.info(f"final kernel {kernel_} with scaling {1/scale} and {y_std=}")
 
-        return kernel_, meas_noise_var / scale ** 2
+        return kernel_, meas_noise_var / scale ** 2, scale
 
     def choose_sample_from_prior(self, data_index: int = 0):
         data_single = copy(self.y_true_samples)
@@ -296,12 +299,12 @@ class GPSimulator():
         if (not hasattr(self.gpm_fit, "X_train_")) or refit:
             self.gpm_fit.fit(self.y_true_train.x, self.y_true_train.y)
 
-    @Plotter
-    def plot_prior(self, add_offset=False, title="Samples from Prior Distribution", ax=None):
-        data_prior = self.y_true_samples
+        if self.normalize_y:
+            assert (self._y_train_std - self.gpm_fit._y_train_std) < 0.0000001
 
-        if add_offset:
-            data_prior = [data + self.offset for data in data_prior]
+    @Plotter
+    def plot_prior(self, title="Samples from Prior Distribution", ax=None):
+        data_prior = self.y_true_samples
 
         plot_lim = 30
 
@@ -318,13 +321,11 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, add_offset=False, title="Predictive Distribution", ax=None, pred_data=None, **kwargs):
+    def plot_posterior(self, title="Predictive Distribution", ax=None, pred_data=None, **kwargs):
         if pred_data is None:
             pred_data = self.f_post
         data_dict = {"f_post": pred_data, "y_true_subsampled": self.y_true_train,
                      "f_true": self.f_true}
-        if add_offset:
-            data_dict = {k: v + self.offset for k, v in data_dict}
 
         plot_posterior(self.x, data_dict["f_post"].y_mean, y_post_std=data_dict["f_post"].y_std,
                        x_red=data_dict["y_true_subsampled"].x, y_red=data_dict["y_true_subsampled"].y,
@@ -332,31 +333,30 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_true_with_samples(self, add_offset=True, ax=None):
-        data_true = self.f_true
+    def plot_true_with_samples(self, ax=None):
+        f_true = self.f_true
+        y_true = self.y_true
         data = self.y_true_train
-        if add_offset:
-            data_true += self.offset
-            data += self.offset
+
         ax.set_title("True Time Series with Samples")
-        ax.plot(data_true.x, data_true.y, "r:",
-                label=f"var(f_true): {np.var(self.f_true.y)}, var(y_true): {np.var(self.y_true.y)}")
+        ax.plot(f_true.x, f_true.y, "r:",
+                label=f"var(f_true): {np.var(f_true.y)}, var(y_true): {np.var(y_true.y)}")
         ax.scatter(data.x, data.y, color="red", zorder=5, label=f"{np.var(data.y)=}")
         ax.legend()
 
-    def plot(self, add_offset=False):
+    def plot(self):
         nrows = 3
         ncols = 2
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
 
-        self.plot_prior(add_offset=add_offset, ax=ax[0, 0])
+        self.plot_prior(ax=ax[0, 0])
 
         plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 1])
 
         self.fit()
 
-        self.plot_posterior(add_offset=add_offset, ax=ax[1, 0])
+        self.plot_posterior(ax=ax[1, 0])
 
         plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1, 1])
 
@@ -380,7 +380,7 @@ class GPSimulator():
         current_row = 0
         current_col = 0
         fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows*10, ncols*10))
-        self.plot_posterior(ax=axs[current_row, current_col], add_offset=False)
+        self.plot_posterior(ax=axs[current_row, current_col])
 
         for k, v in self.eval_config.items():
             if current_col == (ncols-1):
@@ -413,8 +413,6 @@ class GPSimulator():
 
     def get_decomposed_variance(self):
         variance_out = {}
-        # if isinstance(self.kernel_sim, Product) and isinstance(self.kernel_sim.k1, ConstantKernel):
-        #     scale_kernel = self.kernel_sim.k1
 
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             variance_out[k] = np.var(v)
@@ -448,6 +446,12 @@ class GPSimulator():
     @property
     def current_init_kwargs(self):
         return {k: v for k, v in vars(self).items() if k in inspect.signature(GPSimulator.__init__).parameters.keys()}
+
+    @property
+    def current_config(self):
+        base = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
+        base["y_train_std"] = self._y_train_std
+        return base
 
     @Plotter
     def mean_decomposition_plot(self, ax=None):
@@ -533,8 +537,8 @@ class GPSimulationEvaluator(GPSimulator):
 
         return perf_all
 
-    def plot(self, add_offset=False):
-        super().plot(add_offset=add_offset)
+    def plot(self):
+        super().plot()
         for method, pred in self.pred_baseline.items():
             self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
 

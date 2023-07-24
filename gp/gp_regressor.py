@@ -121,6 +121,9 @@ class GPR(GaussianProcessRegressor):
             res = super().predict(X, return_cov=return_cov, return_std=return_std)
 
         if predict_y:
+            alpha = self.alpha
+            if self.normalize_y:
+                alpha *= self._y_train_std**2
             if return_cov:
                 res = (res[0], res[1] + np.diag(np.repeat(self.alpha, len(res[0]))))
             if return_std:
