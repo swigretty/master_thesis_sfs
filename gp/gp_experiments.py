@@ -45,7 +45,7 @@ def get_sample_path_variance_kernel(kernel, t, nsim=1000):
 
 def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
                            n_samples=100, experiment_name="test", normalize_kernel=False,
-                           normalize_y=True):
+                           normalize_y=True, only_var=False):
     mode_config_orig = mode_config.to_dict()
     mode_config_norm = copy.copy(mode_config_orig)
 
@@ -73,7 +73,10 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
         simulator.plot_gp_regression_sample(nplots=1)
         simulator.evaluate()
         simulator.evaluate_target_measures()
-        eval_dict, measure_sum_df = simulator.evaluate_multisample(n_samples)
+        eval_dict, measure_sum_df = simulator.evaluate_multisample(n_samples, only_var=only_var)
+
+        if only_var:
+            return
 
         for k, v in simulator.current_init_kwargs.items():
             if not isinstance(v, np.ndarray):
@@ -145,14 +148,14 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "seasonal_spline_n100"
+    experiment_name = "variance_distribution"
 
     # plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
     #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.5)
-    # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="variance_distribution"),
-    #                        experiment_name=experiment_name, n_samples=10, data_fraction=(0.1, ),
-    #                        normalize_kernel=False, normalize_y=True)
-    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
-                                 normalize_kernel=False)
+    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n200"),
+                           experiment_name=experiment_name, n_samples=200, data_fraction=(0.1, ),
+                           normalize_kernel=False, normalize_y=True, only_var=True)
+    # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
+    #                              normalize_kernel=False)
 
 
