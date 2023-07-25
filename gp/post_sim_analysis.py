@@ -82,7 +82,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "data_fraction_seasonal"
+    experiment_name = "data_fraction_seasonal_normalize_y"
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 

@@ -8,13 +8,18 @@ from target_measures import overall_mean
 from gp.evalutation_utils import calculate_ci
 from sklearn.model_selection import LeaveOneOut
 from logging import getLogger
+import matplotlib.pyplot as plt
+from sklearn.model_selection import KFold
+
 
 logger = getLogger(__name__)
+
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     """
     Using the overall mean as prediction.
     cov is calculated assuming iid data.
     """
+    logger.info("Extracting empirical Mean")
     y_train_mean = np.mean(y_train)
     n = len(y_train)
     y = np.repeat(np.mean(y_train), len(x_pred))
@@ -30,6 +35,8 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
 
 
 def linear_regression(x_pred, x_train, y_train, return_ci=False):
+    logger.info("Fitting linear regression")
+
     y_cov = None
 
     t_freq_train = x_train * 2*np.pi * 1/24
@@ -59,34 +66,57 @@ def linear_regression_statsmodel():
     return
 
 
-def spline_reg(x_pred, x_train, y_train, **kwargs):
+def cross_val_score(self, train_x, train_y, n_folds=3):
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
+    scores = []
+    for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
+        self.gp.fit(train_x[train_idx], train_y[train_idx])
+        predictions = self.gp.predict(train_x[test_idx])
+        scores.append(cost_function(train_y[test_idx], predictions))
+    return np.mean(scores)
 
-    lambs = np.array([0.001, 0.005, 0.1, 0.25, 0.5])
+def spline_reg(x_pred, x_train, y_train, **kwargs):
+    logger.info("Fitting spline")
+
+    lambs = np.array([0.8])
     mse = []
     loo = LeaveOneOut()
     x_train = x_train.reshape(-1)
+    assert all(sorted(x_train) == x_train)
     y_train = y_train.reshape(-1)
     x_pred = x_pred.reshape(-1)
 
-    for i in lambs:
-        error = []
-        for trg, tst in loo.split(x_train):
-            try:
-                spl = scipy.interpolate.splrep(x_train[trg], y_train[trg], s=i)
-            except ValueError as e:
-                logger.warning(f"Could not fit spline: {e}")
-                break
-            pred = scipy.interpolate.splev(x_train[tst], spl)[0]
-            if np.isnan(pred):
-                break
-            true = y_train[tst][0]
-            error.append((pred - true) ** 2)
+    # for i in lambs:
+    #     error = []
+    #     for trg, tst in loo.split(x_train):
+    #         try:
+    #             spl = scipy.interpolate.splrep(x_train[trg], y_train[trg], s=i, per=True)
+    #         except ValueError as e:
+    #             logger.warning(f"Could not fit spline: {e}")
+    #             break
+    #         pred = scipy.interpolate.splev(x_train[tst], spl, ext=1)[0]
+    #         if np.isnan(pred):
+    #             break
+    #         true = y_train[tst][0]
+    #         error.append((pred - true) ** 2)
+    #
+    #     mse.append(np.mean(error))
+    # lamb_best = lambs[np.where(mse == np.min(mse))][0]
+    y_std = np.std(y_train)
+    weights = np.repeat(1/y_std, len(x_train))
 
-        mse.append(np.mean(error))
-    lamb_best = lambs[np.where(mse == np.min(mse))][0]
+    lamb_best = len(x_train)-np.sqrt(2*len(x_train))
+    lamb_best = 10
+    x_train_rep = [i for i in range(1, len(x_train)) if x_train[i] == x_train[i-1]]
+    if x_train_rep:
+        unique_idx = np.setdiff1d(range(len(x_train)), x_train_rep)
+        weights[np.array(x_train_rep)-1] = 2/y_std
+        x_train = x_train[unique_idx]
+        y_train = y_train[unique_idx]
+        weights = weights[unique_idx]
 
-    spl = scipy.interpolate.splrep(x_train, y_train, s=lamb_best)
-    y_pred = scipy.interpolate.splev(x_pred, spl)
+    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, per=True, s=lamb_best)
+    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None)}
 
@@ -104,7 +134,10 @@ if __name__ == "__main__":
     # test_idx = np.setdiff1d(x, train_idx)
 
     pred = spline_reg(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
-    print(pred.y_mean)
 
+    fig, ax = plt.subplots()
+    ax.plot(pred["data"].x, pred["data"].y_mean)
+    plt.show()
 
+    print()
 

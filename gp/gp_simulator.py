@@ -502,6 +502,7 @@ class GPSimulationEvaluator(GPSimulator):
             gps = self
         pred_baseline = {}
         for eval_name, eval_fun in self.baseline_methods.items():
+            assert all(gps.y_true_train.x == sorted(gps.y_true_train.x))
             pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_ci=True)
         return pred_baseline
 
@@ -643,7 +644,7 @@ class GPSimulationEvaluator(GPSimulator):
         train_x = self.y_true_train.x
 
         for i in range(n_samples):
-            idx = self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True)
+            idx = sorted(self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
             y_sub = train_y[idx]
             x_sub = train_x[idx]
             pred = pred_fun(self.x, x_sub, y_sub)

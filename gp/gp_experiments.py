@@ -123,12 +123,12 @@ def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_nois
 #     return modes
 
 
-def plot_sample(normalize_kernel=True, experiment_name="test_single_sample", rng=None,
-                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2):
+def plot_sample(normalize_kernel=False, experiment_name="test_single_sample", rng=None,
+                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2, normalize_y=True):
     output_path_gp_sim = partial(get_output_path, session_name=config.kernel_sim_name, experiment_name=experiment_name)
     simulator = GPSimulationEvaluator(
         output_path=output_path_gp_sim, normalize_kernel=normalize_kernel, rng=rng, data_fraction=data_fraction,
-        normalize_y=True, **config.to_dict())
+        normalize_y=normalize_y, **config.to_dict())
     simulator.plot_gp_regression_sample(nplots=nplots)
 
 
@@ -148,9 +148,9 @@ if __name__ == "__main__":
     experiment_name = "spline"
 
     # plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
-    #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.2)
-    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n10"),
-                           experiment_name=experiment_name, n_samples=10, data_fraction=(0.8, ),
+    #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.5)
+    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="variance_distribution"),
+                           experiment_name=experiment_name, n_samples=10, data_fraction=(0.1, ),
                            normalize_kernel=False, normalize_y=True)
     # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
     #                              normalize_kernel=False)
