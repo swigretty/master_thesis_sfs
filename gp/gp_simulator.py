@@ -504,6 +504,8 @@ class GPSimulationEvaluator(GPSimulator):
         for eval_name, eval_fun in self.baseline_methods.items():
             assert all(gps.y_true_train.x == sorted(gps.y_true_train.x))
             pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_ci=True)
+            if fun_new := pred_baseline[eval_name].get("fun"):
+                self.baseline_methods[eval_name] = fun_new
         return pred_baseline
 
     @property

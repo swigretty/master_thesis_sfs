@@ -14,6 +14,7 @@ from sklearn.model_selection import KFold
 
 logger = getLogger(__name__)
 
+
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     """
     Using the overall mean as prediction.
@@ -35,7 +36,6 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
 
 
 def linear_regression(x_pred, x_train, y_train, return_ci=False):
-    logger.info("Fitting linear regression")
 
     y_cov = None
 
@@ -66,59 +66,70 @@ def linear_regression_statsmodel():
     return
 
 
-def cross_val_score(self, train_x, train_y, n_folds=3):
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
-    scores = []
-    for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
-        self.gp.fit(train_x[train_idx], train_y[train_idx])
-        predictions = self.gp.predict(train_x[test_idx])
-        scores.append(cost_function(train_y[test_idx], predictions))
-    return np.mean(scores)
+def mse(true, pred):
+    return np.mean((pred - true) ** 2)
 
-def spline_reg(x_pred, x_train, y_train, **kwargs):
-    logger.info("Fitting spline")
 
-    lambs = np.array([0.8])
-    mse = []
-    loo = LeaveOneOut()
+def get_rep_count_cluster(x_train_rep):
+    diffs = np.diff(x_train_rep)
+    rep_count = {}
+    current_cluster = x_train_rep[0]
+    rep_count[current_cluster] = 1
+    for i, diff in enumerate(diffs):
+        if diff == 1:
+            rep_count[current_cluster] += 1
+        else:
+            current_cluster = x_train_rep[i + 1]
+            rep_count[current_cluster] = 1
+    return rep_count
+
+
+def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
+    lambs = np.array([100, 200, 400, 600])
+
     x_train = x_train.reshape(-1)
     assert all(sorted(x_train) == x_train)
     y_train = y_train.reshape(-1)
     x_pred = x_pred.reshape(-1)
 
-    # for i in lambs:
-    #     error = []
-    #     for trg, tst in loo.split(x_train):
-    #         try:
-    #             spl = scipy.interpolate.splrep(x_train[trg], y_train[trg], s=i, per=True)
-    #         except ValueError as e:
-    #             logger.warning(f"Could not fit spline: {e}")
-    #             break
-    #         pred = scipy.interpolate.splev(x_train[tst], spl, ext=1)[0]
-    #         if np.isnan(pred):
-    #             break
-    #         true = y_train[tst][0]
-    #         error.append((pred - true) ** 2)
-    #
-    #     mse.append(np.mean(error))
-    # lamb_best = lambs[np.where(mse == np.min(mse))][0]
-    y_std = np.std(y_train)
+    if y_std is None:
+        y_std = np.std(y_train)
+
     weights = np.repeat(1/y_std, len(x_train))
 
-    lamb_best = len(x_train)-np.sqrt(2*len(x_train))
-    lamb_best = 10
-    x_train_rep = [i for i in range(1, len(x_train)) if x_train[i] == x_train[i-1]]
+    if s is None:
+        cv_perf = []
+        for lamb in lambs:
+            fit_pred_fun = partial(spline_reg, y_std=y_std, s=lamb)
+            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
+
+        s = lambs[np.where(cv_perf == np.min(cv_perf))][0]
+
+    x_train_rep = [i for i in range(len(x_train)-1) if x_train[i] == x_train[i+1]]
+
     if x_train_rep:
-        unique_idx = np.setdiff1d(range(len(x_train)), x_train_rep)
-        weights[np.array(x_train_rep)-1] = 2/y_std
+        rep_count = get_rep_count_cluster(x_train_rep)
+        ignore_idx = [idx + i for idx, num in rep_count.items() for i in range(1, num+1)]
+        unique_idx = np.setdiff1d(range(len(x_train)), ignore_idx)
+        weights[np.array(list(rep_count.keys()))] = (np.array(list(rep_count.values())) + 1) * 1/y_std
         x_train = x_train[unique_idx]
         y_train = y_train[unique_idx]
         weights = weights[unique_idx]
 
-    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, per=True, s=lamb_best)
+    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, per=True, s=s)
     y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)
 
-    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None)}
+    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
+            "fun": partial(spline_reg, y_std=y_std, s=s)}
+
+
+def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=3, cost_function=mse):
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
+    scores = []
+    for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
+        pred = fit_pred_fun(train_x[test_idx], train_x[train_idx], train_y[train_idx])
+        scores.append(cost_function(train_y[test_idx], pred["data"].y_mean))
+    return np.mean(scores)
 
 
 BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg}
