@@ -582,7 +582,7 @@ class GPSimulationEvaluator(GPSimulator):
 
         for col in variance_df.columns:
             fig, ax = plt.subplots(nrows=1, ncols=1)
-            ax.hist(variance_df[col])
+            ax.hist(variance_df[col], bins=n_samples/4)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
 
         if eval_dict:

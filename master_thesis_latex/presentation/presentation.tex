@@ -669,8 +669,39 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 	\end{columns}
 
+\end{frame}
+
+\begin{frame}
+	\frametitle{Simulation - Population Level Time Series Characteristics}
+	200 draws from GP
+
+			\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.45\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=0.7\linewidth]{weekly_var}
+				\end{figure}
+
+			\begin{figure}
+					\includegraphics[width=0.7\linewidth]{variance_y_true_std_summary}
+					\caption{Global Standard Deviation}
+			\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.7\linewidth]{20230531_LinTrap_amplitude_distrib}
+				\end{figure}
+
+			\begin{figure}
+					\includegraphics[width=0.7\linewidth]{variance_ampl_summary}
+					\caption{Amplitude (= (max-min)/2) of Seasonal Component}
+			\end{figure}
+
+
+		\end{column}
+	\end{columns}
 
 \end{frame}
+
 
 \begin{frame}
 	\frametitle{Simulation}
