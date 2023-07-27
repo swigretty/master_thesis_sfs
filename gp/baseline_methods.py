@@ -104,6 +104,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
 
         s = lambs[np.where(cv_perf == np.min(cv_perf))][0]
+        logger.info(f"Best smooting parameter for spline {s}")
 
     x_train_rep = [i for i in range(len(x_train)-1) if x_train[i] == x_train[i+1]]
 
@@ -116,14 +117,14 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
         y_train = y_train[unique_idx]
         weights = weights[unique_idx]
 
-    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, per=True, s=s)
-    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)
+    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, s=s)  # per=True,
+    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3) # 3 means just reuse the boundary value to extrapolate
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
             "fun": partial(spline_reg, y_std=y_std, s=s)}
 
 
-def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=3, cost_function=mse):
+def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
     scores = []
     for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):

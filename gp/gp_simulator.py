@@ -493,7 +493,7 @@ class GPSimulationEvaluator(GPSimulator):
 
         if baseline_methods is None:
             baseline_methods = BASELINE_METHODS
-        self.baseline_methods = baseline_methods
+        self.baseline_methods = copy(baseline_methods)
         if target_measures is None:
             target_measures = TARGET_MEASURES
         self.target_measures = target_measures
@@ -548,14 +548,20 @@ class GPSimulationEvaluator(GPSimulator):
 
         return perf_all
 
-    def plot(self):
-        super().plot()
+    def plot_posterior_baseline(self):
         for method, pred in self.pred_baseline.items():
             self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
+
+    def plot(self):
+        super().plot()
+        self.plot_posterior_baseline()
 
     def evaluate_multisample(self, n_samples=100, only_var=False):
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
+        # TODO is it fair to reuse baseline methods?
+        # use the baseline method just identified, so you don't have to reevaluate smoothing params for spline
+        # each time with CV
         current_config["baseline_methods"] = self.baseline_methods
         current_config["target_measures"] = self.target_measures
 
@@ -629,16 +635,19 @@ class GPSimulationEvaluator(GPSimulator):
             ax.plot(gps.x, np.repeat(np.mean(v) + gps.offset, len(gps.x)), label=k, linestyle=linestyles[i])
         ax.legend()
 
-    def plot_gp_regression_sample(self, nplots=1):
+    def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
         gps = self
         for i in range(nplots):
             if nplots > 1:
                 gps_kwargs["rng"] = np.random.default_rng(i)
                 gps = GPSimulationEvaluator(**gps_kwargs)
-            gps.plot_true_with_samples()
-            gps.plot()
-            gps.plot_errors()
+            if plot_method is None:
+                gps.plot_true_with_samples()
+                gps.plot()
+                gps.plot_errors()
+            else:
+                getattr(gps, plot_method)()
             # self.plot_overall_mean(gps=gps)
         return
 

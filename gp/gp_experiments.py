@@ -127,12 +127,12 @@ def evaluate_data_fraction_modes(modes, data_fraction=(0.05, 0.1, 0.2, 0.4), mea
 
 
 def plot_sample(normalize_kernel=False, experiment_name="test_single_sample", rng=None,
-                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2, normalize_y=True):
-    output_path_gp_sim = partial(get_output_path, session_name=config.kernel_sim_name, experiment_name=experiment_name)
+                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2, normalize_y=True, plot_method=None):
+    output_path_gp_sim = partial(get_output_path, session_name=config.session_name, experiment_name=experiment_name)
     simulator = GPSimulationEvaluator(
         output_path=output_path_gp_sim, normalize_kernel=normalize_kernel, rng=rng, data_fraction=data_fraction,
         normalize_y=normalize_y, **config.to_dict())
-    simulator.plot_gp_regression_sample(nplots=nplots)
+    simulator.plot_gp_regression_sample(nplots=nplots, plot_method=plot_method)
 
 
 if __name__ == "__main__":
@@ -148,14 +148,17 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "variance_distribution"
+    experiment_name = "seasonal_spline_n100_v2"
+    # for datafrac in [0.1, 0.2, 0.4, 0.6]:
+    #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
+    #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
+    #                 data_fraction=datafrac,
+    #                 normalize_y=True, plot_method="plot_posterior_baseline")
 
-    # plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
-    #             config=GPSimulatorConfig(kernel_sim_name="sin_rbf"), data_fraction=0.5)
-    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n200"),
-                           experiment_name=experiment_name, n_samples=200, data_fraction=(0.1, ),
-                           normalize_kernel=False, normalize_y=True, only_var=True)
-    # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
-    #                              normalize_kernel=False)
+    # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n200"),
+    #                        experiment_name=experiment_name, n_samples=200, data_fraction=(0.1, ),
+    #                        normalize_kernel=False, normalize_y=True, only_var=True)
+    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
+                                 normalize_kernel=False)
 
 
