@@ -12,7 +12,7 @@ split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_
 
 
 def target_measure_perf_plot(target_measures_df):
-    cdict = {0: 'red', 1: 'blue', 2: 'green'}
+    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange"}
 
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
@@ -82,7 +82,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "data_fraction_seasonal_normalize_y"
+    experiment_name = "seasonal_spline_n100"
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 
