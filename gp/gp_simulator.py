@@ -418,6 +418,7 @@ class GPSimulator():
             variance_out[k] = np.var(v)
             if "Sine" in k:
                 variance_out["ampl"] = np.sqrt(2 * variance_out[k])
+                variance_out["dip_ampl"] = variance_out["ampl"] * 2/np.pi
 
         variance_out["f_true"] = np.var(self.f_true.y)
         variance_out["y_true"] = np.var(self.y_true.y)
@@ -583,6 +584,7 @@ class GPSimulationEvaluator(GPSimulator):
         for col in variance_df.columns:
             fig, ax = plt.subplots(nrows=1, ncols=1)
             ax.hist(variance_df[col], bins=int(n_samples/4))
+            ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed', linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
 
         if eval_dict:
