@@ -43,7 +43,7 @@ def get_sample_path_variance_kernel(kernel, t, nsim=1000):
     return sim_info_mean["var"]
 
 
-def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
+def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
                            n_samples=100, experiment_name="test", normalize_kernel=False,
                            normalize_y=True, only_var=False):
     mode_config_orig = mode_config.to_dict()
@@ -98,7 +98,7 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.1, 0.2, 0.4),
     return df
 
 
-def evaluate_data_fraction_modes(modes, data_fraction=(0.1, 0.2, 0.4), meas_noise_var=(None,),
+def evaluate_data_fraction_modes(modes, data_fraction=(0.05, 0.1, 0.2, 0.4), meas_noise_var=(None,),
                                  n_samples=100, experiment_name="test", normalize_kernel=False, normalize_y=True):
     experiment_output_path = get_output_path(experiment_name=experiment_name)
 
