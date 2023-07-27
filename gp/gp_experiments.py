@@ -148,17 +148,17 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "seasonal_spline_n100_v2"
+    experiment_name = "variance_distribution"
     # for datafrac in [0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=1,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
     #                 data_fraction=datafrac,
     #                 normalize_y=True, plot_method="plot_posterior_baseline")
 
-    # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n200"),
-    #                        experiment_name=experiment_name, n_samples=200, data_fraction=(0.1, ),
-    #                        normalize_kernel=False, normalize_y=True, only_var=True)
-    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
-                                 normalize_kernel=False)
+    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n300"),
+                           experiment_name=experiment_name, n_samples=300, data_fraction=(0.1, ),
+                           normalize_kernel=False, normalize_y=True, only_var=True)
+    # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
+    #                              normalize_kernel=False)
 
 
