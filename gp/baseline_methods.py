@@ -85,7 +85,7 @@ def get_rep_count_cluster(x_train_rep):
 
 
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
-    lambs = np.array([100, 200, 400, 600])
+    lambs = np.array([1, 10, 100, 200, 500])
 
     x_train = x_train.reshape(-1)
     assert all(sorted(x_train) == x_train)
@@ -118,7 +118,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
         weights = weights[unique_idx]
 
     spl = scipy.interpolate.splrep(x_train, y_train, w=weights, s=s)  # per=True,
-    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3) # 3 means just reuse the boundary value to extrapolate
+    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)  # 3 means just reuse the boundary value to extrapolate
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
             "fun": partial(spline_reg, y_std=y_std, s=s)}
