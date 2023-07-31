@@ -10,6 +10,8 @@ from sklearn.model_selection import LeaveOneOut
 from logging import getLogger
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
+import statsmodels.api as sm
+from patsy import dmatrix
 
 
 logger = getLogger(__name__)
@@ -20,8 +22,6 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     Using the overall mean as prediction.
     cov is calculated assuming iid data.
     """
-    logger.info("Extracting empirical Mean")
-    y_train_mean = np.mean(y_train)
     n = len(y_train)
     y = np.repeat(np.mean(y_train), len(x_pred))
     cis = {}
@@ -84,9 +84,41 @@ def get_rep_count_cluster(x_train_rep):
     return rep_count
 
 
+def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
+    dfs = np.array([3, 4, 5, 6, 7, 8, 9, 10])
+    assert all(sorted(x_train) == x_train)
+
+    if df is None:
+        cv_perf = []
+        for _df in dfs:
+            fit_pred_fun = partial(spline_reg_v2, df=_df)
+            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
+
+        df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
+        logger.info(f"Best smoothing parameter for spline {df=}")
+
+    transformed_x = dmatrix(
+        f"bs(train, degree=3, df={df}, include_intercept=False)",
+        {"train": x_train}, return_type='dataframe')
+    cs = sm.GLM(y_train, transformed_x).fit()
+    y_pred = cs.predict(
+        dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
+                return_type='matrix'))
+
+    # try to get Bspline basis
+    # c = np.eye(len(t) - k - 1)
+    # k = 3
+    # m = len(set(x_train))
+    # nest = max(m + k + 1, 2 * k + 3)
+    # c = np.empty((nest,), float)
+    # from scipy.interpolate import BSpline
+    # design_matrix_gh = BSpline(np.unique(x_train), c, k)(x_train)
+    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
+            "fun": partial(spline_reg_v2, df=df)}
+
+
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
     lambs = np.array([10, 100, 200, 400, 500])
-
     x_train = x_train.reshape(-1)
     assert all(sorted(x_train) == x_train)
     y_train = y_train.reshape(-1)
@@ -133,7 +165,8 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     return np.mean(scores)
 
 
-BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg}
+BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg,
+                    "spline2": spline_reg_v2}
 
 
 if __name__ == "__main__":
