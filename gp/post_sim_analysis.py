@@ -17,7 +17,7 @@ def target_measure_perf_plot(target_measures_df):
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
 
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(14, 4))
+    fig, ax = plt.subplots(nrows=1, ncols=len(target_measures_df["data_fraction"].unique()), figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
         ax[i].set_title(f"{data_fraction=}")
         for method, df in dff.groupby("method"):
@@ -82,7 +82,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "seasonal_spline_n100"
+    experiment_name = "seasonal_spline_n100_v2"
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 

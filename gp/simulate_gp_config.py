@@ -22,17 +22,20 @@ PARAM_NAMES = ["noise_level", "length_scale", "constant_value", "periodicity", "
 
 # Simple Kernels
 simple_kernel_config = {
-    "white": {"kernel": WhiteKernel, "params": {"noise_level": 1}, "bound_params": {}, "var": 1, "var_bounds": (0.1, 10)},
-    "ou": {"kernel": Matern, "params": {"length_scale": 3, "nu": 0.5}, "bound_params": {"length_scale_bounds": (1, 10)},
-           "var": 5, "var_bounds": (1, 100)},
+    "white": {"kernel": WhiteKernel, "params": {"noise_level": 1}, "bound_params": {}, "var": 1,
+              "var_bounds": (0.1, 10)},
+    "ou": {"kernel": Matern, "params": {"length_scale": 3, "nu": 0.5},
+           "bound_params": {"length_scale_bounds": (0.1, 10)},
+           "var": 5, "var_bounds": (0.1, 100)},
     "rbf_long": {"kernel": RBF, "params": {"length_scale": 50}, "bound_params": {"length_scale_bounds": (1, 200)},
-                 "var": 5, "var_bounds": (0.1, 10)},
-    "rbf_short": {"kernel": RBF, "params": {"length_scale": 3}, "bound_params": {"length_scale_bounds": (1, 200)},
+                 "var": 5, "var_bounds": (0.1, 100)},
+    "rbf_short": {"kernel": RBF, "params": {"length_scale": 3}, "bound_params": {"length_scale_bounds": (0.1, 20)},
                   "var": 1, "var_bounds": (0.1, 10)},
     "rbf_medium": {"kernel": RBF, "params": {"length_scale": 25}, "bound_params": {"length_scale_bounds": (1, 200)},
                   "var": 1, "var_bounds": (0.1, 10)},
     "sin_day": {"kernel": ExpSineSquared, "params": {
-        "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {"periodicity_bounds": "fixed"},
+        "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {"periodicity_bounds": "fixed",
+                                                                        "length_scale_bounds": (0.1, 20)},
                 "var": 14**2, "var_bounds": (10, 1000)},
     # Note sample_ampl = sqrt(2*sample_var)
     # var of 100 leads to sample_var: 4.17, sample_ampl: 2.89 (overall max-min = 5.78)
@@ -116,6 +119,9 @@ class GPSimulatorConfig():
             kernel = ConstantKernel(constant_value=getattr(self, f"{k_name}_var"),
                                     constant_value_bounds=getattr(self, f"{k_name}_var_bounds")) * \
                      base_config["kernel"](**base_config["bound_params"], **base_config["params"])
+            # kernel = ConstantKernel(constant_value=getattr(self, f"{k_name}_var")) * \
+            #          base_config["kernel"](**base_config["params"])
+
             setattr(self, f"{k_name}_kernel", kernel)
         if self.session_name is None:
             self.session_name = self.kernel_sim_name

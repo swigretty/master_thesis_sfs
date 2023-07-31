@@ -85,7 +85,7 @@ def get_rep_count_cluster(x_train_rep):
 
 
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
-    lambs = np.array([1, 10, 100, 200, 500])
+    lambs = np.array([10, 100, 200, 400, 500])
 
     x_train = x_train.reshape(-1)
     assert all(sorted(x_train) == x_train)
