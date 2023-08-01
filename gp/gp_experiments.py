@@ -139,8 +139,8 @@ if __name__ == "__main__":
     setup_logging()
 
     modes = [
-        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-                     session_name="sin_rbf_default"),
+        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
+        #              session_name="sin_rbf_default"),
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
                  session_name="sin_rbf_seasonal_default"),
         # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 2,
@@ -148,7 +148,7 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "seasonal_spline_test"
+    experiment_name = "seasonal_spline_n100_v5"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),

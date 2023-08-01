@@ -147,7 +147,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
         s = lambs[np.where(cv_perf == np.min(np.array(cv_perf)[idx_numeric]))][0]
         logger.info(f"Best smooting parameter for spline {s}")
 
-    if len(x_train) != m:  # If Tthere are duplicates
+    if len(x_train) != m:  # If there are duplicates
         rep_count = get_rep_count_cluster(x_train)
         # Weight is number of repetitions of same datapoint (bootstrap)
         weights = np.array(list(rep_count.values()))
