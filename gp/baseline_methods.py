@@ -85,7 +85,7 @@ def get_rep_count_cluster(x_train_rep):
 
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
-    dfs = np.array([3, 4, 5, 6, 7, 8, 9, 10])
+    dfs = np.array([3, 6, 12, 24, 50, 100])
     assert all(sorted(x_train) == x_train)
 
     if df is None:
@@ -117,22 +117,30 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
             "fun": partial(spline_reg_v2, df=df)}
 
 
-def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
-    lambs = np.array([10, 100, 200, 400, 500])
+def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, **kwargs):
+    m = len(x_train)
+    lambs = np.linspace(max(m - np.sqrt(2 * m) - m * 0.8, 10),
+                        m + np.sqrt(2 * m) + m * 0.5, 20)
     x_train = x_train.reshape(-1)
     assert all(sorted(x_train) == x_train)
     y_train = y_train.reshape(-1)
     x_pred = x_pred.reshape(-1)
 
-    if y_std is None:
-        y_std = np.std(y_train)
+    if normalize_y:
+        y_train_mean = np.mean(y_train)
+        y_train_std = np.std(y_train)
+        y_train = (y_train-y_train_mean)/y_train_std
 
+
+    # if y_std is None:
+    #     y_std = np.std(y_train)
+    #
     weights = np.repeat(1/y_std, len(x_train))
 
     if s is None:
         cv_perf = []
         for lamb in lambs:
-            fit_pred_fun = partial(spline_reg, y_std=y_std, s=lamb)
+            fit_pred_fun = partial(spline_reg, y_std=y_std, s=lamb, normalize_y=False)
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
 
         s = lambs[np.where(cv_perf == np.min(cv_perf))][0]
@@ -148,9 +156,15 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=None, **kwargs):
         x_train = x_train[unique_idx]
         y_train = y_train[unique_idx]
         weights = weights[unique_idx]
+    #
+    # spl = scipy.interpolate.splrep(x_train, y_train, w=weights, s=s)  # per=True,
+    # y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)  # 3 means just reuse the boundary value to extrapolate
 
-    spl = scipy.interpolate.splrep(x_train, y_train, w=weights, s=s)  # per=True,
-    y_pred = scipy.interpolate.splev(x_pred, spl, ext=3)  # 3 means just reuse the boundary value to extrapolate
+    spl = scipy.interpolate.UnivariateSpline(x_train, y_train, s=s, ext=3)
+    y_pred = spl(x_pred)
+
+    if normalize_y:
+        y_pred = y_pred * y_train_std + y_train_mean
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
             "fun": partial(spline_reg, y_std=y_std, s=s)}
@@ -165,8 +179,7 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     return np.mean(scores)
 
 
-BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg,
-                    "spline2": spline_reg_v2}
+BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg}
 
 
 if __name__ == "__main__":

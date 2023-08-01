@@ -321,10 +321,13 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, title="Predictive Distribution", ax=None, pred_data=None, **kwargs):
+    def plot_posterior(self, title="Predictive Distribution", ax=None, pred_data=None,
+                       y_true_subsampled=None, **kwargs):
         if pred_data is None:
             pred_data = self.f_post
-        data_dict = {"f_post": pred_data, "y_true_subsampled": self.y_true_train,
+        if y_true_subsampled is None:
+            y_true_subsampled = self.y_true_train
+        data_dict = {"f_post": pred_data, "y_true_subsampled": y_true_subsampled,
                      "f_true": self.f_true}
 
         plot_posterior(self.x, data_dict["f_post"].y_mean, y_post_std=data_dict["f_post"].y_std,
@@ -589,7 +592,7 @@ class GPSimulationEvaluator(GPSimulator):
 
         for col in variance_df.columns:
             fig, ax = plt.subplots(nrows=1, ncols=1)
-            ax.hist(variance_df[col], bins=int(n_samples/4))
+            ax.hist(variance_df[col], bins=max(int(n_samples/4), 1))
             ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed', linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
 
@@ -661,6 +664,14 @@ class GPSimulationEvaluator(GPSimulator):
             y_sub = train_y[idx]
             x_sub = train_x[idx]
             pred = pred_fun(self.x, x_sub, y_sub)
+            if i == 0:
+                fun = pred_fun
+                if isinstance(pred_fun, partial):
+                    fun = pred_fun.func
+                self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
+                                    title=f"Prediction {fun.__name__}",
+                                    figname_suffix=f"bootstrap_{fun.__name__}")
+
             theta = theta_fun(pred["data"].y_mean)
             thetas.append(theta)
 
