@@ -595,6 +595,7 @@ class GPSimulationEvaluator(GPSimulator):
             ax.hist(variance_df[col], bins=max(int(n_samples/4), 1))
             ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed', linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
+            plt.close()
 
         if eval_dict:
             eval_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
@@ -613,7 +614,7 @@ class GPSimulationEvaluator(GPSimulator):
                 "mean").reset_index(drop=False)
             eval_target_measure["n_samples"] = n_samples
             eval_target_measure.to_csv(self.output_path / "eval_measure_summary.csv")
-
+        plt.close()
         return eval_dict, eval_target_measure
 
     @Plotter

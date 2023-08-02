@@ -145,7 +145,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
         idx_numeric = np.where(~ np.isnan(cv_perf))[0]
         s = lambs[np.where(cv_perf == np.min(np.array(cv_perf)[idx_numeric]))][0]
-        logger.info(f"Best smooting parameter for spline {s}")
+        # logger.info(f"Best smooting parameter for spline {s}")
 
     if len(x_train) != m:  # If there are duplicates
         rep_count = get_rep_count_cluster(x_train)
@@ -167,7 +167,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
         y_pred = y_pred * y_train_std + y_train_mean
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "fun": partial(spline_reg, y_std=y_std, lambs=np.linspace(s-s*0.5, s+s*0.5, 5))}
+            "fun": partial(spline_reg, y_std=y_std, lambs=np.linspace(s-s*0.5, s+s*0.2, 5))}
 
 
 def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):

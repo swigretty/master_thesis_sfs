@@ -16,15 +16,21 @@ def target_measure_perf_plot(target_measures_df):
 
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
-
     fig, ax = plt.subplots(nrows=1, ncols=len(target_measures_df["data_fraction"].unique()), figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
         ax[i].set_title(f"{data_fraction=}")
-        for method, df in dff.groupby("method"):
+        for ii, (method, df) in enumerate(dff.groupby("method")):
             ax[i].scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
-            ax[i].set_ylim(max(np.min(dff["ci_covered"]) - 0.1, 0), 1.1)
+            ax[i].set_ylim(np.min(dff["ci_covered"]) - 0.1, 1.1)
+            # ax[i].set_xlim(np.min(dff["ci_width"]) - 0.1, np.max(dff["ci_width"]) + 0.1)
+            # randomx = np.random.uniform(-0.05, 0.05)
+            # randomy = np.random.uniform(-0.05, 0.05)
+            # ax[i].annotate(f"{df['mse'].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
+            #                xytext=(df["ci_width"] + randomx, df["ci_covered"] + randomy),
+            #                )
         # ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
-        ax[i].hlines(0.95, xmin=np.min(dff["ci_width"]), xmax=np.max(dff["ci_width"]), color="black", linestyles='dashed')
+        ax[i].axhline(0.95, color="black", linestyle="dashed")
+
     ax[0].legend()
     ax[1].set_xlabel("ci width")
     ax[0].set_ylabel("ci coverage")
@@ -82,7 +88,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "seasonal_spline_n100_v5"
+    experiment_name = "seasonal_spline_n100_v6"
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
 
@@ -94,9 +100,9 @@ if __name__ == "__main__":
     fig = target_measure_perf_plot(df_seasonal.copy())
     fig.savefig(output_path / "target_measures_eval_seasonal_default.pdf")
 
-    df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_extreme")]
-    fig = target_measure_perf_plot(df_seasonal.copy())
-    fig.savefig(output_path / "target_measures_eval_seasonal_extreme.pdf")
+    # df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_extreme")]
+    # fig = target_measure_perf_plot(df_seasonal.copy())
+    # fig.savefig(output_path / "target_measures_eval_seasonal_extreme.pdf")
 
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
