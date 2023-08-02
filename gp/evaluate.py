@@ -28,7 +28,7 @@ class SimpleEvaluator:
 
     @property
     def ci_coverd(self):
-        return int(self.ci_lb < self.f_true) & (self.f_true < self.ci_ub)
+        return int(self.ci_lb <= self.f_true) & (self.f_true <= self.ci_ub)
 
     @property
     def mse(self):

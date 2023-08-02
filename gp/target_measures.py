@@ -44,8 +44,10 @@ def ttr(y_pred, thr_lower=90-120, thr_upper=125-120):
     """
     24h: 90 to 125 (for systolic BP)
     """
-    n_in_range = sum(thr_lower <= y_pred <= thr_upper)
-    return n_in_range/len(y_pred)
+    y_pred_num = y_pred[~np.isnan(y_pred)]
+    n_in_range = sum((thr_lower <= y_pred_num) & (y_pred_num <= thr_upper))
+    n_total = len(y_pred_num)
+    return n_in_range/n_total
 
 
 TARGET_MEASURES = [overall_mean, ttr]

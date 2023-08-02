@@ -28,7 +28,7 @@ class Plotter():
             fig.tight_layout()
             if output_path:
                 fig.savefig(output_path / f"{self.func.__name__}{figname_suffix}.pdf")
-                plt.close()
+            plt.close(fig)
         return value
 
     def __get__(self, instance, owner):

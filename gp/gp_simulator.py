@@ -374,7 +374,7 @@ class GPSimulator():
         figfile = "fit"
         if self.output_path:
             fig.savefig(self.output_path / f"{figfile}.pdf")
-            plt.close()
+            plt.close(fig)
         return fig
 
     def plot_errors(self):
@@ -401,7 +401,7 @@ class GPSimulator():
         figfile = "err"
         if self.output_path:
             fig.savefig(self.output_path / f"{figfile}.pdf")
-            plt.close()
+            plt.close(fig)
 
     @property
     def eval_config(self):
@@ -535,7 +535,8 @@ class GPSimulationEvaluator(GPSimulator):
             if ci is None and pred_name != "gp":
                 est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
                 # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
-            if ci is None and pred_name == "gp":
+            if pred_name == "gp":
+                # if ci is None and pred_name == "gp":
                 est, ci = self.target_measure_from_posterior(target_measure)
 
             eval = SimpleEvaluator(f_true=true_measure, f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
@@ -544,7 +545,7 @@ class GPSimulationEvaluator(GPSimulator):
         return eval_output
 
     def target_measure_from_posterior(self, target_measure, n_samples=100, alpha=0.05):
-        # posterior_samples = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
+        # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
 
         posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
 
@@ -607,7 +608,7 @@ class GPSimulationEvaluator(GPSimulator):
             ax.hist(variance_df[col], bins=max(int(n_samples/4), 1))
             ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed', linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
-            plt.close()
+            plt.close(fig)
 
         if eval_dict:
             eval_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
@@ -626,7 +627,7 @@ class GPSimulationEvaluator(GPSimulator):
                 "mean").reset_index(drop=False)
             eval_target_measure["n_samples"] = n_samples
             eval_target_measure.to_csv(self.output_path / "eval_measure_summary.csv")
-        plt.close()
+        plt.close("all")
         return eval_dict, eval_target_measure
 
     @Plotter

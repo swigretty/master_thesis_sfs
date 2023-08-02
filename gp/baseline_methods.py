@@ -18,7 +18,10 @@ logger = getLogger(__name__)
 
 
 def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
-    return {"data": GPData(y_mean=y_train)}
+    x_train_unique, unique_idx = np.unique(x_train, return_index=True)
+    y_pred = np.repeat(np.nan, len(x_pred))
+    y_pred[np.in1d(x_pred, x_train_unique)] = y_train[unique_idx]
+    return {"data": GPData(x=x_pred, y_mean=y_pred)}
 
 
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
