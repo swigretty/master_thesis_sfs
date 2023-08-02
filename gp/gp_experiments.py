@@ -148,7 +148,7 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "seasonal_spline_n100_v6"
+    experiment_name = "test"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),

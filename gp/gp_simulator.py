@@ -535,12 +535,24 @@ class GPSimulationEvaluator(GPSimulator):
             if ci is None and pred_name != "gp":
                 est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
                 # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
-            # TODO sample from posterior
-            # if ci is None and pred_name == "gp"
+            if ci is None and pred_name == "gp":
+                est, ci = self.target_measure_from_posterior(target_measure)
+
             eval = SimpleEvaluator(f_true=true_measure, f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
             eval_output.append({"method": pred_name, "target_measure": target_measure.__name__,
                                 **eval.to_dict()})
         return eval_output
+
+    def target_measure_from_posterior(self, target_measure, n_samples=100, alpha=0.05):
+        # posterior_samples = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
+
+        posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
+
+        target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples)
+
+        return (np.mean(target_measure_samples),
+                {"ci_lb": np.quantile(target_measure_samples, alpha),
+                 "ci_ub": np.quantile(target_measure_samples, 1-alpha)})
 
     def evaluate_target_measures(self):
         perf_all = []

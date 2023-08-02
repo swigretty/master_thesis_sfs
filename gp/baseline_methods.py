@@ -4,7 +4,7 @@ from functools import partial
 from gp.gp_data import GPData
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
-from target_measures import overall_mean
+from target_measures import overall_mean, ttr
 from gp.evalutation_utils import calculate_ci
 from sklearn.model_selection import LeaveOneOut
 from logging import getLogger
@@ -15,6 +15,10 @@ from patsy import dmatrix
 
 
 logger = getLogger(__name__)
+
+
+def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
+    return {"data": GPData(y_mean=y_train)}
 
 
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
@@ -167,7 +171,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
         y_pred = y_pred * y_train_std + y_train_mean
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "fun": partial(spline_reg, y_std=y_std, lambs=np.linspace(s-s*0.5, s+s*0.2, 5))}
+            "fun": partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3))}
 
 
 def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):
@@ -179,7 +183,39 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     return np.mean(scores)
 
 
-BASELINE_METHODS = {"naive": pred_empirical_mean, "linear": linear_regression, "spline": spline_reg}
+def bootstrap(pred_fun, theta_fun, pred_x, train_x, train_y, n_samples=100, alpha=0.05, rng=None):
+
+    if rng is None:
+        rng = np.random.default_rng()
+
+    thetas = []
+
+    for i in range(n_samples):
+        idx = sorted(rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
+        y_sub = train_y[idx]
+        x_sub = train_x[idx]
+        pred = pred_fun(pred_x, x_sub, y_sub)
+        if i == 0:
+            fun = pred_fun
+            if isinstance(pred_fun, partial):
+                fun = pred_fun.func
+            self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
+                                title=f"Prediction {fun.__name__}",
+                                figname_suffix=f"bootstrap_{fun.__name__}")
+
+        theta = theta_fun(pred["data"].y_mean)
+        thetas.append(theta)
+
+    theta_hat = np.mean(thetas)
+    ci = {"ci_lb": 2*theta_hat-np.quantile(thetas, 1-(alpha/2)),
+          "ci_ub": 2*theta_hat-np.quantile(thetas, (alpha/2))}
+    return theta_hat, ci
+
+
+BASELINE_METHODS = {f"naive_{overall_mean.__name__}": pred_empirical_mean,
+                    f"naive_{ttr.__name__}": pred_ttr_naive,
+                    "linear": linear_regression,
+                    "spline": spline_reg}
 
 
 if __name__ == "__main__":
