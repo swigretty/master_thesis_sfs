@@ -678,22 +678,25 @@ as a collection of multivariate normally distributed random variables and thus a
 			\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=0.7\linewidth]{weekly_var}
+					\includegraphics[width=0.5\linewidth]{weekly_var}
+					\caption{Aktiia Population Global SD}
+
 				\end{figure}
 
 			\begin{figure}
 					\includegraphics[width=0.7\linewidth]{variance_y_true_std_summary}
-					\caption{Global Standard Deviation}
+					\caption{300 samples from GP Global SD}
 			\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.7\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\includegraphics[width=0.5\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\caption{Aktiia night dip detection: $\frac{(\text{max-min})*2}{\pi}$}
 				\end{figure}
 
 			\begin{figure}
-					\includegraphics[width=0.7\linewidth]{variance_ampl_summary}
-					\caption{Amplitude (= (max-min)/2) of Seasonal Component}
+					\includegraphics[width=0.7\linewidth]{variance_dip_ampl_summary}
+					\caption{GP: $\frac{\text{max-min}}{\pi} = \frac{\sqrt {2* \text{var(seasonal)}} * 2}{\pi}$)}
 			\end{figure}
 
 
@@ -1334,4 +1337,9 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{document}
 %%
 
+
+
+
+% data fraction 0.5, amplitude as mean of day and night, measurement noise if doubled ?,
+% spline (fix it)
 
