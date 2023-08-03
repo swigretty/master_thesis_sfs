@@ -12,7 +12,7 @@ split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_
 
 
 def target_measure_perf_plot(target_measures_df):
-    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange"}
+    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple"}
 
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
@@ -87,18 +87,33 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
     fig.savefig(OUTPUT_PATH / f"split_perf_scatter_matrix_{data_fraction}.pdf")
 
 
-if __name__ == "__main__":
-    experiment_name = "seasonal_spline_n100_v6"
+MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extreme"]
+
+
+def plot_all(experiment_name, modes=MODES):
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
+    for mode in modes:
+        for target_measure in target_measures_df["target_measure"].unique():
+            df = target_measures_df[target_measures_df["output_path"].str.contains(mode) &
+                                    (target_measures_df["target_measure"] == target_measure)]
 
-    df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("sin_rbf_seasonal")]
-    fig = target_measure_perf_plot(df_uniform.copy())
-    fig.savefig(output_path / "target_measures_eval_uniform.pdf")
+            fig = target_measure_perf_plot(df.copy())
+            fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
+            plt.close(fig)
 
-    df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_default")]
-    fig = target_measure_perf_plot(df_seasonal.copy())
-    fig.savefig(output_path / "target_measures_eval_seasonal_default.pdf")
+
+if __name__ == "__main__":
+    experiment_name = "ttr_v1"
+    plot_all(experiment_name)
+
+    # df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("sin_rbf_seasonal")]
+    # fig = target_measure_perf_plot(df_uniform.copy())
+    # fig.savefig(output_path / "target_measures_eval_uniform.pdf")
+    #
+    # df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_default")]
+    # fig = target_measure_perf_plot(df_seasonal.copy())
+    # fig.savefig(output_path / "target_measures_eval_seasonal_default.pdf")
 
     # df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_extreme")]
     # fig = target_measure_perf_plot(df_seasonal.copy())
