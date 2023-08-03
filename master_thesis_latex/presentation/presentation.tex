@@ -110,6 +110,7 @@
 
 \usepackage{bbm}
 \usepackage{amsmath}
+\usepackage{textcomp}
 %----------------------------------------------------------------------------------------
 %	SELECT INNER THEME
 %----------------------------------------------------------------------------------------
@@ -611,20 +612,24 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Aktiia Population Level Time Series Characteristics}
 
 	\begin{itemize}
-		\item Within subject weekly BP sample variance $\approx 49$ mmHg
+		\item Within subject weekly BP sample variance $\approx 49 mmHg^2$
 		\begin{itemize}
 			\item This is biased estimate of signal variance due to non-uniform sampling. In case
 			of periodic sampling pattern, variance would be underestimated.
 		\end{itemize}
-		\item measurement (gaussian white) noise variance $=31$ mmHg
+		\item measurement (gaussian white) noise variance $=31 mmHg^2$
 		\begin{itemize}
 			\item Var($BP_{Ref} - BP_{Aktiia}$) = 62 mmHg = Var($Noise_{Ref} - Noise_{Aktiia}$) = Var($Noise_{Ref}$) + Var($Noise_{Aktiia}$) - 2COV($Noise_{Ref}$,
 			$Noise_{Aktiia}$)
 		\end{itemize}
-		\item cyclic pattern amplitude $\approx 5$ mmHg
+		\item cyclic pattern amplitude $\approx 8 mmHg$
+		\begin{itemize}
+			\item night dip (= avg night-avgd day) = $10 mmHg$
+			\item ampl=$\frac{10/2 *\pi}{2}$) $\approx 8 mmHg$
+		\end{itemize}
 		\item cyclic pattern period $= 24$ h
-		\item AR(1) component with length scale 3 h and Sample Path Variance $\approx 3.97$ mmHg
-		\item long term trend Var $\approx 0.14$ mmHg
+		\item AR(1) component with length scale 3 h and Sample Path Variance $\approx 3.97 mmHg^2$
+		\item long term trend Var $\approx 0.14 mmHg^2$
 		\item data density (0.1 to 3 per hour, i.e. 2.4 to 72 per day)
 		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
 	\end{itemize}
