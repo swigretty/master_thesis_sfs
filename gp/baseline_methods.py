@@ -18,11 +18,15 @@ from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_
 logger = getLogger(__name__)
 
 
-def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
+def pred_ttr_naive(x_pred, x_train, y_train, return_ci=False, **kwargs):
+    ci = None
+
     x_train_unique, unique_idx = np.unique(x_train, return_index=True)
     y_pred = np.repeat(np.nan, len(x_pred))
     y_pred[np.in1d(x_pred, x_train_unique)] = y_train[unique_idx]
-    return {"data": GPData(x=x_pred, y_mean=y_pred)}
+    if return_ci:
+        ci = bootstrap(pred_ttr_naive, x_pred, x_train, y_train)
+    return {"data": GPData(x=x_pred, y_mean=y_pred), "ci": ci}
 
 
 def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
@@ -30,6 +34,8 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     Using the overall mean as prediction.
     cov is calculated assuming iid data.
     """
+    ci = None
+
     n = len(y_train)
     y = np.repeat(np.mean(y_train), len(x_pred))
     cis = {}
@@ -37,7 +43,6 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     if return_ci:
         ci = bootstrap(pred_empirical_mean, x_pred, x_train, y_train)
         # sem = np.std(y_train) / np.sqrt(len(y_train))
-        #
         # cis = {f"ci_{overall_mean.__name__}": calculate_ci(sem, overall_mean(y), dist=scipy.stats.distributions.t(
         #     df=n-1))}
 
@@ -45,7 +50,7 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
 
 
 def linear_regression(x_pred, x_train, y_train, return_ci=False):
-
+    ci = None
     y_cov = None
 
     t_freq_train = x_train * 2*np.pi * 1/24
@@ -99,7 +104,9 @@ def get_rep_count_cluster(x_train):
     return rep_count
 
 
-def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
+def spline_reg_v2(x_pred, x_train, y_train, df=None, return_ci=False, **kwargs):
+    ci = None
+
     dfs = np.linspace(3, int(len(x_train)*0.8), 20)
     dfs = np.array([3, 6, 12, 24, 50, 100])
     assert all(sorted(x_train) == x_train)
@@ -126,10 +133,8 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
 
     y_pred = glm_predict(x_pred, transformed_x, y_train, df)
 
-    cis = {}
-    for tm in TARGET_MEASURES:
-        theta_hat, ci = bootstrap(partial(glm_predict, df=df), tm, x_pred, transformed_x, y_train)
-        cis[f"ci_{tm.__name__}"] = ci
+    if return_ci:
+        ci = bootstrap(partial(glm_predict, df=df), x_pred, transformed_x, y_train)
 
     # try to get Bspline basis
     # c = np.eye(len(t) - k - 1)
@@ -141,10 +146,10 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
     # design_matrix_gh = BSpline(np.unique(x_train), c, k)(x_train)
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "fun": partial(spline_reg_v2, df=df), **cis}
+            "ci": ci}
 
 
-def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, **kwargs):
+def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, return_ci=False, **kwargs):
     m = len(np.unique(x_train))
 
     if lambs is None:
@@ -190,8 +195,11 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
     if normalize_y:
         y_pred = y_pred * y_train_std + y_train_mean
 
-    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "fun": partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3))}
+    if return_ci:
+        ci = bootstrap(partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3)), x_pred, x_train,
+                       y_train)
+
+    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci": ci}
 
 
 def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):
