@@ -21,14 +21,24 @@ def target_measure_perf_plot(target_measures_df):
         ax[i].set_title(f"{data_fraction=}")
         for ii, (method, df) in enumerate(dff.groupby("method")):
             ax[i].scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
-            ax[i].set_ylim(np.min(dff["ci_covered"]) - 0.1, 1.1)
-            # ax[i].set_xlim(np.min(dff["ci_width"]) - 0.1, np.max(dff["ci_width"]) + 0.1)
-            # randomx = np.random.uniform(-0.05, 0.05)
-            # randomy = np.random.uniform(-0.05, 0.05)
-            # ax[i].annotate(f"{df['mse'].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
-            #                xytext=(df["ci_width"] + randomx, df["ci_covered"] + randomy),
-            #                )
-        # ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
+            ax[i].set_ylim(- 0.1, 1.1)
+            x_range = np.max(dff["ci_width"]) - np.min(dff["ci_width"])
+            ax[i].set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
+            x_offset = 0
+            y_offset = 0
+            if ii == 1:
+                y_offset = - 0.05 * 1.2
+            if ii == 2:
+                x_offset = - 0.2 * x_range
+            if ii == 3:
+                y_offset = - 0.05 * 1.2
+            if ii == 4:
+                y_offset = - 0.05 * 1.2
+
+            ax[i].annotate(f"{df['mse'].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
+                           xytext=(df["ci_width"] + x_offset, df["ci_covered"] + y_offset),
+                           )
+        ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
         ax[i].axhline(0.95, color="black", linestyle="dashed")
 
     ax[0].legend()
@@ -106,19 +116,6 @@ def plot_all(experiment_name, modes=MODES):
 if __name__ == "__main__":
     experiment_name = "ttr_v1"
     plot_all(experiment_name)
-
-    # df_uniform = target_measures_df[~ target_measures_df["output_path"].str.contains("sin_rbf_seasonal")]
-    # fig = target_measure_perf_plot(df_uniform.copy())
-    # fig.savefig(output_path / "target_measures_eval_uniform.pdf")
-    #
-    # df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_default")]
-    # fig = target_measure_perf_plot(df_seasonal.copy())
-    # fig.savefig(output_path / "target_measures_eval_seasonal_default.pdf")
-
-    # df_seasonal = target_measures_df[target_measures_df["output_path"].str.contains("sin_rbf_seasonal_extreme")]
-    # fig = target_measure_perf_plot(df_seasonal.copy())
-    # fig.savefig(output_path / "target_measures_eval_seasonal_extreme.pdf")
-
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
