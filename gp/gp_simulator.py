@@ -501,13 +501,14 @@ class GPSimulationEvaluator(GPSimulator):
             target_measures = TARGET_MEASURES
         self.target_measures = target_measures
 
-    def _get_pred_baseline(self, gps=None):
-        if gps is None:
-            gps = self
+    def _get_pred_method(self, method, **kwargs):
+        assert all(self.y_true_train.x == sorted(self.y_true_train.x))
+        return method(self.x, self.y_true_train.x, self.y_true_train.y, **kwargs)
+
+    def _get_pred_baseline(self, **kwargs):
         pred_baseline = {}
         for eval_name, eval_fun in self.baseline_methods.items():
-            assert all(gps.y_true_train.x == sorted(gps.y_true_train.x))
-            pred_baseline[eval_name] = eval_fun(gps.x, gps.y_true_train.x, gps.y_true_train.y, return_ci=True)
+            pred_baseline[eval_name] = self._get_pred_baseline(eval_fun, **kwargs)
             if fun_new := pred_baseline[eval_name].get("fun"):
                 self.baseline_methods[eval_name] = fun_new
         return pred_baseline
@@ -524,26 +525,26 @@ class GPSimulationEvaluator(GPSimulator):
             self.f_post.y_mean, y_cov=self.f_post.y_cov)},
                 **self.pred_baseline}
 
-    def get_target_measure_performance(self, target_measure: callable):
-        true_measure = target_measure(self.f_true.y)
-        eval_output = []
-        for pred_name, pred in self.predictions.items():
-            data = pred["data"]
-            est = target_measure(data.y_mean)
-            ci = pred.get(f"ci_{target_measure.__name__}")
-
-            if ci is None and pred_name != "gp":
-                est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
-                # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
-            if pred_name == "gp":
-                # if ci is None and pred_name == "gp":
-                est, ci = self.target_measure_from_posterior(target_measure)
-
-            eval = SimpleEvaluator(f_true=true_measure, f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
-            eval_output.append({"method": pred_name, "target_measure": target_measure.__name__,
-                                **eval.to_dict()})
-        return eval_output
-
+    # def get_target_measure_performance(self, target_measure: callable):
+    #     true_measure = target_measure(self.f_true.y)
+    #     eval_output = []
+    #     for pred_name, pred in self.predictions.items():
+    #         data = pred["data"]
+    #         est = target_measure(data.y_mean)
+    #         ci = pred.get(f"ci_{target_measure.__name__}")
+    #
+    #         if ci is None and pred_name != "gp":
+    #             est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
+    #             # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
+    #         if pred_name == "gp":
+    #             # if ci is None and pred_name == "gp":
+    #             est, ci = self.target_measure_from_posterior(target_measure)
+    #
+    #         eval = SimpleEvaluator(f_true=true_measure, f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
+    #         eval_output.append({"method": pred_name, "target_measure": target_measure.__name__,
+    #                             **eval.to_dict()})
+    #     return eval_output
+    # TODO all measures in one simulation !! Like Bootstrap
     def target_measure_from_posterior(self, target_measure, n_samples=100, alpha=0.05):
         # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
 
@@ -555,13 +556,42 @@ class GPSimulationEvaluator(GPSimulator):
                 {"ci_lb": np.quantile(target_measure_samples, alpha),
                  "ci_ub": np.quantile(target_measure_samples, 1-alpha)})
 
+    @property
+    def true_measures(self):
+        if not hasattr(self, "_true_measures"):
+            self._true_measures = {m.__name__: m(self.f_true.y) for m in self.target_measures}
+        return self._true_measures
+
+    def evaluate_target_measures_baseline_method(self, method, method_name=None):
+        if method_name is None:
+            method_name = method.__name__
+        eval_output = []
+        pred = self._get_pred_method(method, return_ci=True)
+        pred_measures = pred["ci"]
+        for measure in self.target_measures:
+            pred_m = pred_measures[measure.__name__]
+            eval = SimpleEvaluator(f_true=self.true_measure[measure.__name__],
+                                   f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
+            eval_output.append({"method": method_name, "target_measure": measure.__name__, **eval.to_dict()})
+        return eval_output
+
+    def evaluate_target_measures_gp(self):
+        eval_output = []
+        for measure in self.target_measures:
+            est, ci = self.target_measure_from_posterior(measure)
+            eval = SimpleEvaluator(f_true=self.true_measure[measure.__name__],
+                                   f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
+            eval_output.append({"method": "gp", "target_measure": measure.__name__, **eval.to_dict()})
+        return eval_output
+
     def evaluate_target_measures(self):
         perf_all = []
-        for measure in self.target_measures:
-            perf_all.extend(self.get_target_measure_performance(measure))
+        for method_name, method in self.baseline_methods:
+            perf_all.extend(self.evaluate_target_measures_baseline_method(method, method_name=method_name))
+        perf_all.extend(self.evaluate_target_measures_gp())
+
         if self.output_path:
             pd.DataFrame(perf_all).to_csv(self.output_path / f"evaluate_target_measures.csv")
-
         return perf_all
 
     def plot_posterior_baseline(self):
@@ -630,27 +660,27 @@ class GPSimulationEvaluator(GPSimulator):
         plt.close("all")
         return eval_dict, eval_target_measure
 
-    @Plotter
-    def plot_overall_mean(self, ax=None, gps=None):
-        if gps is None:
-            gps = self
-        if gps is self:
-            pred_baseline = self.pred_baseline
-        else:
-            pred_baseline = self._get_pred_baseline(gps)
-
-        gps.plot_true_with_samples(ax=ax, add_offset=True)
-        plot_lines_dict = {"true_mean": gps.f_true.y,
-                           "gp_mean": gps.f_post.y_mean}
-
-        for k, v in pred_baseline.items():
-            plot_lines_dict[f"{k}_mean"] = v["data"].y_mean
-
-        # loosely dashed, dashed dotted, dotted
-        linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
-        for i, (k, v) in enumerate(plot_lines_dict.items()):
-            ax.plot(gps.x, np.repeat(np.mean(v) + gps.offset, len(gps.x)), label=k, linestyle=linestyles[i])
-        ax.legend()
+    # @Plotter
+    # def plot_overall_mean(self, ax=None, gps=None):
+    #     if gps is None:
+    #         gps = self
+    #     if gps is self:
+    #         pred_baseline = self.pred_baseline
+    #     else:
+    #         pred_baseline = self._get_pred_baseline(gps)
+    #
+    #     gps.plot_true_with_samples(ax=ax, add_offset=True)
+    #     plot_lines_dict = {"true_mean": gps.f_true.y,
+    #                        "gp_mean": gps.f_post.y_mean}
+    #
+    #     for k, v in pred_baseline.items():
+    #         plot_lines_dict[f"{k}_mean"] = v["data"].y_mean
+    #
+    #     # loosely dashed, dashed dotted, dotted
+    #     linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
+    #     for i, (k, v) in enumerate(plot_lines_dict.items()):
+    #         ax.plot(gps.x, np.repeat(np.mean(v) + gps.offset, len(gps.x)), label=k, linestyle=linestyles[i])
+    #     ax.legend()
 
     def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
@@ -668,31 +698,35 @@ class GPSimulationEvaluator(GPSimulator):
             # self.plot_overall_mean(gps=gps)
         return
 
-    def bootstrap(self, pred_fun, theta_fun, n_samples=100, alpha=0.05):
-        thetas = []
-        train_y = self.y_true_train.y
-        train_x = self.y_true_train.x
-
-        for i in range(n_samples):
-            idx = sorted(self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
-            y_sub = train_y[idx]
-            x_sub = train_x[idx]
-            pred = pred_fun(self.x, x_sub, y_sub)
-            if i == 0:
-                fun = pred_fun
-                if isinstance(pred_fun, partial):
-                    fun = pred_fun.func
-                self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
-                                    title=f"Prediction {fun.__name__}",
-                                    figname_suffix=f"bootstrap_{fun.__name__}")
-
-            theta = theta_fun(pred["data"].y_mean)
-            thetas.append(theta)
-
-        theta_hat = np.mean(thetas)
-        ci = {"ci_lb": 2*theta_hat-np.quantile(thetas, 1-(alpha/2)),
-              "ci_ub": 2*theta_hat-np.quantile(thetas, (alpha/2))}
-        return theta_hat, ci
+    # def bootstrap(self, pred_fun, theta_fun, train_x=None, n_samples=100, alpha=0.05):
+    #     thetas = {}
+    #     train_y = self.y_true_train.y
+    #     if train_x is None:
+    #         train_x = self.y_true_train.x
+    #     if not isinstance(theta_fun, list):
+    #         theta_fun = theta_fun
+    #
+    #     for i in range(n_samples):
+    #         idx = sorted(self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
+    #         y_sub = train_y[idx]
+    #         x_sub = train_x[idx]
+    #         pred = pred_fun(self.x, x_sub, y_sub)
+    #         if i == 0:
+    #             fun = pred_fun
+    #             if isinstance(pred_fun, partial):
+    #                 fun = pred_fun.func
+    #             self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
+    #                                 title=f"Prediction {fun.__name__}",
+    #                                 figname_suffix=f"bootstrap_{fun.__name__}")
+    #         for fun in theta_fun:
+    #             theta = fun(pred["data"].y_mean)
+    #             thetas_list = thetas.get(fun, [])
+    #             thetas_list.append(theta)
+    #
+    #     theta_hat = {k: np.mean(v) for k, v in thetas.items()}
+    #     ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
+    #           "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
+    #     return ci
 
 
 def plot_mean_decompose(kernel="sin_rbf"):

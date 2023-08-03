@@ -4,7 +4,7 @@ from functools import partial
 from gp.gp_data import GPData
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
-from target_measures import overall_mean, ttr
+from target_measures import overall_mean, ttr, TARGET_MEASURES
 from gp.evalutation_utils import calculate_ci
 from sklearn.model_selection import LeaveOneOut
 from logging import getLogger
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
 from patsy import dmatrix
+from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 
 
 logger = getLogger(__name__)
@@ -34,12 +35,13 @@ def pred_empirical_mean(x_pred, x_train, y_train, return_ci=False):
     cis = {}
 
     if return_ci:
-        sem = np.std(y_train) / np.sqrt(len(y_train))
+        ci = bootstrap(pred_empirical_mean, x_pred, x_train, y_train)
+        # sem = np.std(y_train) / np.sqrt(len(y_train))
+        #
+        # cis = {f"ci_{overall_mean.__name__}": calculate_ci(sem, overall_mean(y), dist=scipy.stats.distributions.t(
+        #     df=n-1))}
 
-        cis = {f"ci_{overall_mean.__name__}": calculate_ci(sem, overall_mean(y), dist=scipy.stats.distributions.t(
-            df=n-1))}
-
-    return {"data": GPData(x=x_pred, y_mean=y, y_cov=None), **cis}
+    return {"data": GPData(x=x_pred, y_mean=y, y_cov=None), "ci": ci}
 
 
 def linear_regression(x_pred, x_train, y_train, return_ci=False):
@@ -55,6 +57,9 @@ def linear_regression(x_pred, x_train, y_train, return_ci=False):
     X_pred = np.hstack((np.ones(x_pred.shape), x_pred, np.sin(t_freq_pred), np.cos(t_freq_pred)))
     y = reg.predict(X_pred)
 
+    if return_ci:
+        ci = bootstrap(linear_regression, x_pred, x_train, y_train)
+
     # if return_ci:
     #     residuals = y_train - reg.predict(X)
     #     RSS = residuals.T @ residuals
@@ -63,7 +68,7 @@ def linear_regression(x_pred, x_train, y_train, return_ci=False):
     #     var_y = sigma_squared_hat * np.diag((X_pred @ XtXinv @ X_pred.T))
     #     y_cov = np.diag(var_y)
 
-    return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov)}
+    return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "ci": ci}
 
 
 def linear_regression_statsmodel():
@@ -95,6 +100,7 @@ def get_rep_count_cluster(x_train):
 
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
+    dfs = np.linspace(3, int(len(x_train)*0.8), 20)
     dfs = np.array([3, 6, 12, 24, 50, 100])
     assert all(sorted(x_train) == x_train)
 
@@ -110,10 +116,20 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
     transformed_x = dmatrix(
         f"bs(train, degree=3, df={df}, include_intercept=False)",
         {"train": x_train}, return_type='dataframe')
-    cs = sm.GLM(y_train, transformed_x).fit()
-    y_pred = cs.predict(
-        dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
-                return_type='matrix'))
+
+    def glm_predict(x_pred, transformed_x, y_train, df):
+        cs = sm.GLM(y_train, transformed_x).fit()
+        y_pred = cs.predict(
+            dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
+                    return_type='matrix'))
+        return y_pred
+
+    y_pred = glm_predict(x_pred, transformed_x, y_train, df)
+
+    cis = {}
+    for tm in TARGET_MEASURES:
+        theta_hat, ci = bootstrap(partial(glm_predict, df=df), tm, x_pred, transformed_x, y_train)
+        cis[f"ci_{tm.__name__}"] = ci
 
     # try to get Bspline basis
     # c = np.eye(len(t) - k - 1)
@@ -123,8 +139,9 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
     # c = np.empty((nest,), float)
     # from scipy.interpolate import BSpline
     # design_matrix_gh = BSpline(np.unique(x_train), c, k)(x_train)
+
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "fun": partial(spline_reg_v2, df=df)}
+            "fun": partial(spline_reg_v2, df=df), **cis}
 
 
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, **kwargs):
@@ -186,15 +203,16 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     return np.mean(scores)
 
 
-def bootstrap(pred_fun, theta_fun, pred_x, train_x, train_y, n_samples=100, alpha=0.05, rng=None):
+def bootstrap(self, pred_fun, pred_x, train_x, train_y, theta_fun=TARGET_MEASURES, n_samples=100, alpha=0.05, rng=None):
 
     if rng is None:
         rng = np.random.default_rng()
-
-    thetas = []
+    thetas = {}
+    if not isinstance(theta_fun, list):
+        theta_fun = theta_fun
 
     for i in range(n_samples):
-        idx = sorted(rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
+        idx = sorted(self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
         y_sub = train_y[idx]
         x_sub = train_x[idx]
         pred = pred_fun(pred_x, x_sub, y_sub)
@@ -202,23 +220,26 @@ def bootstrap(pred_fun, theta_fun, pred_x, train_x, train_y, n_samples=100, alph
             fun = pred_fun
             if isinstance(pred_fun, partial):
                 fun = pred_fun.func
-            self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
-                                title=f"Prediction {fun.__name__}",
-                                figname_suffix=f"bootstrap_{fun.__name__}")
+            fig, ax = plt.subplots()
+            plot_posterior(x=pred_x, y_post_mean=pred["data"].y_mean, x_red=x_sub, y_red=y_sub, ax=ax)
+            ax.set_title(f"Prediction {fun.__name__}")
+            fig.savefig(f"plot_pred_bootstrap_{fun.__name__}.pdf")
+        for theta_f in theta_fun:
+            theta = theta_f(pred["data"].y_mean)
+            thetas_list = thetas.get(theta_f.__name__, [])
+            thetas_list.append(theta)
 
-        theta = theta_fun(pred["data"].y_mean)
-        thetas.append(theta)
-
-    theta_hat = np.mean(thetas)
-    ci = {"ci_lb": 2*theta_hat-np.quantile(thetas, 1-(alpha/2)),
-          "ci_ub": 2*theta_hat-np.quantile(thetas, (alpha/2))}
-    return theta_hat, ci
+    theta_hat = {k: np.mean(v) for k, v in thetas.items()}
+    ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
+          "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
+    return ci
 
 
 BASELINE_METHODS = {f"naive_{overall_mean.__name__}": pred_empirical_mean,
                     f"naive_{ttr.__name__}": pred_ttr_naive,
                     "linear": linear_regression,
-                    "spline": spline_reg}
+                    "spline": spline_reg,
+                    "splinev2": spline_reg_v2}
 
 
 if __name__ == "__main__":

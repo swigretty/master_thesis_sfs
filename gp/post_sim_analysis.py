@@ -11,7 +11,21 @@ split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_
          "test": ["covered_fraction_fun", "pred_logprob", "data_fraction", "meas_noise_var"]}
 
 
-def target_measure_perf_plot(target_measures_df):
+def get_offset_annotate(ii, x_range, y_range=1.2):
+    x_offset = 0
+    y_offset = 0
+    if ii == 1:
+        y_offset = - 0.05 * y_range
+    if ii == 2:
+        x_offset = - 0.2 * x_range
+    if ii == 3:
+        y_offset = - 0.05 * y_range
+    if ii == 4:
+        y_offset = - 0.05 * y_range
+    return x_offset, y_offset
+
+
+def target_measure_perf_plot(target_measures_df, annotate="mse"):
     cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple"}
 
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
@@ -24,20 +38,12 @@ def target_measure_perf_plot(target_measures_df):
             ax[i].set_ylim(- 0.1, 1.1)
             x_range = np.max(dff["ci_width"]) - np.min(dff["ci_width"])
             ax[i].set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
-            x_offset = 0
-            y_offset = 0
-            if ii == 1:
-                y_offset = - 0.05 * 1.2
-            if ii == 2:
-                x_offset = - 0.2 * x_range
-            if ii == 3:
-                y_offset = - 0.05 * 1.2
-            if ii == 4:
-                y_offset = - 0.05 * 1.2
 
-            ax[i].annotate(f"{df['mse'].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
-                           xytext=(df["ci_width"] + x_offset, df["ci_covered"] + y_offset),
-                           )
+            if annotate:
+                x_offset, y_offset = get_offset_annotate(ii, x_range)
+                ax[i].annotate(f"{df[annotate].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
+                               xytext=(df["ci_width"] + x_offset, df["ci_covered"] + y_offset),
+                               )
         ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
         ax[i].axhline(0.95, color="black", linestyle="dashed")
 
@@ -100,7 +106,7 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extreme"]
 
 
-def plot_all(experiment_name, modes=MODES):
+def plot_all(experiment_name, modes=MODES, annotate="mse"):
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
     for mode in modes:
@@ -108,14 +114,14 @@ def plot_all(experiment_name, modes=MODES):
             df = target_measures_df[target_measures_df["output_path"].str.contains(mode) &
                                     (target_measures_df["target_measure"] == target_measure)]
 
-            fig = target_measure_perf_plot(df.copy())
+            fig = target_measure_perf_plot(df.copy(), annotate=annotate)
             fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
             plt.close(fig)
 
 
 if __name__ == "__main__":
     experiment_name = "ttr_v1"
-    plot_all(experiment_name)
+    plot_all(experiment_name, annotate="mse")
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
