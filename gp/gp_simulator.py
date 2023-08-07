@@ -506,11 +506,16 @@ class GPSimulationEvaluator(GPSimulator):
         return method(self.x, self.y_true_train.x, self.y_true_train.y, **kwargs)
 
     def _get_pred_baseline(self, **kwargs):
+        """
+        returns {"data": predicted_data, "ci_fun": function_to_calculate_ci}
+        """
         pred_baseline = {}
         for eval_name, eval_fun in self.baseline_methods.items():
-            pred_baseline[eval_name] = self._get_pred_baseline(eval_fun, **kwargs)
+            pred_baseline[eval_name] = self._get_pred_method(eval_fun, **kwargs)
             if fun_new := pred_baseline[eval_name].get("fun"):
+                # overwrite self.baseline_method e.g. for spline smoothing parameter has been found using cv
                 self.baseline_methods[eval_name] = fun_new
+
         return pred_baseline
 
     @property
@@ -522,39 +527,26 @@ class GPSimulationEvaluator(GPSimulator):
     @property
     def predictions(self):
         return {"gp": {"data": self.f_post, "ci_overall_mean": ci_overall_mean_gp(
-            self.f_post.y_mean, y_cov=self.f_post.y_cov)},
+            self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
-    # def get_target_measure_performance(self, target_measure: callable):
-    #     true_measure = target_measure(self.f_true.y)
-    #     eval_output = []
-    #     for pred_name, pred in self.predictions.items():
-    #         data = pred["data"]
-    #         est = target_measure(data.y_mean)
-    #         ci = pred.get(f"ci_{target_measure.__name__}")
-    #
-    #         if ci is None and pred_name != "gp":
-    #             est, ci = self.bootstrap(self.baseline_methods[pred_name], target_measure)
-    #             # logger.info(f"{est=}, {est_boot=}, {ci=}, {ci_boot=}")
-    #         if pred_name == "gp":
-    #             # if ci is None and pred_name == "gp":
-    #             est, ci = self.target_measure_from_posterior(target_measure)
-    #
-    #         eval = SimpleEvaluator(f_true=true_measure, f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
-    #         eval_output.append({"method": pred_name, "target_measure": target_measure.__name__,
-    #                             **eval.to_dict()})
-    #     return eval_output
-    # TODO all measures in one simulation !! Like Bootstrap
-    def target_measure_from_posterior(self, target_measure, n_samples=100, alpha=0.05):
+    def target_measures_from_posterior(self, theta_fun=None, n_samples=100, alpha=0.05):
+        if theta_fun is None:
+            theta_fun = self.target_measures
+        if not isinstance(theta_fun, list):
+            theta_fun = [theta_fun]
         # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
-
+        out_dict = {}
         posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
+        for target_measure in theta_fun:
+            target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples)
+            theta_hat = np.mean(target_measure_samples)
 
-        target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples)
+            out_dict[target_measure.__name__] = {
+                "mean": theta_hat, "ci_lb": np.quantile(target_measure_samples, alpha),
+                "ci_ub": np.quantile(target_measure_samples, 1-alpha)}
 
-        return (np.mean(target_measure_samples),
-                {"ci_lb": np.quantile(target_measure_samples, alpha),
-                 "ci_ub": np.quantile(target_measure_samples, 1-alpha)})
+        return out_dict
 
     @property
     def true_measures(self):
@@ -562,37 +554,28 @@ class GPSimulationEvaluator(GPSimulator):
             self._true_measures = {m.__name__: m(self.f_true.y) for m in self.target_measures}
         return self._true_measures
 
-    def evaluate_target_measures_baseline_method(self, method, method_name=None):
-        if method_name is None:
-            method_name = method.__name__
+    def evaluate_target_measures(self, ci_fun_kwargs=None):
         eval_output = []
-        pred = self._get_pred_method(method, return_ci=True)
-        pred_measures = pred["ci"]
-        for measure in self.target_measures:
-            pred_m = pred_measures[measure.__name__]
-            eval = SimpleEvaluator(f_true=self.true_measure[measure.__name__],
-                                   f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
-            eval_output.append({"method": method_name, "target_measure": measure.__name__, **eval.to_dict()})
-        return eval_output
+        if ci_fun_kwargs is None:
+            ci_fun_kwargs = {}
+        ci_fun_kwargs["theta_fun"] = self.target_measures
+        for method_name, pred in self.predictions.items():
+            logger.info(f"Evaluate {method_name=}")
+            pred_measures = pred["ci_fun"](**ci_fun_kwargs)
+            for measure in self.target_measures:
+                pred_m = pred_measures[measure.__name__]
+                # TODO write test for this, this does not belong here
+                # if ci2 := pred.get(f"ci_{measure.__name__}"):
+                #     logger.info(f"{pred_m}, {ci2=}")
 
-    def evaluate_target_measures_gp(self):
-        eval_output = []
-        for measure in self.target_measures:
-            est, ci = self.target_measure_from_posterior(measure)
-            eval = SimpleEvaluator(f_true=self.true_measure[measure.__name__],
-                                   f_pred=est, ci_lb=ci["ci_lb"], ci_ub=ci["ci_ub"])
-            eval_output.append({"method": "gp", "target_measure": measure.__name__, **eval.to_dict()})
-        return eval_output
+                eval = SimpleEvaluator(f_true=self.true_measures[measure.__name__],
+                                       f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
 
-    def evaluate_target_measures(self):
-        perf_all = []
-        for method_name, method in self.baseline_methods:
-            perf_all.extend(self.evaluate_target_measures_baseline_method(method, method_name=method_name))
-        perf_all.extend(self.evaluate_target_measures_gp())
+                eval_output.append({"method": method_name, "target_measure": measure.__name__, **eval.to_dict()})
 
         if self.output_path:
-            pd.DataFrame(perf_all).to_csv(self.output_path / f"evaluate_target_measures.csv")
-        return perf_all
+            pd.DataFrame(eval_output).to_csv(self.output_path / f"evaluate_target_measures.csv")
+        return eval_output
 
     def plot_posterior_baseline(self):
         for method, pred in self.pred_baseline.items():
