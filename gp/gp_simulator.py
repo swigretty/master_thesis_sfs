@@ -608,7 +608,7 @@ class GPSimulationEvaluator(GPSimulator):
                 # TODO eval_dict as df with group by and aggregate
                 eval_sample = gps.evaluate()
                 eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
-                eval_target_measure.extend(gps.evaluate_target_measures())
+                eval_target_measure.extend(gps.evaluate_target_measures(ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
 
         logger.setLevel(previousloglevel)

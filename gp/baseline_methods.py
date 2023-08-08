@@ -131,7 +131,7 @@ def get_spline_basis(x_pred, x_train, df):
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
     if dfs is None:
-        dfs = np.linspace(10, int(len(x_train)*0.8), 10)
+        dfs = np.linspace(20, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
 
     if df is None:
@@ -235,7 +235,8 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     return np.mean(scores)
 
 
-def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_samples=100, alpha=0.05, rng=None):
+def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_samples=100, alpha=0.05,
+              rng=None, logger=logger):
 
     if rng is None:
         rng = np.random.default_rng()
