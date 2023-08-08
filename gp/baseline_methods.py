@@ -11,9 +11,9 @@ from logging import getLogger
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
-from patsy import dmatrix
+import patsy
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
-
+from sklearn.preprocessing import SplineTransformer
 
 logger = getLogger(__name__)
 
@@ -98,50 +98,73 @@ def get_rep_count_cluster(x_train):
     return rep_count
 
 
-def spline_reg_v2(x_pred, x_train, y_train, df=None, **kwargs):
-    ci = None
+def get_spline_basis(x_pred, x_train, df):
+    if x_pred.ndim == 1:
+        x_pred = x_pred.reshape(-1, 1)
 
-    dfs = np.linspace(10, int(len(x_train)*0.8), 10).astype(int)
-    # dfs = np.array([3, 6, 12, 24, 50, 100])
-    assert all(sorted(x_train) == x_train)
+    if x_train.ndim == 1:
+        x_train = x_train.reshape(-1, 1)
+    # lower_bound = min(np.min(x_pred), np.min(x_train))
+    # upper_bound = max(np.max(x_pred), np.max(x_train))
+
+
+    # lower_bound = np.min(x_train)
+    # upper_bound = np.max(x_train)
+
+    # x_train_trans = patsy.dmatrix(f"bs(train, degree=3, df={df}, include_intercept=False)", {"train": x_train},
+    #                         return_type='matrix')
+    # x_pred_trans = dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
+    #                        return_type='matrix')
+    # x_train_trans = patsy.cr(x_train, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
+    # x_pred_trans = patsy.cr(x_pred, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
+
+    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant")
+    spline.fit(x_train)
+
+    x_train_trans = spline.transform(x_train)
+    x_pred_trans = spline.transform(x_pred)
+
+    # x_train_trans = np.hstack((np.ones((x_train_trans.shape[0], 1)), x_train_trans))
+    # x_pred_trans = np.hstack((np.ones((x_pred_trans.shape[0], 1)), x_pred_trans))
+    return x_pred_trans, x_train_trans
+
+
+def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
+    if dfs is None:
+        dfs = np.linspace(10, int(len(x_train)*0.8), 10)
+    dfs = dfs.astype(int)
 
     if df is None:
         cv_perf = []
         for _df in dfs:
-            fit_pred_fun = partial(spline_reg_v2, df=_df)
-            cv_perf.append(loo_cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
+            _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
+            fit_pred_fun = partial(spline_reg_v2, df=_df, transformed=True)
+            cv_perf.append(cross_val_score(train_x=x_train_trans, train_y=y_train, fit_pred_fun=fit_pred_fun,
+                                           n_folds=10))
 
         df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
         logger.info(f"Best smoothing parameter for spline {df=}")
 
-    transformed_x = dmatrix(
-        f"bs(train, degree=3, df={df}, include_intercept=False)",
-        {"train": x_train}, return_type='matrix')
+    if transformed:
+        x_train_trans = x_train
+        x_pred_trans = x_pred
+    else:
+        x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train, df)
 
-    def glm_predict(x_pred, transformed_x, y_train, df):
-        cs = sm.GLM(y_train, transformed_x).fit()
-        y_pred = cs.predict(
-            dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
-                    return_type='matrix'))
-        return y_pred
+    # glm = sm.GLM(y_train, x_train_trans).fit()
+    glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
+    y_pred = glm.predict(x_pred_trans)
 
-    y_pred = glm_predict(x_pred, transformed_x, y_train, df)
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df, transformed=True),
+                     x_pred=x_pred_trans, x_train=x_train_trans, y_train=y_train)
 
-    # TODO does this does retransorme x_train !!!
-    ci_fun = partial(bootstrap, pred_fun=partial(glm_predict, df=df), x_pred=x_pred, x_train=transformed_x,
-                     y_train=y_train)
+    if transformed:
+        x_pred = None
+    else:
+        x_pred = x_pred.reshape(-1, 1)
 
-    # try to get Bspline basis
-    # c = np.eye(len(t) - k - 1)
-    # k = 3
-    # m = len(set(x_train))
-    # nest = max(m + k + 1, 2 * k + 3)
-    # c = np.empty((nest,), float)
-    # from scipy.interpolate import BSpline
-    # design_matrix_gh = BSpline(np.unique(x_train), c, k)(x_train)
-
-    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None),
-            "ci_fun": ci_fun, "fun": partial(glm_predict, df=df)}
+    return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
+            "ci_fun": ci_fun, "fun": partial(spline_reg_v2, df=df)}
 
 
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, **kwargs):
@@ -190,7 +213,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
     if normalize_y:
         y_pred = y_pred * y_train_std + y_train_mean
 
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3)),
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg, y_std=y_std, s=s),
                      x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci_fun": ci_fun,
@@ -204,6 +227,8 @@ def loo_cross_val_score(train_x, train_y, fit_pred_fun, cost_function=mse):
 def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
     scores = []
+    # if train_x.ndim == 1:
+    #     train_x = train_x.reshape(-1, 1)
     for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
         pred = fit_pred_fun(train_x[test_idx], train_x[train_idx], train_y[train_idx])
         scores.append(cost_function(train_y[test_idx], pred["data"].y_mean))
@@ -256,15 +281,18 @@ if __name__ == "__main__":
 
     # x = np.arange(100)
     # y = np.sin(x)
-    x = np.linspace(0, 100, 200)
-    y = np.sin(x)
-    train_idx = np.sort(np.random.choice(np.arange(len(x)), size=int(len(x) * 0.8), replace=False))
+    x = np.linspace(0, 20, 100)
+    y = np.sin(x) + np.random.normal() + 120
+    train_idx = np.sort(np.random.choice(np.arange(len(x)), size=int(len(x) * 0.5), replace=False))
     # test_idx = np.setdiff1d(x, train_idx)
 
-    pred = spline_reg(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
+    # pred = spline_reg(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
+    pred = spline_reg_v2(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
 
     fig, ax = plt.subplots()
     ax.plot(pred["data"].x, pred["data"].y_mean)
+    ax.plot(x, y)
+    ax.scatter(x[train_idx], y[train_idx])
     plt.show()
 
     print()

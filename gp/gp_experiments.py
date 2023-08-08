@@ -148,7 +148,7 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "test_spline_reg2"
+    experiment_name = "test_spline_reg2_n10"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n300"),
     #                        experiment_name=experiment_name, n_samples=300, data_fraction=(0.1, ),
     #                        normalize_kernel=False, normalize_y=True, only_var=True)
-    evaluate_data_fraction_modes(modes, n_samples=2, experiment_name=experiment_name, normalize_y=True,
+    evaluate_data_fraction_modes(modes, n_samples=10, experiment_name=experiment_name, normalize_y=True,
                                  normalize_kernel=False)
 
 
