@@ -530,7 +530,7 @@ class GPSimulationEvaluator(GPSimulator):
             self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
-    def target_measures_from_posterior(self, theta_fun=None, n_samples=100, alpha=0.05):
+    def target_measures_from_posterior(self, theta_fun=None, n_samples=100, alpha=0.05, **kwargs):
         if theta_fun is None:
             theta_fun = self.target_measures
         if not isinstance(theta_fun, list):

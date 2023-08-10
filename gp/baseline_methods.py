@@ -99,11 +99,16 @@ def get_rep_count_cluster(x_train):
 
 
 def get_spline_basis(x_pred, x_train, df):
+    x_pred_in_range = x_pred[(x_pred >= np.min(x_train)) & (x_pred <= np.max(x_train))]
+
     if x_pred.ndim == 1:
         x_pred = x_pred.reshape(-1, 1)
 
     if x_train.ndim == 1:
         x_train = x_train.reshape(-1, 1)
+
+    if x_pred_in_range.ndim == 1:
+        x_pred_in_range = x_pred_in_range.reshape(-1, 1)
     # lower_bound = min(np.min(x_pred), np.min(x_train))
     # upper_bound = max(np.max(x_pred), np.max(x_train))
 
@@ -119,7 +124,8 @@ def get_spline_basis(x_pred, x_train, df):
     # x_pred_trans = patsy.cr(x_pred, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
 
     spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant")
-    spline.fit(x_train)
+
+    spline.fit(x_pred_in_range)
 
     x_train_trans = spline.transform(x_train)
     x_pred_trans = spline.transform(x_pred)
