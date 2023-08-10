@@ -3,7 +3,7 @@ import numpy as np
 from constants.constants import get_output_path
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import cm
+import matplotlib as mpl
 
 split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_logprob", "data_fraction",
                           "pred_prob_overall_mean", "meas_noise_var"],
@@ -26,7 +26,9 @@ def get_offset_annotate(ii, x_range, y_range=1.2):
 
 
 def target_measure_perf_plot(target_measures_df, annotate="mse"):
-    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple"}
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(target_measures_df["method"].unique())))
+    cdict = {i: color for i, color in enumerate(colors)}
+    # cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple", 5: ""}
 
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
@@ -44,7 +46,7 @@ def target_measure_perf_plot(target_measures_df, annotate="mse"):
                 ax[i].annotate(f"{df[annotate].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
                                xytext=(df["ci_width"] + x_offset, df["ci_covered"] + y_offset),
                                )
-        ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
+        # ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
         ax[i].axhline(0.95, color="black", linestyle="dashed")
 
     ax[0].legend()
@@ -120,7 +122,7 @@ def plot_all(experiment_name, modes=MODES, annotate="mse"):
 
 
 if __name__ == "__main__":
-    experiment_name = "ttr_v1"
+    experiment_name = "test_spline_reg2_n100_in_range"
     plot_all(experiment_name, annotate="mse")
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
