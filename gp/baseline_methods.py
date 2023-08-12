@@ -12,10 +12,36 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
 import patsy
+from scipy import stats
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from sklearn.preprocessing import SplineTransformer
+from pygam import GAM, s, te, l, LinearGAM
+
 
 logger = getLogger(__name__)
+
+
+def conf_int_linear_regression(x_train, y_train, model, x_pred, alpha=0.05):
+    # degrees of freedom
+    dof = -np.diff(x.shape)[0]
+    # Student's t-distribution table lookup
+    t_val = stats.t.isf(alpha / 2, dof)
+    residuals = y_train - model.predict(x_train)
+    rss = residuals.T @ residuals
+    sigma_squared_hat = rss / (x_train.shape[0] - x_train.shape[1])
+    xtxinv = np.linalg.inv(x_train.T @ x_train)
+    var_y_pred = sigma_squared_hat * np.diag((x_pred @ xtxinv @ x_pred.T))
+
+    # # rss = np.sum((Y_train - lin_model.predict(X_train)) ** 2) / dof
+    # # inverse of the variance of the parameters
+    # var_params = np.diag(np.linalg.inv(X_aux.T.dot(X_aux)))
+    # # distance between lower and upper bound of CI
+    # gap = t_val * np.sqrt(rss * var_params)
+    #
+    # ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
+    #       "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
+    #
+    # return ci
 
 
 def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
@@ -59,13 +85,6 @@ def linear_regression(x_pred, x_train, y_train):
 
     ci_fun = partial(bootstrap, pred_fun=linear_regression, x_pred=x_pred, x_train=x_train, y_train=y_train)
 
-    # if return_ci:
-    #     residuals = y_train - reg.predict(X)
-    #     RSS = residuals.T @ residuals
-    #     sigma_squared_hat = RSS / (X.shape[0] - X.shape[1])
-    #     XtXinv = np.linalg.inv(X.T @ X)
-    #     var_y = sigma_squared_hat * np.diag((X_pred @ XtXinv @ X_pred.T))
-    #     y_cov = np.diag(var_y)
 
     return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "ci_fun": ci_fun}
 
@@ -125,7 +144,7 @@ def get_spline_basis(x_pred, x_train, df):
 
     spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant")
 
-    spline.fit(x_pred_in_range)
+    spline.fit(x_train)
 
     x_train_trans = spline.transform(x_train)
     x_pred_trans = spline.transform(x_pred)
@@ -133,6 +152,7 @@ def get_spline_basis(x_pred, x_train, df):
     # x_train_trans = np.hstack((np.ones((x_train_trans.shape[0], 1)), x_train_trans))
     # x_pred_trans = np.hstack((np.ones((x_pred_trans.shape[0], 1)), x_pred_trans))
     return x_pred_trans, x_train_trans
+
 
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
@@ -171,6 +191,26 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
 
     return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
             "ci_fun": ci_fun, "fun": partial(spline_reg_v2, df=df)}
+
+
+def gam_spline(x_pred, x_train, y_train, normalize_y=True, **kwargs):
+
+    if normalize_y:
+        y_train_mean = np.mean(y_train)
+        y_train_std = np.std(y_train)
+        y_train = (y_train-y_train_mean)/y_train_std
+
+    gam = LinearGAM(s(0))
+    gam.fit(x_train, y_train)
+    y_pred = gam.predict(x_pred)
+
+    ci_fun = partial(bootstrap, pred_fun=gam_spline,
+                     x_pred=x_pred, x_train=x_train, y_train=y_train)
+
+    if normalize_y:
+        y_pred = y_pred * y_train_std + y_train_mean
+
+    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci_fun": ci_fun}
 
 
 def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, **kwargs):
@@ -219,7 +259,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
     if normalize_y:
         y_pred = y_pred * y_train_std + y_train_mean
 
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg, y_std=y_std, s=s),
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3)),
                      x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci_fun": ci_fun,
@@ -281,7 +321,7 @@ BASELINE_METHODS = {f"naive_{overall_mean.__name__}": pred_empirical_mean,
                     f"naive_{ttr.__name__}": pred_ttr_naive,
                     "linear": linear_regression,
                     "spline": spline_reg,
-                    "splinev2": spline_reg_v2}
+                    "splinev2": spline_reg_v2, "gam_spline": gam_spline}
 
 
 if __name__ == "__main__":
