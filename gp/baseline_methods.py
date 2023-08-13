@@ -156,19 +156,19 @@ def get_spline_basis(x_pred, x_train, df):
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
     if dfs is None:
-        dfs = np.linspace(20, int(len(x_train)*0.8), 10)
+        dfs = np.linspace(10, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
 
     if df is None:
         cv_perf = []
         for _df in dfs:
             _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
-            fit_pred_fun = partial(spline_reg_v2, df=_df, transformed=True)
-            cv_perf.append(cross_val_score(train_x=x_train_trans, train_y=y_train, fit_pred_fun=fit_pred_fun,
+            fit_pred_fun = partial(spline_reg_v2, df=_df)
+            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
 
         df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
-        logger.info(f"Best smoothing parameter for spline {df=}")
+        # logger.info(f"Best smoothing parameter for spline {df=}")
 
     if transformed:
         x_train_trans = x_train
@@ -180,8 +180,8 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
 
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df, transformed=True),
-                     x_pred=x_pred_trans, x_train=x_train_trans, y_train=y_train)
+    ci_fun = partial(bootstrap, pred_fun=spline_reg_v2,
+                     x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     if transformed:
         x_pred = None
@@ -319,8 +319,10 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
 BASELINE_METHODS = {f"naive_{overall_mean.__name__}": pred_empirical_mean,
                     f"naive_{ttr.__name__}": pred_ttr_naive,
                     "linear": linear_regression,
-                    "spline": spline_reg,
-                    "splinev2": spline_reg_v2, "gam_spline": gam_spline}
+                    # "spline": spline_reg,
+                    "splinev2": spline_reg_v2,
+                    # "gam_spline": gam_spline
+                    }
 
 
 if __name__ == "__main__":

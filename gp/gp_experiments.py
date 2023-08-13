@@ -148,15 +148,15 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "test_gam_spline_v0"
+    experiment_name = "test_spline_v2_refit"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
     #                 data_fraction=datafrac,
     #                 normalize_y=True, plot_method="plot_posterior_baseline")
 
-    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf_n300"),
-                           experiment_name=experiment_name, n_samples=3, data_fraction=(0.1, ),
+    evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf"),
+                           experiment_name=experiment_name, n_samples=10, data_fraction=(0.1, ),
                            normalize_kernel=False, normalize_y=True)
     # evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
     #                              normalize_kernel=False)
