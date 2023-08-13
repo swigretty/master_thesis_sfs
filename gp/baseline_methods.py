@@ -54,7 +54,7 @@ def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
     return {"data": GPData(x=x_pred, y_mean=y_pred), "ci_fun": ci_fun}
 
 
-def pred_empirical_mean(x_pred, x_train, y_train):
+def pred_empirical_mean(x_pred, x_train, y_train, **kwargs):
     """
     Using the overall mean as prediction.
     cov is calculated assuming iid data.
@@ -70,7 +70,7 @@ def pred_empirical_mean(x_pred, x_train, y_train):
     return {"data": GPData(x=x_pred, y_mean=y, y_cov=None), "ci_fun": ci_fun}
 
 
-def linear_regression(x_pred, x_train, y_train):
+def linear_regression(x_pred, x_train, y_train, **kwargs):
     ci = None
     y_cov = None
 
@@ -154,7 +154,8 @@ def get_spline_basis(x_pred, x_train, df):
     return x_pred_trans, x_train_trans
 
 
-def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
+def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, train_idx=None,
+                  test_idx=None, **kwargs):
     if dfs is None:
         dfs = np.linspace(15, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
@@ -162,9 +163,9 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     if df is None:
         cv_perf = []
         for _df in dfs:
-            # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
-            fit_pred_fun = partial(spline_reg_v2, df=_df)
-            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun,
+            _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
+            fit_pred_fun = partial(spline_reg_v2, df=_df, transformed=True)
+            cv_perf.append(cross_val_score(train_x=x_train_trans, train_y=y_train, fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
 
         df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
@@ -179,13 +180,21 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     # glm = sm.GLM(y_train, x_train_trans).fit()
     glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
+
     if not transformed:
         idx_in_range = ((x_pred <= np.max(x_train)) & (x_pred >= np.min(x_train))).reshape(-1)
         idx_out_range = ((x_pred > np.max(x_train)) | (x_pred < np.min(x_train))).reshape(-1)
         y_pred[idx_out_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
 
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
-                     x_pred=x_pred, x_train=x_train, y_train=y_train)
+    elif train_idx:
+        if not test_idx:
+            test_idx = np.arange(len(x_pred))
+        idx_in_range = ((test_idx <= np.max(train_idx)) & (test_idx >= np.min(train_idx))).reshape(-1)
+        idx_out_range = ((test_idx > np.max(train_idx)) | (test_idx < np.min(train_idx))).reshape(-1)
+        y_pred[idx_out_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
+
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df, transformed=True),
+                     x_pred=x_pred_trans, x_train=x_train_trans, y_train=y_train)
 
     if transformed:
         x_pred = None
@@ -278,7 +287,8 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
     # if train_x.ndim == 1:
     #     train_x = train_x.reshape(-1, 1)
     for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
-        pred = fit_pred_fun(train_x[test_idx], train_x[train_idx], train_y[train_idx])
+        pred = fit_pred_fun(train_x[test_idx], train_x[train_idx], train_y[train_idx], train_idx=train_idx,
+                            test_idx=test_idx)
         scores.append(cost_function(train_y[test_idx], pred["data"].y_mean))
     return np.mean(scores)
 
@@ -298,7 +308,7 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
         idx = sorted(rng.choice(np.arange(len(y_train)), size=len(y_train), replace=True))
         y_sub = y_train[idx]
         x_sub = x_train[idx, ]
-        pred = pred_fun(x_pred, x_sub, y_sub)
+        pred = pred_fun(x_pred, x_sub, y_sub, train_idx=idx)
         if i == 0:
             fun = pred_fun
             if isinstance(pred_fun, partial):
