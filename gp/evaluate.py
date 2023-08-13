@@ -19,8 +19,8 @@ class SimpleEvaluator:
 
     f_true: float
     f_pred: float
-    ci_lb: float
-    ci_ub: float
+    ci_lb: float = None
+    ci_ub: float = None
 
     @property
     def ci_width(self):

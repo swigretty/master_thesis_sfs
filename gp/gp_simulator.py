@@ -562,16 +562,16 @@ class GPSimulationEvaluator(GPSimulator):
         for method_name, pred in self.predictions.items():
             logger.info(f"Evaluate {method_name=}")
             pred_measures = pred["ci_fun"](**ci_fun_kwargs)
+            pred_mean = pred["data"].y_mean
             for measure in self.target_measures:
                 pred_m = pred_measures[measure.__name__]
-                # TODO write test for this, this does not belong here
-                # if ci2 := pred.get(f"ci_{measure.__name__}"):
-                #     logger.info(f"{pred_m}, {ci2=}")
-
+                mse_base = SimpleEvaluator(f_true=self.true_measures[measure.__name__],
+                                           f_pred=measure(pred_mean)).mse
                 eval = SimpleEvaluator(f_true=self.true_measures[measure.__name__],
                                        f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
 
-                eval_output.append({"method": method_name, "target_measure": measure.__name__, **eval.to_dict()})
+                eval_output.append({"method": method_name, "target_measure": measure.__name__,
+                                    "mse_base": mse_base, **eval.to_dict()})
 
         if self.output_path:
             pd.DataFrame(eval_output).to_csv(self.output_path / f"evaluate_target_measures.csv")

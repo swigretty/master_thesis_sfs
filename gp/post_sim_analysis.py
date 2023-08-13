@@ -122,7 +122,7 @@ def plot_all(experiment_name, modes=MODES, annotate="mse"):
 
 
 if __name__ == "__main__":
-    experiment_name = "test_spline_reg2_n100"
+    experiment_name = "gam_spline_v0"
     plot_all(experiment_name, annotate="mse")
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
