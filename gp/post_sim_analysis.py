@@ -34,24 +34,28 @@ def target_measure_perf_plot(target_measures_df, annotate="mse"):
     target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
     fig, ax = plt.subplots(nrows=1, ncols=len(target_measures_df["data_fraction"].unique()), figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
-        ax[i].set_title(f"{data_fraction=}")
+        cur_ax = ax
+        if len(target_measures_df["data_fraction"].unique()) > 1:
+            cur_ax = ax[i]
+        cur_ax.set_title(f"{data_fraction=}")
         for ii, (method, df) in enumerate(dff.groupby("method")):
-            ax[i].scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
-            ax[i].set_ylim(- 0.1, 1.1)
+            cur_ax.scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
+            cur_ax.set_ylim(- 0.1, 1.1)
             x_range = np.max(dff["ci_width"]) - np.min(dff["ci_width"])
-            ax[i].set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
+            cur_ax.set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
 
             if annotate:
                 x_offset, y_offset = get_offset_annotate(ii, x_range)
-                ax[i].annotate(f"{df[annotate].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
+                cur_ax.annotate(f"{df[annotate].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered"]),
                                xytext=(df["ci_width"] + x_offset, df["ci_covered"] + y_offset),
                                )
-        # ax[i].plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
-        ax[i].axhline(0.95, color="black", linestyle="dashed")
+        # cur_ax.plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
+        cur_ax.axhline(0.95, color="black", linestyle="dashed")
+    cur_ax.legend()
 
-    ax[0].legend()
-    ax[1].set_xlabel("ci width")
-    ax[0].set_ylabel("ci coverage")
+    if len(target_measures_df["data_fraction"].unique()) > 1:
+        ax[1].set_xlabel("ci width")
+        ax[0].set_ylabel("ci coverage")
     return fig
 
 
@@ -108,9 +112,13 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extreme"]
 
 
-def plot_all(experiment_name, modes=MODES, annotate="mse"):
+def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None):
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
+    if filter_dict:
+        for k, v in filter_dict.items():
+            target_measures_df = target_measures_df[target_measures_df[k] == v]
+
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():
             df = target_measures_df[target_measures_df["output_path"].str.contains(mode) &
@@ -122,8 +130,9 @@ def plot_all(experiment_name, modes=MODES, annotate="mse"):
 
 
 if __name__ == "__main__":
-    experiment_name = "gam_spline_v0"
-    plot_all(experiment_name, annotate="mse")
+    experiment_name = "test_new_measures"
+    plot_all(experiment_name, annotate="mse", modes=["sin_rbf"], filter_dict={
+        "output_path": "/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/test_new_measures/sin_rbf/08_13_11_47_41"})
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
