@@ -130,9 +130,8 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "test_new_measures"
-    plot_all(experiment_name, annotate="mse", modes=["sin_rbf"], filter_dict={
-        "output_path": "/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments/test_new_measures/sin_rbf/08_13_11_47_41"})
+    experiment_name = "new_measures"
+    plot_all(experiment_name, annotate="mse")
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
