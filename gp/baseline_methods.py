@@ -156,13 +156,13 @@ def get_spline_basis(x_pred, x_train, df):
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
     if dfs is None:
-        dfs = np.linspace(15, int(len(x_train)*0.8), 5)
+        dfs = np.linspace(15, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
 
     if df is None:
         cv_perf = []
         for _df in dfs:
-            _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
+            # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
             fit_pred_fun = partial(spline_reg_v2, df=_df)
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
@@ -179,8 +179,12 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     # glm = sm.GLM(y_train, x_train_trans).fit()
     glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
+    if not transformed:
+        idx_in_range = ((x_pred <= np.max(x_train)) & (x_pred >= np.min(x_train))).reshape(-1)
+        idx_out_range = ((x_pred > np.max(x_train)) | (x_pred < np.min(x_train))).reshape(-1)
+        y_pred[idx_out_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
 
-    ci_fun = partial(bootstrap, pred_fun=spline_reg_v2,
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
                      x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     if transformed:
@@ -188,8 +192,7 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     else:
         x_pred = x_pred.reshape(-1, 1)
 
-    return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
-            "ci_fun": ci_fun, "fun": partial(spline_reg_v2, df=df)}
+    return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None), "ci_fun": ci_fun}
 
 
 def gam_spline(x_pred, x_train, y_train, normalize_y=True, **kwargs):
@@ -237,7 +240,7 @@ def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lamb
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
         idx_numeric = np.where(~ np.isnan(cv_perf))[0]
         s = lambs[np.where(cv_perf == np.min(np.array(cv_perf)[idx_numeric]))][0]
-        # logger.info(f"Best smooting parameter for spline {s}")
+        logger.info(f"Best smooting parameter for spline {s}")
 
     if len(x_train) != m:  # If there are duplicates
         rep_count = get_rep_count_cluster(x_train)
