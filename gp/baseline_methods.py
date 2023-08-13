@@ -156,7 +156,7 @@ def get_spline_basis(x_pred, x_train, df):
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
     if dfs is None:
-        dfs = np.linspace(10, int(len(x_train)*0.8), 10)
+        dfs = np.linspace(15, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
 
     if df is None:
