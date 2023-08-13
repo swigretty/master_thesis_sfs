@@ -180,8 +180,9 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
 
-    ci_fun = partial(bootstrap, pred_fun=spline_reg_v2,
-                     x_pred=x_pred, x_train=x_train, y_train=y_train, df=df)
+    # TODO use cv to determine df also during bootstrap
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
+                     x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     if transformed:
         x_pred = None
