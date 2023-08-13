@@ -532,7 +532,7 @@ class GPSimulationEvaluator(GPSimulator):
             self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
-    def target_measures_from_posterior(self, theta_fun=None, n_samples=100, alpha=0.05, **kwargs):
+    def target_measures_from_posterior(self, theta_fun=None, n_samples=200, alpha=0.05, **kwargs):
         if theta_fun is None:
             theta_fun = self.target_measures
         if not isinstance(theta_fun, dict):
@@ -541,11 +541,11 @@ class GPSimulationEvaluator(GPSimulator):
         out_dict = {}
         posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
         for fun_name, target_measure in theta_fun.items():
-            target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples)
-            theta_hat = np.mean(target_measure_samples)
-            out_dict[fun_name] = {
-                "mean": theta_hat, "ci_lb": np.quantile(target_measure_samples, alpha),
-                "ci_ub": np.quantile(target_measure_samples, 1-alpha)}
+            target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples).T
+            theta_hat = np.apply_along_axis(np.mean, 0, target_measure_samples)
+            ci_lb = np.apply_along_axis(partial(np.quantile, q=alpha), 0, target_measure_samples)
+            ci_ub = np.apply_along_axis(partial(np.quantile, q=1-alpha), 0, target_measure_samples)
+            out_dict[fun_name] = {"mean": theta_hat, "ci_lb": ci_lb, "ci_ub": ci_ub}
 
         return out_dict
 

@@ -156,7 +156,7 @@ def get_spline_basis(x_pred, x_train, df):
 
 def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, **kwargs):
     if dfs is None:
-        dfs = np.linspace(15, int(len(x_train)*0.8), 10)
+        dfs = np.linspace(15, int(len(x_train)*0.8), 5)
     dfs = dfs.astype(int)
 
     if df is None:
@@ -181,7 +181,7 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     y_pred = glm.predict(x_pred_trans)
 
     ci_fun = partial(bootstrap, pred_fun=spline_reg_v2,
-                     x_pred=x_pred, x_train=x_train, y_train=y_train)
+                     x_pred=x_pred, x_train=x_train, y_train=y_train, df=df)
 
     if transformed:
         x_pred = None
@@ -311,9 +311,14 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
         for fn, theta_f in theta_fun.items():
             thetas[fn].append(theta_f(pred["data"].y_mean))
 
-    theta_hat = {k: np.mean(v) for k, v in thetas.items()}
-    ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
-          "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
+    thetas = {k: np.array(v) for k, v in thetas.items()}
+    theta_hat = {k: np.apply_along_axis(np.mean, 0, v) for k, v in thetas.items()}
+    ci_quant_ub = {k: np.apply_along_axis(partial(np.quantile, q=(alpha/2)), 0, v)
+                   for k, v in thetas.items()}
+    ci_quant_lb = {k: np.apply_along_axis(partial(np.quantile, q=1-(alpha/2)), 0, v)
+                   for k, v in thetas.items()}
+    ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-ci_quant_lb[k],
+          "ci_ub": 2*theta_hat[k]-ci_quant_ub[k]} for k, v in thetas.items()}
     return ci
 
 
