@@ -481,8 +481,8 @@ class GPSimulator():
 
 class GPSimulationEvaluator(GPSimulator):
 
-    def __init__(self,  kernel_sim=None, baseline_methods=None, normalize_kernel=True, meas_noise_var=0,
-                 target_measures=None, **gps_kwargs):
+    def __init__(self,  kernel_sim=None, baseline_methods: dict = None, normalize_kernel=True, meas_noise_var=0,
+                 target_measures: dict = None, **gps_kwargs):
 
         self.kernel_sim_orig = kernel_sim
         self.meas_noise_var_orig = meas_noise_var
@@ -497,9 +497,11 @@ class GPSimulationEvaluator(GPSimulator):
         if baseline_methods is None:
             baseline_methods = BASELINE_METHODS
         self.baseline_methods = copy(baseline_methods)
-        if target_measures is None:
-            target_measures = TARGET_MEASURES
+
         self.target_measures = target_measures
+        if self.target_measures is None:
+            self.target_measures = TARGET_MEASURES
+        self.target_measures = {n: partial(tm, x_pred=self.x) for n, tm in self.target_measures.items()}
 
     def _get_pred_method(self, method, **kwargs):
         assert all(self.y_true_train.x == sorted(self.y_true_train.x))
@@ -533,16 +535,15 @@ class GPSimulationEvaluator(GPSimulator):
     def target_measures_from_posterior(self, theta_fun=None, n_samples=100, alpha=0.05, **kwargs):
         if theta_fun is None:
             theta_fun = self.target_measures
-        if not isinstance(theta_fun, list):
-            theta_fun = [theta_fun]
+        if not isinstance(theta_fun, dict):
+            theta_fun = {theta_fun.__name__: theta_fun}
         # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
         out_dict = {}
         posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
-        for target_measure in theta_fun:
+        for fun_name, target_measure in theta_fun.items():
             target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples)
             theta_hat = np.mean(target_measure_samples)
-
-            out_dict[target_measure.__name__] = {
+            out_dict[fun_name] = {
                 "mean": theta_hat, "ci_lb": np.quantile(target_measure_samples, alpha),
                 "ci_ub": np.quantile(target_measure_samples, 1-alpha)}
 
@@ -551,7 +552,7 @@ class GPSimulationEvaluator(GPSimulator):
     @property
     def true_measures(self):
         if not hasattr(self, "_true_measures"):
-            self._true_measures = {m.__name__: m(self.f_true.y) for m in self.target_measures}
+            self._true_measures = {name: m(self.f_true.y) for name, m in self.target_measures.items()}
         return self._true_measures
 
     def evaluate_target_measures(self, ci_fun_kwargs=None):
@@ -563,14 +564,14 @@ class GPSimulationEvaluator(GPSimulator):
             logger.info(f"Evaluate {method_name=}")
             pred_measures = pred["ci_fun"](**ci_fun_kwargs)
             pred_mean = pred["data"].y_mean
-            for measure in self.target_measures:
-                pred_m = pred_measures[measure.__name__]
-                mse_base = SimpleEvaluator(f_true=self.true_measures[measure.__name__],
+            for mn, measure in self.target_measures.items():
+                pred_m = pred_measures[mn]
+                mse_base = SimpleEvaluator(f_true=self.true_measures[mn],
                                            f_pred=measure(pred_mean)).mse
-                eval = SimpleEvaluator(f_true=self.true_measures[measure.__name__],
+                eval = SimpleEvaluator(f_true=self.true_measures[mn],
                                        f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
 
-                eval_output.append({"method": method_name, "target_measure": measure.__name__,
+                eval_output.append({"method": method_name, "target_measure": mn,
                                     "mse_base": mse_base, **eval.to_dict()})
 
         if self.output_path:

@@ -17,18 +17,21 @@ logger = getLogger(__name__)
 @dataclass
 class SimpleEvaluator:
 
-    f_true: float
-    f_pred: float
-    ci_lb: float = None
-    ci_ub: float = None
+    f_true: np.ndarray | float
+    f_pred: np.ndarray | float
+    ci_lb: np.ndarray | float = None
+    ci_ub: np.ndarray | float = None
 
     @property
     def ci_width(self):
-        return self.ci_ub - self.ci_lb
+        return np.mean(self.ci_ub - self.ci_lb)
 
     @property
     def ci_coverd(self):
-        return int(self.ci_lb <= self.f_true) & (self.f_true <= self.ci_ub)
+        covered = (self.ci_lb <= self.f_true) & (self.f_true <= self.ci_ub)
+        if not isinstance(covered, np.ndarray):
+            return int(covered)
+        return np.mean(covered.astype(int))
 
     @property
     def mse(self):

@@ -7,12 +7,12 @@ def ci_overall_mean_gp(y_pred, y_cov=None, alpha=0.05):
     return calculate_ci(se_overall_mean_from_cov(y_cov), overall_mean(y_pred), dist=norm, alpha=alpha)
 
 
-def overall_mean(y_pred):
+def overall_mean(y_pred, x_pred=None):
     return np.mean(y_pred)
 
 
 def get_cycles(x_pred, cycle_length):
-    return (x_pred/cycle_length).astype(int)
+    return (x_pred/cycle_length).astype(int).reshape(-1)
 
 
 def get_cycle_length_daily(x_unit):
@@ -34,13 +34,23 @@ def cis_mean_24h_gp(x_pred, y_pred, y_cov=None, alpha=0.05, x_unit="hour"):
     return cis_mean_24h_gp
 
 
-def mean_24h(x_pred, y_pred, x_unit="hour"):
+def mean_24h(y_pred, x_pred, x_unit="hour"):
     cycles = get_cycles(x_pred, get_cycle_length_daily(x_unit))
-    mean_cycles = {cn: np.mean(y_pred[cycles == cn]) for cn in range(np.max(cycles))}
-    return mean_cycles
+    mean_cycles = {cn: np.nanmean(y_pred[cycles == cn]) for cn in range(np.max(cycles))}
+    out_array = np.array(list(mean_cycles.values()))
+    out_array[np.isnan(out_array)] = np.nanmean(y_pred)
+    return out_array
 
 
-def ttr(y_pred, thr_lower=90-120, thr_upper=125-120):
+def mean_1h(y_pred, x_pred,  x_unit="hour"):
+    cycles = get_cycles(x_pred, 1)
+    mean_cycles = {cn: np.nanmean(y_pred[cycles == cn]) for cn in range(np.max(cycles))}
+    out_array = np.array(list(mean_cycles.values()))
+    out_array[np.isnan(out_array)] = np.nanmean(y_pred)
+    return out_array
+
+
+def ttr(y_pred, x_pred=None, thr_lower=90-120, thr_upper=125-120):
     """
     24h: 90 to 125 (for systolic BP)
     """
@@ -50,7 +60,7 @@ def ttr(y_pred, thr_lower=90-120, thr_upper=125-120):
     return n_in_range/n_total
 
 
-TARGET_MEASURES = [overall_mean, ttr]
+TARGET_MEASURES_LIST = [overall_mean, ttr, mean_1h, mean_24h]
 
-
+TARGET_MEASURES = {f.__name__: f for f in TARGET_MEASURES_LIST}
 

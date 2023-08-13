@@ -286,9 +286,10 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
     if rng is None:
         rng = np.random.default_rng()
 
-    if not isinstance(theta_fun, list):
-        theta_fun = theta_fun
-    thetas = {fun.__name__: [] for fun in theta_fun}
+    if not isinstance(theta_fun, dict):
+        theta_fun = {theta_fun.__name__: theta_fun}
+
+    thetas = {fn: [] for fn, fun in theta_fun.items()}
 
     for i in range(n_samples):
         idx = sorted(rng.choice(np.arange(len(y_train)), size=len(y_train), replace=True))
@@ -307,8 +308,8 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
             except Exception as e:
                 logger.info(f"could not plot bootstrap sample {e}")
             plt.close(fig=fig)
-        for theta_f in theta_fun:
-            thetas[theta_f.__name__].append(theta_f(pred["data"].y_mean))
+        for fn, theta_f in theta_fun.items():
+            thetas[fn].append(theta_f(pred["data"].y_mean))
 
     theta_hat = {k: np.mean(v) for k, v in thetas.items()}
     ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
