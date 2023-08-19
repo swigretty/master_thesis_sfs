@@ -142,7 +142,7 @@ def get_spline_basis(x_pred, x_train, df):
     # x_train_trans = patsy.cr(x_train, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
     # x_pred_trans = patsy.cr(x_pred, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
 
-    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant")
+    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant", knots="quantile")
 
     spline.fit(x_train)
 
@@ -177,20 +177,8 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     else:
         x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train, df)
 
-    # glm = sm.GLM(y_train, x_train_trans).fit()
     glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
-
-    if not transformed:
-        idx_in_range = ((x_pred <= np.max(x_train)) & (x_pred >= np.min(x_train))).reshape(-1)
-        y_pred[~idx_in_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
-
-    elif train_idx is not None:
-        if test_idx is None:
-            test_idx = np.arange(len(x_pred))
-        idx_in_range = ((test_idx <= np.max(train_idx)) & (test_idx >= np.min(train_idx))).reshape(-1)
-        y_pred[~idx_in_range] = 0  # set to constant value out of range
-
     ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
                      x_pred=x_pred, x_train=x_train, y_train=y_train)
 
@@ -307,7 +295,7 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
         y_sub = y_train[idx]
         x_sub = x_train[idx, ]
         pred = pred_fun(x_pred, x_sub, y_sub, train_idx=idx)
-        if i == 0:
+        if i % 10 == 0:
             fun = pred_fun
             if isinstance(pred_fun, partial):
                 fun = pred_fun.func
@@ -315,7 +303,7 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
             try:
                 plot_posterior(x=x_pred, y_post_mean=pred["data"].y_mean, x_red=x_sub, y_red=y_sub, ax=ax)
                 ax.set_title(f"Prediction {fun.__name__}")
-                fig.savefig(f"plot_pred_bootstrap_{fun.__name__}.pdf")
+                fig.savefig(f"plot_pred_bootstrap_{fun.__name__}_{i}.pdf")
             except Exception as e:
                 logger.info(f"could not plot bootstrap sample {e}")
             plt.close(fig=fig)
@@ -333,13 +321,13 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
     return ci
 
 
-BASELINE_METHODS = {f"naive_{overall_mean.__name__}": pred_empirical_mean,
-                    f"naive_{ttr.__name__}": pred_ttr_naive,
-                    "linear": linear_regression,
-                    # "spline": spline_reg,
-                    "splinev2": spline_reg_v2,
-                    # "gam_spline": gam_spline
-                    }
+BASELINE_METHODS = {
+    f"naive_{overall_mean.__name__}": pred_empirical_mean,
+    f"naive_{ttr.__name__}": pred_ttr_naive,
+    "linear": linear_regression,
+    "spline": spline_reg_v2,
+    # "gam_spline": gam_spline
+}
 
 
 if __name__ == "__main__":
