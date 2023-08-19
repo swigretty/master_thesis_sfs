@@ -8,9 +8,7 @@ import numpy as np
 from logging import getLogger
 import logging
 import json
-import scipy
-import matplotlib as mpl
-from scipy.stats import norm, multivariate_normal
+from tqdm import tqdm
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel, Product
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
@@ -605,7 +603,7 @@ class GPSimulationEvaluator(GPSimulator):
 
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
-        for i in range(n_samples):
+        for i in tqdm(range(n_samples)):
             gps = GPSimulationEvaluator(**current_config)
 
             if not only_var:
