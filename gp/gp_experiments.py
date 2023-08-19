@@ -141,14 +141,14 @@ if __name__ == "__main__":
     modes = [
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
                      session_name="sin_rbf_default"),
-        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
-        #          session_name="sin_rbf_seasonal_default"),
-        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 2,
-        #          session_name="sin_rbf_seasonal_extreme")
+        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
+                 session_name="sin_rbf_seasonal_default"),
+        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 2,
+                 session_name="sin_rbf_seasonal_extreme")
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "new_measures_spline_fixed_transform"
+    experiment_name = "new_measures_spline_fixed_transform_v2"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),

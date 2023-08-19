@@ -570,7 +570,10 @@ class GPSimulationEvaluator(GPSimulator):
                                            f_pred=measure(pred_mean)).mse
                 eval = SimpleEvaluator(f_true=self.true_measures[mn],
                                        f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
-
+                if eval.mse > 100:
+                    logger.info(f"Fit is very bad for {method_name=}")
+                    self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method_name}",
+                                        figname_suffix=f"{method_name}_bad_fit")
                 eval_output.append({"method": method_name, "target_measure": mn,
                                     "mse_base": mse_base, **eval.to_dict()})
 
