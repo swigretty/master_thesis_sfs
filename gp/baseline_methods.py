@@ -13,6 +13,7 @@ from sklearn.model_selection import KFold
 import statsmodels.api as sm
 import patsy
 from scipy import stats
+from pathlib import Path
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from sklearn.preprocessing import SplineTransformer
 from pygam import GAM, s, te, l, LinearGAM
@@ -280,7 +281,7 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
 
 
 def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_samples=100, alpha=0.05,
-              rng=None, logger=logger):
+              rng=None, logger=logger, output_path=Path(".")):
 
     if rng is None:
         rng = np.random.default_rng()
@@ -295,7 +296,7 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
         y_sub = y_train[idx]
         x_sub = x_train[idx, ]
         pred = pred_fun(x_pred, x_sub, y_sub, train_idx=idx)
-        if i % 10 == 0:
+        if i % int(n_samples/5) == 0:
             fun = pred_fun
             if isinstance(pred_fun, partial):
                 fun = pred_fun.func
@@ -303,7 +304,7 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
             try:
                 plot_posterior(x=x_pred, y_post_mean=pred["data"].y_mean, x_red=x_sub, y_red=y_sub, ax=ax)
                 ax.set_title(f"Prediction {fun.__name__}")
-                fig.savefig(f"plot_pred_bootstrap_{fun.__name__}_{i}.pdf")
+                fig.savefig(output_path / f"plot_pred_bootstrap_{fun.__name__}_{i}.pdf")
             except Exception as e:
                 logger.info(f"could not plot bootstrap sample {e}")
             plt.close(fig=fig)

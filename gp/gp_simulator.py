@@ -560,6 +560,7 @@ class GPSimulationEvaluator(GPSimulator):
         if ci_fun_kwargs is None:
             ci_fun_kwargs = {}
         ci_fun_kwargs["theta_fun"] = self.target_measures
+        ci_fun_kwargs["output_path"] = self.output_path
         for method_name, pred in self.predictions.items():
             logger.info(f"Evaluate {method_name=}")
             pred_measures = pred["ci_fun"](**ci_fun_kwargs)

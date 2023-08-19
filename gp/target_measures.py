@@ -44,7 +44,8 @@ def mean_24h(y_pred, x_pred, x_unit="hour"):
 
 def mean_1h(y_pred, x_pred,  x_unit="hour"):
     cycles = get_cycles(x_pred, 1)
-    mean_cycles = {cn: np.nanmean(y_pred[cycles == cn]) for cn in range(np.max(cycles))}
+    mean_cycles = {cn: (np.nanmean(y_pred[cycles == cn]) if np.any(~np.isnan(y_pred[cycles == cn])) else np.nan) for cn
+                   in range(np.max(cycles))}
     out_array = np.array(list(mean_cycles.values()))
     out_array[np.isnan(out_array)] = np.nanmean(y_pred)
     return out_array
