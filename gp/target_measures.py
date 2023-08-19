@@ -34,21 +34,24 @@ def cis_mean_24h_gp(x_pred, y_pred, y_cov=None, alpha=0.05, x_unit="hour"):
     return cis_mean_24h_gp
 
 
-def mean_24h(y_pred, x_pred, x_unit="hour"):
-    cycles = get_cycles(x_pred, get_cycle_length_daily(x_unit))
+def mean_cycle(y_pred, x_pred, cycle_length):
+    cycles = get_cycles(x_pred, cycle_length)
+    # {cycle_number: mean_value_of_cycle}
+    # If there is not any not nan value in the cylce put np.nan
     mean_cycles = {cn: np.nanmean(y_pred[cycles == cn]) for cn in range(np.max(cycles))}
     out_array = np.array(list(mean_cycles.values()))
+    # Inpute nans with mean
     out_array[np.isnan(out_array)] = np.nanmean(y_pred)
     return out_array
+
+
+def mean_24h(y_pred, x_pred, x_unit="hour"):
+    cycle_legth = get_cycle_length_daily(x_unit)
+    return mean_cycle(y_pred, x_pred, cycle_legth)
 
 
 def mean_1h(y_pred, x_pred,  x_unit="hour"):
-    cycles = get_cycles(x_pred, 1)
-    mean_cycles = {cn: (np.nanmean(y_pred[cycles == cn]) if np.any(~np.isnan(y_pred[cycles == cn])) else np.nan) for cn
-                   in range(np.max(cycles))}
-    out_array = np.array(list(mean_cycles.values()))
-    out_array[np.isnan(out_array)] = np.nanmean(y_pred)
-    return out_array
+    return mean_cycle(y_pred, x_pred, 1)
 
 
 def ttr(y_pred, x_pred=None, thr_lower=90-120, thr_upper=125-120):
