@@ -163,9 +163,9 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     if df is None:
         cv_perf = []
         for _df in dfs:
-            _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
-            fit_pred_fun = partial(spline_reg_v2, df=_df, transformed=True)
-            cv_perf.append(cross_val_score(train_x=x_train_trans, train_y=y_train, fit_pred_fun=fit_pred_fun,
+            # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
+            fit_pred_fun = partial(spline_reg_v2, df=_df)
+            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
 
         df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
@@ -189,10 +189,10 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
         if test_idx is None:
             test_idx = np.arange(len(x_pred))
         idx_in_range = ((test_idx <= np.max(train_idx)) & (test_idx >= np.min(train_idx))).reshape(-1)
-        y_pred[~idx_in_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
+        y_pred[~idx_in_range] = 0  # set to constant value out of range
 
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df, transformed=True),
-                     x_pred=x_pred_trans, x_train=x_train_trans, y_train=y_train)
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
+                     x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     if transformed:
         x_pred = None
