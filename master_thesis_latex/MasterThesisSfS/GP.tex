@@ -515,83 +515,71 @@ However, deriving $\Sigma_e$ for an ARMA process with irregularly spaced samples
 been shown in chapter \ref{ch:time-series-decomposition-and-regression}.
 The next section will illustrate how choosing a specific kernel function solves this problem.
 
-\section{Mean Function - draft}\label{subsec:mean-function}
+\section{Mean Function}\label{subsec:mean-function}
 
-TODO: finish, cite: Incorporating Explicit Basis Functions \citeauthor{rasmussen_gaussian_2006} p.27
-\\
+A Gaussian process is fully defined by its mean function, $\mu(x)$,
+and its covariance function, $k(x, x')$. However, the mean function can always be subtracted from
+the observed data without altering the covariance structure. In Gaussian process regression,
+this implies that the predictive variance remains entirely independent of the mean function.
+To demonstrate this, we assume a model $Y(x) = f(x) + \epsilon$,
+with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function, $E(x)$ is a time series
+process, and $\epsilon$ is independent and identically distributed Gaussian noise with variance $\sigma_n^{2}$.
 
-A Gaussian process is fully specified by its mean function, $\mu(x)$, and its covariance
-function, $k(x, x')$.
-However, the mean function can always be subtracted from the observed data without changing
-the covariance structure of the data. In other words, if we subtract the mean function from the
-observed data, we obtain a new dataset with zero mean, but the same covariance structure.
+This allows us to model $f(x)$ using a Gaussian Process:
 
+\begin{gather*}
+    f(x) \sim GP(m(x), k(x,x'))
+\end{gather*}
 
+Applying the conditioning rule leads us to the predictive distribution for $f^{\ast} := f(x^{\ast})$:
 
-
-Assuming we want to model $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function
-and the $E(x)$ is a time series process and $\epsilon$ is some iid. gaussian noise term with variance $\sigma_n^{2}$.
-%In matrix notation for an input $X$:
-%
-%$$ \mathbf{Y} = \matthbf{M} + \mathbf{E} + \mathbf{\epsilon}$$
-
-Then we can model $f(x)$ with a GP:
-$$ f(x) \sim GP(m(x), k(x,x'))$$
-
-By using the conditioning rule we arrive at the following predictive distribution for $f^{\ast} := f(x^{\ast})$:
 \begin{gather*}
     p(f^{\ast}| \mathbf{Y}= y, X, x^{\ast}) = N(\bar{\mu}, \bar{\Sigma}), \\
-    \bar{\mu} = m(x^{\ast}) + K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1}(y - m(X)),\\
-    \bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} K(X, x^{\ast})
+    \bar{\mu} = m(x^{\ast}) + K_{x^{\ast}X} (K_{XX} + \sigma_{n}^2 I )^{-1}(y - m(X)),\\
+    \bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} (K_{XX} +  \sigma_{n}^2 I )^{-1} K(X, x^{\ast})
 \end{gather*}
-Note how the predictive variance $\bar{\Sigma}$ is not affected by $m(x)$.
+
+It's worth noting that the predictive variance $\bar{\Sigma}$ remains unaffected by $m(x)$.
+
 If instead a GP is fitted to $f(x) - m(x) = E(x)$ we can write:
-$$ E(x) = f(x) - m(x) \sim GP(0, k(x,x'))$$
+\begin{gather*}
+    E(x) = f(x) - m(x) \sim GP(0, k(x,x'))
+\end{gather*}
+
 The predictive distribution over $E^{\ast} := E(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is then:
+
 \begin{gather*}
     p(E^{\ast}| \mathbf{Z} = z, X, x^{\ast}) = N(\bar{\mu}_{E^{\ast}}, \bar{\Sigma}), \\
     \bar{\mu}_{E^{\ast}} = K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} z,\\
 \end{gather*}
+
 Since $ z = y - m(X)$, the predictive distribution over $f^{\ast}$ is recovered by adding $m(x^{\ast})$ to
 the predictive mean $\bar{\mu}_{E^{\ast}}$. The predictive variance $\bar{\Sigma}$ remains unchanged,
-since it is not affected by the observations nor by $m(x)$.
+since it is unaffected by the observations or by $m(x)$.
 
-%In order to find $m(x)$ we again could assume the liner model from chapter \ref{ch:time-series-decomposition-and-regression}
-%and use the GP only to model the errors $E(x)$.
-%When fitting the model, one could optimize over the parameters $\beta$ jointly with
-%the hyperparameters of the covariance function.
-%However, we can also put a prior over the parameters $\beta$
-%and fit a GP to $f(x)$, as has been done in section \ref{sec:gaussian-process-regression}.
-Hence, when
-having some knowledge about $m(x)$ one should subtract it first before fitting a GP
-with a zero mean prior.
+%For the special case where $m(x)$ is a constant $c$, you can equivalently add $c^2$ to the covariance function
+%to achieve a zero mean GP. To see this, consider a mean-zero GP with the following covariance function:
+%
+%\begin{align*}
+%    \cov[f(x_i), f(x_j)] & = k(x_i, x_j) + c^2 \\ & = E[(f(x_i) - E[f(x_i)])(f(x_j)-E[f(x_i)])] \\ & = E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)]
+%\end{align*}
+%
+%For a GP with a constant mean $c$ and the covariance function $k(x_i, x_j)$ we arrive at the same expression
+%$E[f(x_i)f(x_j)] = k(x_i, x_j) + c^2$, since
+%
+%\begin{gather*}
+%    \cov[f(x_i), f(x_j)] = E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)] - c^2 = k(x_i, x_j)
+%\end{gather*}
 
-If unknown one can optimize over the paramters of the mean function and the hyperparameters
-of the convariance function jointly.
-
-Also in the case of $m(x)$ being a constant $c$ one one can simply add $c^2$ to the covariance function
-and have $m(x) =0$
-
-$f(x) \sim GP(m(x)=0, k(x_i, x_j))$
-
-that is to say,
-
-$E[f(x)] = 0$, $cov[f(x_i), f(x_j)] = k(x_i, x_j)$
-
-If a constant c is added to the kernel,
-
-    $cov[f(x_i), f(x_j)] = E[(f(x_i) - E[f(x_i)])(f(x_j) -E[f(x_i)])]= E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)] = k(x_i, x_j) + c$
-
-So actually it is the same as a GP with
-
-    $sqrt(c), k(x_i, x_j)$
-
-because
-
-    $cov[f(x_i), f(x_j)] = E[f(x_i)f(x_j)] - m(x_i)m(x_j) = E[f(x_i)f(x_j)] - c = k(x_i, x_j)$
+Most frameworks for GP regression assume a zero mean prior.
+Therefore, when you have prior knowledge about $m(x)$, it's advisable to subtract it before fitting a GP.
+Additionally, it's common practice to normalize your response variable,
+to achieve a zero mean and unit variance, before fitting a GP.
 
 
-
+For readers interested in delving further into this subject,
+the book by \citeauthor{rasmussen_gaussian_2006} provides additional insights on this topic,
+as elaborated on page 27.
 
 
 \section{Kernel Functions - draft}\label{subsec:kernel}
