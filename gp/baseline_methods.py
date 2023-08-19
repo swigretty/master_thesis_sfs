@@ -183,15 +183,13 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
 
     if not transformed:
         idx_in_range = ((x_pred <= np.max(x_train)) & (x_pred >= np.min(x_train))).reshape(-1)
-        idx_out_range = ((x_pred > np.max(x_train)) | (x_pred < np.min(x_train))).reshape(-1)
-        y_pred[idx_out_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
+        y_pred[~idx_in_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
 
-    elif train_idx:
-        if not test_idx:
+    elif train_idx is not None:
+        if test_idx is None:
             test_idx = np.arange(len(x_pred))
         idx_in_range = ((test_idx <= np.max(train_idx)) & (test_idx >= np.min(train_idx))).reshape(-1)
-        idx_out_range = ((test_idx > np.max(train_idx)) | (test_idx < np.min(train_idx))).reshape(-1)
-        y_pred[idx_out_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
+        y_pred[~idx_in_range] = np.mean(y_pred[idx_in_range])  # set to constant value out of range
 
     ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df, transformed=True),
                      x_pred=x_pred_trans, x_train=x_train_trans, y_train=y_train)
