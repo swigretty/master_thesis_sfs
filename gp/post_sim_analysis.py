@@ -10,6 +10,8 @@ split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun", "pred_
          "train": ["covered_fraction_fun", "pred_logprob", "data_fraction", "log_marginal_likelihood", "meas_noise_var"],
          "test": ["covered_fraction_fun", "pred_logprob", "data_fraction", "meas_noise_var"]}
 
+plt.style.use('tableau-colorblind10')
+
 
 def get_offset_annotate(ii, x_range, y_range=1.2):
     x_offset = 0
@@ -25,19 +27,19 @@ def get_offset_annotate(ii, x_range, y_range=1.2):
     return x_offset, y_offset
 
 
-def target_measure_perf_plot(target_measures_df, annotate="mse"):
-    colors = plt.cm.rainbow(np.linspace(0, 1, len(target_measures_df["method"].unique())))
-    cdict = {i: color for i, color in enumerate(colors)}
-    # cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple", 5: ""}
-
+def target_measure_perf_plot(target_measures_df, annotate="mse", ci_width_max=30):
+    cmap = mpl.colormaps["viridis"]
+    colors = [cmap.colors[int(i)] for i in np.linspace(0, len(cmap.colors)-1, len(target_measures_df["method"].unique()))]
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
-    target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
+    target_measures_df["color"] = target_measures_df["method"].apply(lambda x: colors[method_col_map[x]])
+
     fig, ax = plt.subplots(nrows=1, ncols=len(target_measures_df["data_fraction"].unique()), figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
         cur_ax = ax
         if len(target_measures_df["data_fraction"].unique()) > 1:
             cur_ax = ax[i]
         cur_ax.set_title(f"{data_fraction=}")
+        dff = dff[dff["ci_width"] <= ci_width_max]
         for ii, (method, df) in enumerate(dff.groupby("method")):
             cur_ax.scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
             cur_ax.set_ylim(- 0.1, 1.1)
@@ -130,8 +132,8 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None):
 
 
 if __name__ == "__main__":
-    experiment_name = "new_measures"
-    plot_all(experiment_name, annotate="mse")
+    experiment_name = "new_measures_spline_fixed_no_transform_quantile"
+    plot_all(experiment_name, annotate=None)
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
