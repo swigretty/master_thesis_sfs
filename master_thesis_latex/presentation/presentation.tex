@@ -27,6 +27,7 @@
 \graphicspath{{Images/}{./}} % Specifies where to look for included images (trailing slash required)
 
 \usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule for better rules in tables
+\usepackage[font=footnotesize,labelfont=bf]{caption}
 %----------------------------------------------------------------------------------------
 %	SELECT LAYOUT THEME
 %----------------------------------------------------------------------------------------
@@ -683,7 +684,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 	\end{verbatim}
 
-		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
 				\begin{figure}
 					\includegraphics[width=\linewidth]{true_decomposed_rescaled}
@@ -799,28 +800,22 @@ as a collection of multivariate normally distributed random variables and thus a
 			\end{itemize}
 			\item Extract target measure including its distribution.
 				\begin{itemize}
-					\item GP: If distribution cannot be calculated analytically (e.g. TTR) we can
-					sample from the posterior distribution (Multivariate Gaussian) to approx. it.
-					\item Baseline Methods: If distribution cannot be calculated analytically use bootstrap
+					\item GP: sample from the posterior distribution (Multivariate Gaussian) to approx. it.
+					\item Baseline Methods: Use bootstrap to approx. it
 				\end{itemize}
 			\item Calculate performance metric between true and predicted values.
 		\end{enumerate}
-	\smallskip
+
+	\bigskip
 	Calculate mean performance over $n_{simulations}$
-	\smallskip
+		\begin{itemize}
+			\item CI coverage of true value and CI width
+		\end{itemize}
+
+	\bigskip
 
 	Compare performance of GP Regression to baseline methods
 
-	\bigskip % Vertical whitespace
-
-	\begin{itemize}
-		\item Performance metrics
-		\begin{itemize}
-			\item CI coverage of true value and CI width
-%			\item Predictive probability of the true value (of e.g. test, train or overall data, true mean)
-%			\item Mean squared error (does not account for uncertainty estimate)
-		\end{itemize}
-	\end{itemize}
 
 \end{frame}
 
@@ -880,15 +875,15 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-\begin{frame}
-	\frametitle{Methods - Baseline Methods}
-	\framesubtitle{Naive TTR}
-		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_naive_ttr}
-			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
-		\end{figure}
-
-\end{frame}
+%\begin{frame}
+%	\frametitle{Methods - Baseline Methods}
+%	\framesubtitle{Naive TTR}
+%		\begin{figure}
+%			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_naive_ttr}
+%			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+%		\end{figure}
+%
+%\end{frame}
 
 \begin{frame}
 	\frametitle{Methods - Baseline Methods}
@@ -923,31 +918,55 @@ as a collection of multivariate normally distributed random variables and thus a
 \begin{frame}
 	\frametitle{Methods - Target Measures}
 
-	Hourly/Daily/Weekly Mean:
+	Hourly/Daily/Weekly Mean
 	\begin{itemize}
-		\item Weekly mean of prediction
-		\item TTR Naive: Mean of available measurments within an hour/day/week
+		\item Calculation:
+		\begin{itemize}
+			\item General: Mean of predicted values within the time period
+			\item TTR Naive: Mean of available measurements within the time period. If no available measurement
+			global mean is used
+		\end{itemize}
 	\end{itemize}
-
 
 	\bigskip
 
 	Time in Target Range (TTR):
-
-	Values for Threshold $\gamma$:
 	\begin{itemize}
-		\item 24h: 90 to 125 (for systolic BP)
-		\item day: 90 to 130 (for systolic BP)
-		\item night: 80 to 120 (for systolic BP)
+		\item Target Range: 90 to 125 mmHg
+		\item Calculation:
+		\begin{itemize}
+			\item General: Number of predicted data points within the range over the total number of data points
+			\item Naive TTR: Number of available data points within the range over the total number of available data points
+		\end{itemize}
 	\end{itemize}
 
-	Calculate TTR:
+%	Calculate TTR:
+%	\begin{itemize}
+%			\item General: Number of predicted data points within the range over the total number of data points
+%			\item Naive TTR: Number of available data points within the range over the total number of available data points
+%			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
+%			\item GP/Spline/: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
+%			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
+%	\end{itemize}
+
+\end{frame}
+
+
+\subsection{Adversarial Analysis}
+
+\begin{frame}
+	\frametitle{Methods - Adversarial Analysis}
+
 	\begin{itemize}
-			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
-			\item GP: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
-			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
+		\item Data density (0.5 to 4 mearurments per hour)
+		\item Seasonal sampling
 	\end{itemize}
 
+
+	\begin{figure}
+		\includegraphics[width=0.5\linewidth]{new_measures_transform_quantile_sin_rbf_seasonal_default_08_19_18_22_59_plot_true_with_samples.pdf}
+		\caption{Seasonal sampling with 2 samples per hour}
+	\end{figure}
 \end{frame}
 
 
@@ -972,45 +991,84 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
+
 \begin{frame}
 	\frametitle{Results}
-	\framesubtitle{Weekly Mean} % Optional subtitle
+	\framesubtitle{Hourly Mean} % Optional subtitle
 
 	Simulation over a 100 samples from true GP
 
 	\begin{figure}
-			\includegraphics[width=0.8\linewidth]{overall_mean_eval_sin_rbf_seasonal_extreme}
-			\caption{Extreme Seasonal Sampling}
+			\includegraphics[width=0.8\linewidth]{mean_1h_eval_sin_rbf_default}
+			\caption{Uniform Sampling}
 	\end{figure}
-\end{frame}
 
+	\begin{figure}
+			\includegraphics[width=0.8\linewidth]{mean_1h_eval_sin_rbf_seasonal_default}
+			\caption{Seasonal Sampling}
+	\end{figure}
+
+\end{frame}
 
 
 \begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Weekly Mean} % Optional subtitle
+	\frametitle{Results}
+	\framesubtitle{Time in Target Range} % Optional subtitle
 
-	Uniform Sampling
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_14_50_32_plot_posterior_gp.png}
-					\caption{GP}
+	Simulation over a 100 samples from true GP
 
-				\end{figure}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_linear.pdf}
-					\caption{Linear Regression}
-				\end{figure}
+	\begin{figure}
+			\includegraphics[width=0.85\linewidth]{ttr_eval_sin_rbf_default}
+			\caption{Uniform Sampling}
+	\end{figure}
 
-		\end{column}
-	\end{columns}
-
-
+	\begin{figure}
+			\includegraphics[width=0.85\linewidth]{ttr_eval_sin_rbf_seasonal_default}
+			\caption{Seasonal Sampling}
+	\end{figure}
 
 \end{frame}
+
+
+\section{Discussion}
+
+\begin{frame}
+	\frametitle{Discussion}
+
+	\begin{itemize}
+		\item spline huge confidence intervals for very low data frequency
+		\item Linear does not improve with more data. Gives decent weekly mean estimates
+  also for very low data densities and when there is seasonal sampling.
+  Does not estimate the 1h mean and TTR values as well as GP and spline.
+		\item Naive TTR is not a good estimator of TTR.
+	\end{itemize}
+
+%	\begin{itemize}
+%		\item Measurement noise variance $\approx 0.5 *$ total variance
+%		\item AR(1) component variance $\approx 0.1 *$ measurement noise variance
+%		\item Seasonal Component variance $\approx 21 \approx 0.4 *$ total variance (for sinus this equal amplitude of 8. $Var(\sin{x}) = \frac{\text{ampl}^2}{2}$)
+%		\item GP can assess local uncertainty due to missing value, which is not needed when evaluating 1 week mean
+%		\item Simulation restricted to perfect seasonal patterns
+%	\end{itemize}
+
+\end{frame}
+
+
+
+%\begin{frame}
+%	\frametitle{Results}
+%	\framesubtitle{Weekly Mean} % Optional subtitle
+%
+%	Simulation over a 100 samples from true GP
+%
+%	\begin{figure}
+%			\includegraphics[width=0.8\linewidth]{overall_mean_eval_sin_rbf_seasonal_extreme}
+%			\caption{Extreme Seasonal Sampling}
+%	\end{figure}
+%\end{frame}
+
+
+
 
 
 
