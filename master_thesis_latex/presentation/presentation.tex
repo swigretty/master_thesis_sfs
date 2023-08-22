@@ -737,19 +737,6 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-\begin{frame}
-	\frametitle{Methods - BP Time Series Simulation}
-	\framesubtitle{Exampe - Uniform Sampling}
-
-
-	\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_19_14_50_32_fit}
-			\caption{GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
-	\end{figure}
-
-\end{frame}
-
-
 
 \subsection{Performance Evaluation}
 
@@ -792,7 +779,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		for i in $1 \dots n_{simulations}$:
 		\begin{enumerate}
 			\item Simulate from true GP (adversarial add non-gaussian noise)
-			\item subsample data (adversarial: different densities, non-uniform sampling)
+			\item Subsample data (adversarial: different densities, non-uniform sampling)
 			\item Fit Regression
 			\begin{itemize}
 				\item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
@@ -816,49 +803,59 @@ as a collection of multivariate normally distributed random variables and thus a
 
 	Compare performance of GP Regression to baseline methods
 
-
 \end{frame}
+%
+%\begin{frame}
+%	\frametitle{Methods - Performance Evaluation}
+%	\framesubtitle{Simulation and GP Regression Details}
+%	Simulation of true BP signal and measurements:
+%		\begin{itemize}
+%			\item $X=\{x_1, \dots x_n\}$: The input time points of interest, i.e. 1 week with 10 BP values per hour.
+%			\item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
+%			\item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
+%		\end{itemize}
+%	\bigskip
+%	Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
+%	\begin{itemize}
+%		\item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
+%		\item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
+%	\end{itemize}
+%
+%	\bigskip
+%
+%	Fit GP regression model to training data $y_{train}$, $X_{train}$:
+%			\begin{itemize}
+%				\item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
+%				$p(y_{train}| \theta)$
+%				\item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
+%				The posterior (predictive) probability density of $f_X$. The posterior mean vector
+%				$\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
+%				\begin{itemize}
+%					\item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
+%					\item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
+%
+%				\end{itemize}
+%			\end{itemize}
+%	\bigskip
+%	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
+%		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
+%			\begin{itemize}
+%				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
+%				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
+%				\bar{\Sigma}_{X_{train}})$
+%				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
+%			\end{itemize}
+%
+%\end{frame}
 
 \begin{frame}
-	\frametitle{Methods - Performance Evaluation}
-	\framesubtitle{Simulation and GP Regression Details}
-	Simulation of true BP signal and measurements:
-		\begin{itemize}
-			\item $X=\{x_1, \dots x_n\}$: The input time points of interest, i.e. 1 week with 10 BP values per hour.
-			\item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
-			\item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
-		\end{itemize}
-	\bigskip
-	Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
-	\begin{itemize}
-		\item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
-		\item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
-	\end{itemize}
+	\frametitle{Methods - GP Regression}
+	\framesubtitle{Example Uniform Sampling 1}
 
-	\bigskip
-
-	Fit GP regression model to training data $y_{train}$, $X_{train}$:
-			\begin{itemize}
-				\item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
-				$p(y_{train}| \theta)$
-				\item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
-				The posterior (predictive) probability density of $f_X$. The posterior mean vector
-				$\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
-				\begin{itemize}
-					\item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
-					\item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
-
-				\end{itemize}
-			\end{itemize}
-	\bigskip
-	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
-		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
-			\begin{itemize}
-				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
-				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
-				\bar{\Sigma}_{X_{train}})$
-				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
-			\end{itemize}
+	\begin{figure}
+			\includegraphics[width=0.6\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_19_14_50_32_fit}
+			\caption{GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampled across time)}
+	\end{figure}
 
 \end{frame}
 

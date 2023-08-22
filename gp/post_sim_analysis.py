@@ -43,7 +43,7 @@ def target_measure_perf_plot(target_measures_df, annotate="mse", ci_width_max=30
         cur_ax.set_title(f"{data_fraction=}")
         dff = dff[dff["ci_width"] <= ci_width_max]
         for ii, (method, df) in enumerate(dff.groupby("method")):
-            cur_ax.scatter(df["ci_width"], df["ci_covered"], s=20, c=df["color"], marker='o', label=method)
+            cur_ax.scatter(df["ci_width"], df["ci_covered"], s=30, c=df["color"], marker='o', label=method)
             cur_ax.set_ylim(- 0.1, 1.1)
             x_range = np.max(dff["ci_width"]) - np.min(dff["ci_width"])
             cur_ax.set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
