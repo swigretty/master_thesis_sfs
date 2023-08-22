@@ -28,10 +28,12 @@ def get_offset_annotate(ii, x_range, y_range=1.2):
 
 
 def target_measure_perf_plot(target_measures_df, annotate="mse", ci_width_max=30):
-    cmap = mpl.colormaps["viridis"]
-    colors = [cmap.colors[int(i)] for i in np.linspace(0, len(cmap.colors)-1, len(target_measures_df["method"].unique()))]
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(target_measures_df["method"].unique())))
+    cdict = {i: color for i, color in enumerate(colors)}
+    # cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple", 5: ""}
+
     method_col_map = {meth: i for i, meth in enumerate(target_measures_df["method"].unique())}
-    target_measures_df["color"] = target_measures_df["method"].apply(lambda x: colors[method_col_map[x]])
+    target_measures_df["color"] = target_measures_df["method"].apply(lambda x: cdict[method_col_map[x]])
 
     fig, ax = plt.subplots(nrows=1, ncols=len(target_measures_df["data_fraction"].unique()), figsize=(14, 4))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby("data_fraction")):
