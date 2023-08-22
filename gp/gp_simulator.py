@@ -345,7 +345,7 @@ class GPSimulator():
         ax.scatter(data.x, data.y, color="red", zorder=5, label=f"{np.var(data.y)=}")
         ax.legend()
 
-    def plot(self):
+    def plot(self, figname_suffix=""):
         nrows = 3
         ncols = 2
 
@@ -369,9 +369,11 @@ class GPSimulator():
             ax[2, 1].plot(self.x, v, label=k)
 
         fig.tight_layout()
-        figfile = "fit"
+
+        if figname_suffix and not figname_suffix.startswith("_"):
+            figname_suffix = f"_{figname_suffix}"
         if self.output_path:
-            fig.savefig(self.output_path / f"{figfile}.pdf")
+            fig.savefig(self.output_path / f"fit{figname_suffix}.pdf")
             plt.close(fig)
         return fig
 
@@ -580,13 +582,15 @@ class GPSimulationEvaluator(GPSimulator):
             pd.DataFrame(eval_output).to_csv(self.output_path / f"evaluate_target_measures.csv")
         return eval_output
 
-    def plot_posterior_baseline(self):
+    def plot_posterior_baseline(self, figname_suffix=""):
+        if figname_suffix and not figname_suffix.startswith("_"):
+            figname_suffix = f"_{figname_suffix}"
         for method, pred in self.pred_baseline.items():
-            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}")
+            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}{figname_suffix}")
 
-    def plot(self):
-        super().plot()
-        self.plot_posterior_baseline()
+    def plot(self, **kwargs):
+        super().plot(**kwargs)
+        self.plot_posterior_baseline(**kwargs)
 
     def evaluate_multisample(self, n_samples=100, only_var=False):
         current_config = copy(self.gps_kwargs_normalized)
@@ -613,6 +617,10 @@ class GPSimulationEvaluator(GPSimulator):
                 eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
                 eval_target_measure.extend(gps.evaluate_target_measures(ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
+
+            if i % 10 == 0:
+                gps.output_path = self.output_path
+                gps.plot(figname_suffix=f"_{i}")
 
         logger.setLevel(previousloglevel)
 
