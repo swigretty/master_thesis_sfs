@@ -571,43 +571,39 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \section{Methods}
 
-\subsection{BP Time Series Simulation}
+\begin{frame}
+	\frametitle{Methods}
+	\framesubtitle{Overview}
 
+	\begin{itemize}
+		\item Simulate BP Time Series
+	\end{itemize}
 
-\begin{frame}[fragile]
-	\frametitle{Methods - BP Time Series Simulation}
-	\framesubtitle{Aktiia Population Level Time Series Characteristics}
+	\bigskip % Vertical whitespace
 
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-				\begin{figure}
-					\includegraphics[width=0.9\linewidth]{20230531_number_of_valid_meas}
-				\end{figure}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-				\begin{figure}
-					\includegraphics[width=0.7\linewidth]{20230531_LinTrap_amplitude_distrib}
-				\end{figure}
+	\begin{itemize}
+		\item For target measure compare performance of GP regression to baseline methods:
+		\begin{itemize}
+			\item Target measures: weekly daily and hourly mean, TTR
+			\item Baseline Methods: Linear Regression, empirical overall mean, ttr naive, cubic spline
+		\end{itemize}
+	\end{itemize}
 
-		\end{column}
-	\end{columns}
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-				\begin{figure}
-					\includegraphics[width=0.9\linewidth]{meas_noise_var_stats}
-				\end{figure}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-				\begin{figure}
-					\includegraphics[width=0.7\linewidth]{weekly_var}
-				\end{figure}
+	\bigskip % Vertical whitespace
 
-		\end{column}
-	\end{columns}
+	\begin{itemize}
+		\item Adversarial analysis: compare performance of baseline and GP regression introducing different adversarial
+		factors
+		\begin{itemize}
+			\item Model mis-specification (mis-specified kernel or hyperparameters and non-gausianities)
+			\item Missing data. More or less data available, more or less extreme non-uniform sampling patterns
+		\end{itemize}
 
+	\end{itemize}
 
 \end{frame}
 
+\subsection{BP Time Series Simulation}
 
 
 \begin{frame}
@@ -655,11 +651,9 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-
-
 \begin{frame}
 	\frametitle{Methods - BP Time Series Simulation}
-	\framesubtitle{Aktiia Population Level Time Series Characteristics - Part 2}
+	\framesubtitle{Aktiia Population Level Time Series Characteristics - Part 3}
 
 	Define GP such that its samples have similar characteristics:
 
@@ -676,8 +670,6 @@ as a collection of multivariate normally distributed random variables and thus a
 	\end{itemize}
 
 \end{frame}
-
-
 
 \begin{frame}[fragile]
 	\frametitle{Methods - BP Time Series Simulation}
@@ -744,7 +736,6 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-
 \begin{frame}
 	\frametitle{Methods - BP Time Series Simulation}
 	\framesubtitle{Exampe - Uniform Sampling}
@@ -762,8 +753,14 @@ as a collection of multivariate normally distributed random variables and thus a
 \subsection{Performance Evaluation}
 
 \begin{frame}
-	\frametitle{Methods - Performance Evaluation}
+	\frametitle{Methods}
 	\framesubtitle{Overview}
+
+	\begin{itemize}
+		\item Simulate BP Time Series
+	\end{itemize}
+
+	\bigskip % Vertical whitespace
 
 	\begin{itemize}
 		\item For target measure compare performance of GP regression to baseline methods:
@@ -788,10 +785,9 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{frame}
 
 
-
 \begin{frame}
 	\frametitle{Methods - Performance Evaluation}
-	\framesubtitle{Simulation and Evaluation}
+	\framesubtitle{Simulation and Evaluation Flow}
 		for i in $1 \dots n_{simulations}$:
 		\begin{enumerate}
 			\item Simulate from true GP (adversarial add non-gaussian noise)
@@ -827,8 +823,6 @@ as a collection of multivariate normally distributed random variables and thus a
 	\end{itemize}
 
 \end{frame}
-
-
 
 \begin{frame}
 	\frametitle{Methods - Performance Evaluation}
@@ -896,7 +890,6 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-
 \begin{frame}
 	\frametitle{Methods - Baseline Methods}
 	\framesubtitle{Linear Regression}
@@ -925,80 +918,39 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
-
-
-
+\subsection{Target Measures}
 
 \begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Hourly/Daily/Weekly Mean} % Optional subtitle
+	\frametitle{Methods - Target Measures}
 
-	Calculate hourly/daily/weekly mean:
+	Hourly/Daily/Weekly Mean:
 	\begin{itemize}
-		\item True: mean($f_{X}$)
-		\item GP Regression: mean($\bar{\mu}$) with standard error
-		$1 / n * \sqrt {\sum_{i=1}^{n}\sum_{j=1}^{n} \bar{\Sigma}_{i,j}}$ or sample from posterior
-		\item Baseline Methods:
-		\begin{itemize}
-			\item Naive:
-			\begin{itemize}
-				\item Empirical mean of $y_{train}$ with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
-			\end{itemize}
-			\item Linear Regression:
-			\begin{itemize}
-				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
-
-			\end{itemize}
-			\item Cubic Spline:
-			\begin{itemize}
-				\item smooting parameter identified by cross validation
-			\end{itemize}
-		\end{itemize}
+		\item Weekly mean of prediction
+		\item TTR Naive: Mean of available measurments within an hour/day/week
 	\end{itemize}
+
 
 	\bigskip
 
-	Performance Metrics:
+	Time in Target Range (TTR):
+
+	Values for Threshold $\gamma$:
 	\begin{itemize}
-		\item CI coverage + CI width
+		\item 24h: 90 to 125 (for systolic BP)
+		\item day: 90 to 130 (for systolic BP)
+		\item night: 80 to 120 (for systolic BP)
 	\end{itemize}
+
+	Calculate TTR:
+	\begin{itemize}
+			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
+			\item GP: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
+			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
+	\end{itemize}
+
 \end{frame}
 
 
-\begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Hourly/Daily/Weekly Mean} % Optional subtitle
-
-	Calculate hourly/daily/weekly mean:
-	\begin{itemize}
-		\item True: mean($f_{X}$)
-		\item GP Regression: mean($\bar{\mu}$) with standard error
-		$1 / n * \sqrt {\sum_{i=1}^{n}\sum_{j=1}^{n} \bar{\Sigma}_{i,j}}$ or sample from posterior
-		\item Baseline Methods:
-		\begin{itemize}
-			\item Naive:
-			\begin{itemize}
-				\item Empirical mean of $y_{train}$ with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
-			\end{itemize}
-			\item Linear Regression:
-			\begin{itemize}
-				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
-
-			\end{itemize}
-			\item Cubic Spline:
-			\begin{itemize}
-				\item smooting parameter identified by cross validation
-			\end{itemize}
-		\end{itemize}
-	\end{itemize}
-
-	\bigskip
-
-	Performance Metrics:
-	\begin{itemize}
-		\item CI coverage + CI width
-	\end{itemize}
-\end{frame}
 
 \section{Results}
 
