@@ -111,6 +111,7 @@
 \usepackage{bbm}
 \usepackage{amsmath}
 \usepackage{textcomp}
+\usepackage{stmaryrd}
 %----------------------------------------------------------------------------------------
 %	SELECT INNER THEME
 %----------------------------------------------------------------------------------------
@@ -568,13 +569,14 @@ as a collection of multivariate normally distributed random variables and thus a
 	where $p$ is the period
 \end{frame}
 
+\section{Methods}
 
-
-\section{Simulations} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
+\subsection{BP Time Series Simulation}
 
 
 \begin{frame}[fragile]
-	\frametitle{Aktiia Population Level Time Series Characteristics}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Aktiia Population Level Time Series Characteristics}
 
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
@@ -609,48 +611,77 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Aktiia Population Level Time Series Characteristics}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Aktiia Population Level Time Series Characteristics - Part 1}
+
+	Define GP such that its samples have similar characteristics:
 
 	\begin{itemize}
-		\item Within subject weekly BP sample variance $\approx 49 mmHg^2$
-		\begin{itemize}
-			\item This is biased estimate of signal variance due to non-uniform sampling. In case
-			of periodic sampling pattern, variance would be underestimated.
-		\end{itemize}
+		\item Within subject weekly BP sample variance $\approx 49 mmHg^2 = 7^2 mmHg^2$
+			\begin{figure}
+					\includegraphics[width=0.4\linewidth]{weekly_var}
+					\caption{Distribution of weekly standard deviation within Aktiia population.
+					Note: This is biased estimate of signal variance due to non-uniform sampling. In case
+					of periodic sampling pattern, variance would be underestimated}
+			\end{figure}
 		\item measurement (gaussian white) noise variance $=31 mmHg^2$
 		\begin{itemize}
-			\item Var($BP_{Ref} - BP_{Aktiia}$) = 62 mmHg = Var($Noise_{Ref} - Noise_{Aktiia}$) = Var($Noise_{Ref}$) + Var($Noise_{Aktiia}$) - 2COV($Noise_{Ref}$,
-			$Noise_{Aktiia}$)
+			\item Measured standard deviation of differences between SBP determinations of the Aktiia bracelet
+			($BP_{Aktiia}$)  and double-auscultation ($BP_{Ref}$) = $7.92 mmHg$
+			\item $Var(BP_{Ref} - BP_{Aktiia}) = 7.92^2 mmHg^2 = 62 mmHg^2 = Var(Noise_{Ref} - Noise_{Aktiia})
+			= Var(Noise_{Ref}) + Var(Noise_{Aktiia}) - 2COV(Noise_{Ref}, Noise_{Aktiia})$
 		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Aktiia Population Level Time Series Characteristics - Part 2}
+
+	Define GP such that its samples have similar characteristics:
+
+	\begin{itemize}
 		\item cyclic pattern amplitude $\approx 8 mmHg$
+				\begin{figure}
+					\includegraphics[width=0.5\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\caption{Aktiia night dip detection. ampl = $\frac{(\text{max-min})*2}{\pi}$}
+				\end{figure}
 		\begin{itemize}
-			\item night dip (= avg night-avgd day) = $10 mmHg$
-			\item ampl=$\frac{10/2 *\pi}{2}$) $\approx 8 mmHg$
+			\item night dip amplitude (= avg night-avg day = $\frac{(\text{max-min})*2}{\pi}$) $ \approx 10 mmHg$
+			\item cyclic pattern amplitude (=(max-min)/2) $\approx \frac{10 *\pi}{4} \approx 8 mmHg$
 		\end{itemize}
-		\item cyclic pattern period $= 24$ h
-		\item AR(1) component with length scale 3 h and Sample Path Variance $\approx 3.97 mmHg^2$
-		\item long term trend Var $\approx 0.14 mmHg^2$
-		\item data density (0.1 to 3 per hour, i.e. 2.4 to 72 per day)
-		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
+
 	\end{itemize}
 
-	\begin{block}{Questions}
-		\begin{itemize}
-			\item Do we want to simulate the whole population (i.e. sample from the population level distribution
-		over data density, meas noise, cycle amplitude etc.) ?
-			\item If so do we want to put priors also on GP hyperparameters e.g. meas noise, cycle amplitude based on
-		the population level distribution ?
-			\item Or do we just look at realistic ranges to tell when methods fail?
-		\end{itemize}
-	\end{block}
+\end{frame}
 
+
+
+\begin{frame}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Aktiia Population Level Time Series Characteristics - Part 2}
+
+	Define GP such that its samples have similar characteristics:
+
+	\begin{itemize}
+		\item data density (0.5 to 4 per hour, i.e. 1.2 to 96 per day)
+		\begin{figure}
+			\includegraphics[width=0.4\linewidth]{20230531_number_of_valid_meas}
+			\caption{Number of valid measurements}
+		\end{figure}
+		\item cyclic pattern period $= 24$ h
+		\item AR(1) component with length scale 3 h and sample path variance $\approx 3.97 mmHg^2$
+		\item long term trend variance $\approx 0.14 mmHg^2$
+		\item cyclic data density pattern (e.g. less data during night, than during day and vice versa)
+	\end{itemize}
 
 \end{frame}
 
 
 
 \begin{frame}[fragile]
-	\frametitle{Simulation}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{GP Kernel Function}
 
 	\begin{verbatim}
 
@@ -664,6 +695,8 @@ as a collection of multivariate normally distributed random variables and thus a
 		\begin{column}{0.45\textwidth} % Left column width
 				\begin{figure}
 					\includegraphics[width=\linewidth]{true_decomposed_rescaled}
+					\caption{Decomposed posterior kernel function based on a sample drawn from
+					a GP with additive kernel function}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
@@ -677,8 +710,9 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{frame}
 
 \begin{frame}
-	\frametitle{Simulation - Population Level Time Series Characteristics}
-	200 draws from GP
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Comparison of Population Level Time Series Characteristics}
+	300 draws from GP
 
 			\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
@@ -695,13 +729,13 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.5\linewidth]{20230531_LinTrap_amplitude_distrib}
-					\caption{Aktiia night dip detection: $\frac{(\text{max-min})*2}{\pi}$}
+					\includegraphics[width=0.45\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\caption{Aktiia night dip detection. Night dip ampl=$\frac{(\text{max-min})*2}{\pi}$}
 				\end{figure}
 
 			\begin{figure}
-					\includegraphics[width=0.7\linewidth]{variance_dip_ampl_summary}
-					\caption{GP: $\frac{\text{max-min}}{\pi} = \frac{\sqrt {2* \text{var(seasonal)}} * 2}{\pi}$)}
+					\includegraphics[width=0.6\linewidth]{variance_dip_ampl_summary}
+					\caption{GP: 0.5 * night dip ampl $=\frac{\sqrt {2* \text{var(seasonal)}} * 2}{\pi}$)}
 			\end{figure}
 
 
@@ -712,42 +746,30 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Simulation}
+	\frametitle{Methods - BP Time Series Simulation}
+	\framesubtitle{Exampe - Uniform Sampling}
 
 
 	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_36_fit}
-%			\caption{Periodic Kernel with different length scale}
+			\includegraphics[width=0.6\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_19_14_50_32_fit}
+			\caption{GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 	\end{figure}
 
 \end{frame}
 
-
-
-\begin{frame}
-	\frametitle{Simulation}
-
-	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_18_fit}
-%			\caption{Periodic Kernel with different length scale}
-	\end{figure}
-
-\end{frame}
-
-
-
-\section{Outlook}% Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 
 \subsection{Performance Evaluation}
 
 \begin{frame}
-	\frametitle{Performance Evaluation}
+	\frametitle{Methods - Performance Evaluation}
+	\framesubtitle{Overview}
 
 	\begin{itemize}
-		\item For target measure compare performance of GP regression to baseline method:
+		\item For target measure compare performance of GP regression to baseline methods:
 		\begin{itemize}
-			\item weekly/daily/hourly mean to empirical average over sample points or to mean of linear regression line
+			\item Target measures: weekly daily and hourly mean, TTR
+			\item Baseline Methods: Linear Regression, empirical overall mean, ttr naive, cubic spline
 		\end{itemize}
 	\end{itemize}
 
@@ -768,7 +790,8 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Simulation and Evaluation}
+	\frametitle{Methods - Performance Evaluation}
+	\framesubtitle{Simulation and Evaluation}
 		for i in $1 \dots n_{simulations}$:
 		\begin{enumerate}
 			\item Simulate from true GP (adversarial add non-gaussian noise)
@@ -798,8 +821,8 @@ as a collection of multivariate normally distributed random variables and thus a
 		\item Performance metrics
 		\begin{itemize}
 			\item CI coverage of true value and CI width
-			\item Predictive probability of the true value (of e.g. test, train or overall data, true mean)
-			\item Mean squared error (does not account for uncertainty estimate)
+%			\item Predictive probability of the true value (of e.g. test, train or overall data, true mean)
+%			\item Mean squared error (does not account for uncertainty estimate)
 		\end{itemize}
 	\end{itemize}
 
@@ -808,7 +831,8 @@ as a collection of multivariate normally distributed random variables and thus a
 
 
 \begin{frame}
-	\frametitle{Simulation and GP Regression}
+	\frametitle{Methods - Performance Evaluation}
+	\framesubtitle{Simulation and GP Regression Details}
 	Simulation of true BP signal and measurements:
 		\begin{itemize}
 			\item $X=\{x_1, \dots x_n\}$: The input time points of interest, i.e. 1 week with 10 BP values per hour.
@@ -849,6 +873,61 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
+\subsection{Baseline Methods}
+
+\begin{frame}
+	\frametitle{Methods - Baseline Methods}
+	\framesubtitle{Overall mean}
+
+		\begin{figure}
+			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_naive_overall_mean}
+			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+		\end{figure}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Methods - Baseline Methods}
+	\framesubtitle{Naive TTR}
+		\begin{figure}
+			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_naive_ttr}
+			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+		\end{figure}
+
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{Methods - Baseline Methods}
+	\framesubtitle{Linear Regression}
+		\begin{figure}
+			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_linear}
+			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+		\end{figure}
+
+	\begin{itemize}
+		\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Methods - Baseline Methods}
+	\framesubtitle{Spline}
+		\begin{figure}
+			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_spline}
+			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+		\end{figure}
+
+	\begin{itemize}
+		\item smoothing parameter identified using cross validation
+	\end{itemize}
+
+\end{frame}
+
+
+
+
 
 \begin{frame}
 	\frametitle{Extract Target Measures and Evaluate}
@@ -870,7 +949,10 @@ as a collection of multivariate normally distributed random variables and thus a
 				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
 
 			\end{itemize}
-			\item Kernel Regression/ Smoothing Spline
+			\item Cubic Spline:
+			\begin{itemize}
+				\item smooting parameter identified by cross validation
+			\end{itemize}
 		\end{itemize}
 	\end{itemize}
 
@@ -883,25 +965,74 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{frame}
 
 
-
 \begin{frame}
 	\frametitle{Extract Target Measures and Evaluate}
+	\framesubtitle{Hourly/Daily/Weekly Mean} % Optional subtitle
+
+	Calculate hourly/daily/weekly mean:
+	\begin{itemize}
+		\item True: mean($f_{X}$)
+		\item GP Regression: mean($\bar{\mu}$) with standard error
+		$1 / n * \sqrt {\sum_{i=1}^{n}\sum_{j=1}^{n} \bar{\Sigma}_{i,j}}$ or sample from posterior
+		\item Baseline Methods:
+		\begin{itemize}
+			\item Naive:
+			\begin{itemize}
+				\item Empirical mean of $y_{train}$ with standard error $\frac{\text{std}(y_{train})}{\sqrt{m}}$
+			\end{itemize}
+			\item Linear Regression:
+			\begin{itemize}
+				\item $Y(t) = \beta_0 + \beta_1 t + \beta_2 \cos(2 \pi f t) + \beta_3 \sin(2 \pi f t) + \epsilon, \epsilon \text{ iid } \sim N(0, \sigma^2)$
+
+			\end{itemize}
+			\item Cubic Spline:
+			\begin{itemize}
+				\item smooting parameter identified by cross validation
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+
+	\bigskip
+
+	Performance Metrics:
+	\begin{itemize}
+		\item CI coverage + CI width
+	\end{itemize}
+\end{frame}
+
+\section{Results}
+
+\begin{frame}
+	\frametitle{Results}
 	\framesubtitle{Weekly Mean} % Optional subtitle
 
 	Simulation over a 100 samples from true GP
 
 	\begin{figure}
-			\includegraphics[width=0.7\linewidth]{target_measures_eval_uniform}
+			\includegraphics[width=0.8\linewidth]{overall_mean_eval_sin_rbf_default}
 			\caption{Uniform Sampling}
 	\end{figure}
 
-		\begin{figure}
-			\includegraphics[width=0.7\linewidth]{target_measures_eval_seasonal}
+	\begin{figure}
+			\includegraphics[width=0.8\linewidth]{overall_mean_eval_sin_rbf_seasonal_default}
 			\caption{Seasonal Sampling}
 	\end{figure}
 
-
 \end{frame}
+
+\begin{frame}
+	\frametitle{Results}
+	\framesubtitle{Weekly Mean} % Optional subtitle
+
+	Simulation over a 100 samples from true GP
+
+	\begin{figure}
+			\includegraphics[width=0.8\linewidth]{overall_mean_eval_sin_rbf_seasonal_extreme}
+			\caption{Extreme Seasonal Sampling}
+	\end{figure}
+\end{frame}
+
+
 
 \begin{frame}
 	\frametitle{Extract Target Measures and Evaluate}
@@ -911,14 +1042,14 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.45\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{plot_posterior_gp_uniform}
+					\includegraphics[width=\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_14_50_32_plot_posterior_gp.png}
 					\caption{GP}
 
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{plot_posterior_linear_uniform}
+					\includegraphics[width=\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_linear.pdf}
 					\caption{Linear Regression}
 				\end{figure}
 
