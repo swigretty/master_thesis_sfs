@@ -8,8 +8,10 @@ import numpy as np
 from logging import getLogger
 import logging
 import json
+from pathlib import Path
 from tqdm import tqdm
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel, Product
+from statsmodels.stats.proportion import proportion_confint
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from gp.gp_data import GPData
@@ -592,12 +594,76 @@ class GPSimulationEvaluator(GPSimulator):
         super().plot(**kwargs)
         self.plot_posterior_baseline(**kwargs)
 
+    def plot_variances(self, variance_df):
+        for col in variance_df.columns:
+            fig, ax = plt.subplots(nrows=1, ncols=1)
+            ax.hist(variance_df[col], bins=max(int(len(variance_df)/4), 1))
+            ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed',
+                       linewidth=1)
+            fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
+            plt.close(fig)
+
+    def summarize_eval_dict(self, eval_dict: dict) -> dict:
+        n_samples = len(next(iter(eval_dict.values())))
+        if eval_dict:
+            eval_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v
+                         in eval_dict.items()}
+            for v in eval_dict.values():
+                v["data_fraction"] = self.data_fraction
+                v["kernel_sim"] = self.kernel_sim
+                v["kernel_fit"] = self.gpm_fit.kernel_
+                v["n_samples"] = n_samples
+                v["meas_noise_var"] = self.meas_noise_var
+                v["output_path"] = self.output_path
+            with (self.output_path / "eval_summary.json").open("w") as f:
+                f.write(json.dumps(eval_dict, default=str))
+        return eval_dict
+
+    def summarize_eval_target_measures(
+            self, eval_target_measure_all:
+            pd.DataFrame | Path) -> pd.DataFrame:
+
+        if isinstance(eval_target_measure_all, Path):
+            eval_target_measure_all = pd.read_csv(eval_target_measure_all)
+        group_by_cols = ["method", "target_measure"]
+        grouped_df = eval_target_measure_all.groupby(
+            ["method", "target_measure"])
+
+        def ci_covered_confint(df: pd.DataFrame) -> tuple:
+            n = len(df)
+            if hasattr(df["f_true"], "len"):
+                n *= len(df["f_true"])
+            return proportion_confint(sum(df["ci_covered"]), n)
+
+        mean_df = grouped_df.agg("mean").reset_index(drop=False)
+        ci_covered_confint_df = grouped_df.apply(
+            ci_covered_confint).reset_index(drop=False)
+
+        agg_dict = {"ci_covered": [prop_confint, "count", "mean"],
+                    **{c: "mean" for c in eval_target_measure_all.columns
+                       if c not in group_by_cols + ["ci_covered"]}}
+
+        eval_target_measure = eval_target_measure_all.groupby(
+            group_by_cols).agg(agg_dict).reset_index(drop=False)
+        eval_target_measure.columns = [
+            "n_samples" if "count" in col else
+            ''.join(col).replace("mean", "").strip() for col in
+            eval_target_measure.columns.values]
+        prop_confint_col = ''.join(
+            ["ci_covered", prop_confint.__name__]).replace(
+            "mean", "").strip()
+        eval_target_measure[
+            ["ci_covered_lb", "ci_covered_ub"]] = eval_target_measure[
+            prop_confint_col].to_list()
+        eval_target_measure.to_csv(
+            self.output_path / "eval_measure_summary.csv")
+        return eval_target_measure
+
     def evaluate_multisample(self, n_samples=100, only_var=False):
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
-        # TODO is it fair to reuse baseline methods?
-        # use the baseline method just identified, so you don't have to reevaluate smoothing params for spline
-        # each time with CV
+        # use the baseline method just identified, so you don't have to
+        # reevaluate smoothing params for spline ach time with CV
         current_config["baseline_methods"] = self.baseline_methods
         current_config["target_measures"] = self.target_measures
 
@@ -612,10 +678,10 @@ class GPSimulationEvaluator(GPSimulator):
 
             if not only_var:
                 gps.fit()
-                # TODO eval_dict as df with group by and aggregate
                 eval_sample = gps.evaluate()
                 eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
-                eval_target_measure.extend(gps.evaluate_target_measures(ci_fun_kwargs={"logger": logger}))
+                eval_target_measure.extend(gps.evaluate_target_measures(
+                    ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
 
             if i % 10 == 0:
@@ -626,57 +692,20 @@ class GPSimulationEvaluator(GPSimulator):
 
         variance_df = pd.DataFrame(variances)
         variance_df.describe().to_csv(self.output_path / f"variance_summary.csv")
-
-        for col in variance_df.columns:
-            fig, ax = plt.subplots(nrows=1, ncols=1)
-            ax.hist(variance_df[col], bins=max(int(n_samples/4), 1))
-            ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed', linewidth=1)
-            fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
-            plt.close(fig)
+        self.plot_variances(variance_df)
 
         if eval_dict:
-            eval_dict = {k: pd.DataFrame(v).mean(axis=0).to_dict() for k, v in eval_dict.items()}
-            for v in eval_dict.values():
-                v["data_fraction"] = gps.data_fraction
-                v["kernel_sim"] = gps.kernel_sim
-                v["kernel_fit"] = gps.gpm_fit.kernel_
-                v["n_samples"] = n_samples
-                v["meas_noise_var"] = gps.meas_noise_var
-                v["output_path"] = self.output_path
-            with (self.output_path / "eval_summary.json").open("w") as f:
-                f.write(json.dumps(eval_dict, default=str))
+            eval_dict = self.summarize_eval_dict(eval_dict)
 
         if eval_target_measure:
             eval_target_measure_all = pd.DataFrame(eval_target_measure)
-            eval_target_measure_all.to_csv(self.output_path / "eval_measure_all.csv")
-            eval_target_measure = eval_target_measure_all.groupby(["method", "target_measure"]).agg(
-                "mean").reset_index(drop=False)
-            eval_target_measure["n_samples"] = n_samples
-            eval_target_measure.to_csv(self.output_path / "eval_measure_summary.csv")
+            eval_target_measure_all.to_csv(self.output_path /
+                                           "eval_measure_all.csv")
+            eval_target_measure = self.summarize_eval_target_measures(
+                eval_target_measure_all)
+
         plt.close("all")
         return eval_dict, eval_target_measure
-
-    # @Plotter
-    # def plot_overall_mean(self, ax=None, gps=None):
-    #     if gps is None:
-    #         gps = self
-    #     if gps is self:
-    #         pred_baseline = self.pred_baseline
-    #     else:
-    #         pred_baseline = self._get_pred_baseline(gps)
-    #
-    #     gps.plot_true_with_samples(ax=ax, add_offset=True)
-    #     plot_lines_dict = {"true_mean": gps.f_true.y,
-    #                        "gp_mean": gps.f_post.y_mean}
-    #
-    #     for k, v in pred_baseline.items():
-    #         plot_lines_dict[f"{k}_mean"] = v["data"].y_mean
-    #
-    #     # loosely dashed, dashed dotted, dotted
-    #     linestyles = [(0, (5, 10)), (0, (3, 10, 1, 10)), (0, (1, 10))]
-    #     for i, (k, v) in enumerate(plot_lines_dict.items()):
-    #         ax.plot(gps.x, np.repeat(np.mean(v) + gps.offset, len(gps.x)), label=k, linestyle=linestyles[i])
-    #     ax.legend()
 
     def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
@@ -691,38 +720,7 @@ class GPSimulationEvaluator(GPSimulator):
                 gps.plot_errors()
             else:
                 getattr(gps, plot_method)()
-            # self.plot_overall_mean(gps=gps)
         return
-
-    # def bootstrap(self, pred_fun, theta_fun, train_x=None, n_samples=100, alpha=0.05):
-    #     thetas = {}
-    #     train_y = self.y_true_train.y
-    #     if train_x is None:
-    #         train_x = self.y_true_train.x
-    #     if not isinstance(theta_fun, list):
-    #         theta_fun = theta_fun
-    #
-    #     for i in range(n_samples):
-    #         idx = sorted(self.rng.choice(np.arange(len(train_y)), size=len(train_y), replace=True))
-    #         y_sub = train_y[idx]
-    #         x_sub = train_x[idx]
-    #         pred = pred_fun(self.x, x_sub, y_sub)
-    #         if i == 0:
-    #             fun = pred_fun
-    #             if isinstance(pred_fun, partial):
-    #                 fun = pred_fun.func
-    #             self.plot_posterior(pred_data=pred["data"], y_true_subsampled=GPData(x=x_sub, y=y_sub),
-    #                                 title=f"Prediction {fun.__name__}",
-    #                                 figname_suffix=f"bootstrap_{fun.__name__}")
-    #         for fun in theta_fun:
-    #             theta = fun(pred["data"].y_mean)
-    #             thetas_list = thetas.get(fun, [])
-    #             thetas_list.append(theta)
-    #
-    #     theta_hat = {k: np.mean(v) for k, v in thetas.items()}
-    #     ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
-    #           "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
-    #     return ci
 
 
 def plot_mean_decompose(kernel="sin_rbf"):

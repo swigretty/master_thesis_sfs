@@ -155,8 +155,8 @@ def get_spline_basis(x_pred, x_train, df):
     return x_pred_trans, x_train_trans
 
 
-def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None, train_idx=None,
-                  test_idx=None, **kwargs):
+def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False,
+                  dfs=None, train_idx=None, test_idx=None, **kwargs):
     if dfs is None:
         dfs = np.linspace(15, int(len(x_train)*0.8), 10)
     dfs = dfs.astype(int)
@@ -166,7 +166,8 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
         for _df in dfs:
             # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
             fit_pred_fun = partial(spline_reg_v2, df=_df)
-            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun,
+            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train,
+                                           fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
 
         df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
@@ -188,7 +189,8 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False, dfs=None
     else:
         x_pred = x_pred.reshape(-1, 1)
 
-    return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None), "ci_fun": ci_fun}
+    return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
+            "ci_fun": ci_fun}
 
 
 def gam_spline(x_pred, x_train, y_train, normalize_y=True, **kwargs):
