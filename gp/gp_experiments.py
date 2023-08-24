@@ -2,14 +2,12 @@ import copy
 
 from gp.gp_simulator import GPSimulator, GPSimulationEvaluator
 from gp.simulate_gp_config import base_config, GPSimulatorConfig
-from gp.post_sim_analysis import perf_plot, perf_plot_split
 from logging import getLogger
 from log_setup import setup_logging
 import numpy as np
 import pandas as pd
 from constants.constants import get_output_path
 from functools import partial
-from datetime import datetime
 
 
 logger = getLogger(__name__)
@@ -44,7 +42,8 @@ def get_sample_path_variance_kernel(kernel, t, nsim=1000):
 
 
 def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
-                           n_samples=100, experiment_name="test", normalize_kernel=False,
+                           n_samples=100, experiment_name="test",
+                           normalize_kernel=False,
                            normalize_y=True, only_var=False):
     mode_config_orig = mode_config.to_dict()
     mode_config_norm = copy.copy(mode_config_orig)
@@ -98,8 +97,12 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
     return df
 
 
-def evaluate_data_fraction_modes(modes, data_fraction=(0.05, 0.1, 0.2, 0.4), meas_noise_var=(None,),
-                                 n_samples=100, experiment_name="test", normalize_kernel=False, normalize_y=True):
+def evaluate_data_fraction_modes(modes: list[GPSimulatorConfig],
+                                 data_fraction: tuple = (0.05, 0.1, 0.2, 0.4),
+                                 meas_noise_var: tuple = (None,),
+                                 n_samples: int = 100,
+                                 experiment_name: str = "test",
+                                 normalize_kernel=False, normalize_y=True):
     experiment_output_path = get_output_path(experiment_name=experiment_name)
 
     for nv in meas_noise_var:
@@ -148,7 +151,7 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "new_measures_test"
+    experiment_name = "new_measures_ci_covered_confint"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf"),
     #                        experiment_name=experiment_name, n_samples=2, data_fraction=(0.1, ),
     #                        normalize_kernel=False, normalize_y=True)
-    evaluate_data_fraction_modes(modes, n_samples=2, experiment_name=experiment_name, normalize_y=True,
+    evaluate_data_fraction_modes(modes, n_samples=100, experiment_name=experiment_name, normalize_y=True,
                                  normalize_kernel=False)
 
 

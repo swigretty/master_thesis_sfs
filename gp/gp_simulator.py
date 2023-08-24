@@ -631,30 +631,19 @@ class GPSimulationEvaluator(GPSimulator):
 
         def ci_covered_confint(df: pd.DataFrame) -> tuple:
             n = len(df)
-            if hasattr(df["f_true"], "len"):
-                n *= len(df["f_true"])
-            return proportion_confint(sum(df["ci_covered"]), n)
+            if hasattr(df["f_true"].values[0], "__len__"):
+                n *= len(df["f_true"].values[0])
+            ci = proportion_confint(np.mean(df["ci_covered"]) * n, n)
+            df["ci_covered_lb"] = ci[0]
+            df["ci_covered_ub"] = ci[1]
+            return df[["ci_covered_lb", "ci_covered_ub"]]
 
         mean_df = grouped_df.agg("mean").reset_index(drop=False)
         ci_covered_confint_df = grouped_df.apply(
             ci_covered_confint).reset_index(drop=False)
 
-        agg_dict = {"ci_covered": [prop_confint, "count", "mean"],
-                    **{c: "mean" for c in eval_target_measure_all.columns
-                       if c not in group_by_cols + ["ci_covered"]}}
-
-        eval_target_measure = eval_target_measure_all.groupby(
-            group_by_cols).agg(agg_dict).reset_index(drop=False)
-        eval_target_measure.columns = [
-            "n_samples" if "count" in col else
-            ''.join(col).replace("mean", "").strip() for col in
-            eval_target_measure.columns.values]
-        prop_confint_col = ''.join(
-            ["ci_covered", prop_confint.__name__]).replace(
-            "mean", "").strip()
-        eval_target_measure[
-            ["ci_covered_lb", "ci_covered_ub"]] = eval_target_measure[
-            prop_confint_col].to_list()
+        eval_target_measure = pd.merge(mean_df, ci_covered_confint_df,
+                                       on=group_by_cols)
         eval_target_measure.to_csv(
             self.output_path / "eval_measure_summary.csv")
         return eval_target_measure
@@ -679,7 +668,8 @@ class GPSimulationEvaluator(GPSimulator):
             if not only_var:
                 gps.fit()
                 eval_sample = gps.evaluate()
-                eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in eval_sample.items()}
+                eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in
+                             eval_sample.items()}
                 eval_target_measure.extend(gps.evaluate_target_measures(
                     ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
@@ -691,7 +681,8 @@ class GPSimulationEvaluator(GPSimulator):
         logger.setLevel(previousloglevel)
 
         variance_df = pd.DataFrame(variances)
-        variance_df.describe().to_csv(self.output_path / f"variance_summary.csv")
+        variance_df.describe().to_csv(
+            self.output_path / f"variance_summary.csv")
         self.plot_variances(variance_df)
 
         if eval_dict:
