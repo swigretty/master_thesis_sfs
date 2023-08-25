@@ -57,6 +57,15 @@ class GPR(GaussianProcessRegressor):
 
         super().__init__(kernel=kernel, random_state=rng.integers(0, 10), **kwargs)
 
+    # @property
+    # def kernel_fit_orig_scale(self):
+    #     if not hasattr(self, "X_train_"):
+    #         logger.warning("The model has not been fitted")
+    #         return
+    #     if not self.normalize_y:
+    #         return self.kernel_
+    #     return self._y_train_std**2 * self.kernel_ + np.sign(self._y_train_mean) * self._y_train_mean**2
+
     @classmethod
     def decompose_additive_kernel(cls, k):
         if isinstance(k, Sum):
@@ -76,9 +85,12 @@ class GPR(GaussianProcessRegressor):
             return
 
         kernel = self.kernel_
-        scale_kernel = ConstantKernel(constant_value=1, constant_value_bounds="fixed")
 
-        if isinstance(self.kernel_, Product) and isinstance(self.kernel_.k1, ConstantKernel):
+        scale_kernel = ConstantKernel(constant_value=1,
+                                      constant_value_bounds="fixed")
+
+        if isinstance(self.kernel_, Product) and isinstance(self.kernel_.k1,
+                                                            ConstantKernel):
             scale_kernel = self.kernel_.k1
             kernel = self.kernel_.k2
 

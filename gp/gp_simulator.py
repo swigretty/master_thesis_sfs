@@ -22,6 +22,7 @@ from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
 from gp.evaluate import GPEvaluator, SimpleEvaluator
 from log_setup import setup_logging
+import re
 
 logger = getLogger(__name__)
 
@@ -79,10 +80,13 @@ class GPSimulator():
         self.gpm_sim.fit(self.y_true.x, self.f_true.y)
 
         self.meas_noise_var_fit = self.meas_noise_var
+        self._y_train_std = np.std(self.y_true_train.y)
         if self.normalize_y:
-            self._y_train_std = np.std(self.y_true_train.y)
-            self.meas_noise_var_fit = self.meas_noise_var_fit / self._y_train_std**2
-        self.gpm_fit = GPR(kernel=self.kernel_fit, normalize_y=self.normalize_y, alpha=self.meas_noise_var_fit, rng=rng)
+            self.meas_noise_var_fit = (self.meas_noise_var_fit /
+                                       self._y_train_std**2)
+        self.gpm_fit = GPR(kernel=self.kernel_fit,
+                           normalize_y=self.normalize_y,
+                           alpha=self.meas_noise_var_fit, rng=rng)
 
         self.output_path = output_path
         if self.output_path is not None:
@@ -274,9 +278,12 @@ class GPSimulator():
         while (std_range[0] > y_std) or (
                 std_range[1] < y_std):
 
-            kernel_ = ConstantKernel(constant_value=1/scale**2, constant_value_bounds="fixed") * kernel
-            gps = GPSimulator(kernel_sim=kernel_, meas_noise_var=meas_noise_var / scale ** 2,
-                              rng=np.random.default_rng(15), output_path=None, normalize_kernel=False)
+            kernel_ = ConstantKernel(constant_value=1/scale**2,
+                                     constant_value_bounds="fixed") * kernel
+            gps = GPSimulator(kernel_sim=kernel_,
+                              meas_noise_var=meas_noise_var / scale ** 2,
+                              rng=np.random.default_rng(15), output_path=None,
+                              normalize_kernel=False)
             data_sim = gps.sim_gp(n_samples=1000, predict_y=True)
             y_std = np.mean([np.std(d.y) for d in data_sim])
             scale *= y_std
@@ -327,11 +334,14 @@ class GPSimulator():
             pred_data = self.f_post
         if y_true_subsampled is None:
             y_true_subsampled = self.y_true_train
-        data_dict = {"f_post": pred_data, "y_true_subsampled": y_true_subsampled,
+        data_dict = {"f_post": pred_data,
+                     "y_true_subsampled": y_true_subsampled,
                      "f_true": self.f_true}
 
-        plot_posterior(self.x, data_dict["f_post"].y_mean, y_post_std=data_dict["f_post"].y_std,
-                       x_red=data_dict["y_true_subsampled"].x, y_red=data_dict["y_true_subsampled"].y,
+        plot_posterior(self.x, data_dict["f_post"].y_mean,
+                       y_post_std=data_dict["f_post"].y_std,
+                       x_red=data_dict["y_true_subsampled"].x,
+                       y_red=data_dict["y_true_subsampled"].y,
                        y_true=data_dict["f_true"].y, ax=ax)
         ax.set_title(title)
 
@@ -347,36 +357,45 @@ class GPSimulator():
         ax.scatter(data.x, data.y, color="red", zorder=5, label=f"{np.var(data.y)=}")
         ax.legend()
 
+    @Plotter
+    def plot_kernel_function(self, x, kernel, ax=None):
+        if x.ndim == 1:
+            x = x.reshape(-1, 1)
+        kxx = kernel(x)
+        if x.shape[1] > 1:
+            x = x[:, 1]
+        ax.plot(x, kxx[0, :])
+        title = re.sub("(.{120})", "\\1\n", str(kernel), 0,
+                       re.DOTALL)
+        ax.set_title(title)
+
     def plot(self, figname_suffix=""):
-        nrows = 3
-        ncols = 2
-
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 10, nrows * 6))
-
-        self.plot_prior(ax=ax[0, 0])
-
-        plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 1])
 
         self.fit()
+        self.plot_prior()
+        self.plot_posterior()
 
-        self.plot_posterior(ax=ax[1, 0])
+        # Plot Kernel functions
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(2 * 10, 2 * 6))
+        self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 0])
+        scale = 1
+        if not self.normalize_kernel and self.normalize_y:
+            _, _, scale = self.get_normalized_kernel(self.kernel_sim)
 
-        plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1, 1])
-
+        self.plot_kernel_function(self.x, scale**2 * self.gpm_fit.kernel_,
+                                  ax=ax[0, 1])
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
-            ax[2, 0].plot(self.x, v, label=k)
-        ax[2, 0].legend()
-
+            ax[1, 0].plot(self.x, v, label=k)
+        ax[1, 0].legend()
         for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
-            ax[2, 1].plot(self.x, v, label=k)
-
+            ax[1, 1].plot(self.x, v, label=k)
         fig.tight_layout()
-
         if figname_suffix and not figname_suffix.startswith("_"):
             figname_suffix = f"_{figname_suffix}"
         if self.output_path:
-            fig.savefig(self.output_path / f"fit{figname_suffix}.pdf")
+            fig.savefig(self.output_path / f"plot_kernel_{figname_suffix}.pdf")
             plt.close(fig)
+
         return fig
 
     def plot_errors(self):

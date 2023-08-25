@@ -60,14 +60,16 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
     logger.info(f"{orig_scale=}")
 
     if normalize_kernel:
-        mode_config_norm["kernel_sim"], mode_config_norm["meas_noise_var"] = GPSimulator.get_normalized_kernel(
+        (mode_config_norm["kernel_sim"], mode_config_norm["meas_noise_var"],
+         scale) = GPSimulator.get_normalized_kernel(
             kernel=mode_config.kernel_sim, meas_noise_var=mode_config.meas_noise_var)
 
     for frac in data_fraction:
         logger.info(f"Simulation started for {experiment_name=}, {session_name=} and {frac=}")
         rng = np.random.default_rng(15)
         simulator = GPSimulationEvaluator(
-            output_path=output_path_gp_sim, rng=rng, data_fraction=frac, normalize_kernel=False,
+            output_path=output_path_gp_sim, rng=rng, data_fraction=frac,
+            normalize_kernel=False,
             normalize_y=normalize_y, **mode_config_norm)
         simulator.plot_gp_regression_sample(nplots=1)
         simulator.evaluate()
@@ -151,7 +153,7 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "new_measures_ci_covered_confint_test"
+    experiment_name = "new_measures_ci_covered_confint_normk"
     # for datafrac in [0.05, 0.1, 0.2, 0.4, 0.6]:
     #     plot_sample(normalize_kernel=False, rng=rng, experiment_name=experiment_name, nplots=3,
     #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="10foldcv_sin_rbf_notperiodic"),
@@ -161,7 +163,9 @@ if __name__ == "__main__":
     # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf"),
     #                        experiment_name=experiment_name, n_samples=2, data_fraction=(0.1, ),
     #                        normalize_kernel=False, normalize_y=True)
-    evaluate_data_fraction_modes(modes, n_samples=2, experiment_name=experiment_name, normalize_y=True,
-                                 normalize_kernel=False)
+    evaluate_data_fraction_modes(modes, n_samples=100,
+                                 experiment_name=experiment_name,
+                                 normalize_y=False,
+                                 normalize_kernel=True, data_fraction=(0.1, ))
 
 
