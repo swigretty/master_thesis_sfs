@@ -636,7 +636,8 @@ class GPSimulationEvaluator(GPSimulator):
             ci = proportion_confint(np.mean(df["ci_covered"]) * n, n)
             df["ci_covered_lb"] = ci[0]
             df["ci_covered_ub"] = ci[1]
-            return df[["ci_covered_lb", "ci_covered_ub"]]
+            return pd.DataFrame({"ci_covered_lb": [ci[0]],
+                                 "ci_covered_ub": [ci[1]]})
 
         mean_df = grouped_df.agg("mean").reset_index(drop=False)
         ci_covered_confint_df = grouped_df.apply(
