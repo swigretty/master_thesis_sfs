@@ -12,12 +12,13 @@ class Plotter():
     def __init__(self, f):
         self.func = f
 
-    def __call__(self, instance, *args, figname_suffix="", ax=None, **kwargs):
+    def __call__(self, instance, *args, figname_suffix="", ax=None,
+                 nrows=1, ncols=1, **kwargs):
         fig = None
         output_path = getattr(instance, "output_path", None)
 
         if ax is None:
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
+            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10, 6))
 
         value = self.func(instance, *args, ax=ax, **kwargs)
 

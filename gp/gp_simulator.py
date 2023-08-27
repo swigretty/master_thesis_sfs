@@ -328,7 +328,8 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, title="Predictive Distribution", ax=None, pred_data=None,
+    def plot_posterior(self, title="Predictive Distribution", ax=None,
+                       pred_data=None,
                        y_true_subsampled=None, **kwargs):
         if pred_data is None:
             pred_data = self.f_post
@@ -346,7 +347,7 @@ class GPSimulator():
         ax.set_title(title)
 
     @Plotter
-    def plot_true_with_samples(self, ax=None):
+    def plot_true_with_samples(self, ax=None, **kwargs):
         f_true = self.f_true
         y_true = self.y_true
         data = self.y_true_train
@@ -358,7 +359,7 @@ class GPSimulator():
         ax.legend()
 
     @Plotter
-    def plot_kernel_function(self, x, kernel, ax=None):
+    def plot_kernel_function(self, x, kernel, ax=None, **kwargs):
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         kxx = kernel(x)
@@ -371,29 +372,34 @@ class GPSimulator():
 
     def plot(self, figname_suffix=""):
 
+        if figname_suffix and not figname_suffix.startswith("_"):
+            figname_suffix = f"_{figname_suffix}"
+
         self.fit()
         self.plot_prior()
         self.plot_posterior()
 
-        # Plot Kernel functions
-        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(2 * 10, 2 * 6))
-        self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0, 0])
-        scale = 1
-        if not self.normalize_kernel and self.normalize_y:
-            _, _, scale = self.get_normalized_kernel(self.kernel_sim)
-
-        self.plot_kernel_function(self.x, scale**2 * self.gpm_fit.kernel_,
-                                  ax=ax[0, 1])
+        # Plot mean decomposed
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(2 * 10, 6))
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
-            ax[1, 0].plot(self.x, v, label=k)
-        ax[1, 0].legend()
+            ax[0].plot(self.x, v, label=k)
+        ax[0].legend()
         for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
-            ax[1, 1].plot(self.x, v, label=k)
+            ax[1].plot(self.x, v, label=k)
         fig.tight_layout()
-        if figname_suffix and not figname_suffix.startswith("_"):
-            figname_suffix = f"_{figname_suffix}"
+
         if self.output_path:
-            fig.savefig(self.output_path / f"plot_kernel_{figname_suffix}.pdf")
+            fig.savefig(
+                self.output_path / f"plot_mean_decomposed{figname_suffix}.pdf")
+            plt.close(fig)
+
+        # Plot Kernel functions
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 10, 2 * 6))
+        self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0])
+        scale = 1
+        self.plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1])
+        if self.output_path:
+            fig.savefig(self.output_path / f"plot_kernel{figname_suffix}.pdf")
             plt.close(fig)
 
         return fig
