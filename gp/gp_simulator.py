@@ -10,10 +10,11 @@ import logging
 import json
 from pathlib import Path
 from tqdm import tqdm
-from sklearn.gaussian_process.kernels import Matern, ConstantKernel, WhiteKernel, Product
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from statsmodels.stats.proportion import proportion_confint
 from gp.gp_regressor import GPR
-from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
+from gp.gp_plotting_utils import (plot_kernel_function, plot_posterior,
+                                  plot_gpr_samples, Plotter)
 from gp.gp_data import GPData
 from gp.baseline_methods import BASELINE_METHODS
 from gp.target_measures import TARGET_MEASURES, ci_overall_mean_gp
@@ -310,7 +311,7 @@ class GPSimulator():
             assert (self._y_train_std - self.gpm_fit._y_train_std) < 0.0000001
 
     @Plotter
-    def plot_prior(self, title="Samples from Prior Distribution", ax=None):
+    def plot_prior(self, ax=None, **kwargs):
         data_prior = self.y_true_samples
 
         plot_lim = 30
@@ -325,12 +326,10 @@ class GPSimulator():
         if max(y_prior_std) > plot_lim:
             ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
         plot_gpr_samples(data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim, ax=ax)
-        ax.set_title(title)
 
     @Plotter
-    def plot_posterior(self, title="Predictive Distribution", ax=None,
-                       pred_data=None,
-                       y_true_subsampled=None, **kwargs):
+    def plot_posterior(self, ax=None, pred_data=None, y_true_subsampled=None,
+                       **kwargs):
         if pred_data is None:
             pred_data = self.f_post
         if y_true_subsampled is None:
@@ -344,18 +343,17 @@ class GPSimulator():
                        x_red=data_dict["y_true_subsampled"].x,
                        y_red=data_dict["y_true_subsampled"].y,
                        y_true=data_dict["f_true"].y, ax=ax)
-        ax.set_title(title)
 
     @Plotter
     def plot_true_with_samples(self, ax=None, **kwargs):
         f_true = self.f_true
         y_true = self.y_true
         data = self.y_true_train
-
-        ax.set_title("True Time Series with Samples")
         ax.plot(f_true.x, f_true.y, "r:",
-                label=f"var(f_true): {np.var(f_true.y)}, var(y_true): {np.var(y_true.y)}")
-        ax.scatter(data.x, data.y, color="red", zorder=5, label=f"{np.var(data.y)=}")
+                label=f"var(f_true): {np.var(f_true.y)}, "
+                      f"var(y_true): {np.var(y_true.y)}")
+        ax.scatter(data.x, data.y, color="red", zorder=5,
+                   label=f"var(data): {np.var(data.y)}")
         ax.legend()
 
     @Plotter
@@ -600,10 +598,12 @@ class GPSimulationEvaluator(GPSimulator):
                                        f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
                 if eval.mse > 100:
                     logger.info(f"Fit is very bad for {method_name=}")
-                    self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method_name}",
-                                        figname_suffix=f"{method_name}_bad_fit")
-                eval_output.append({"method": method_name, "target_measure": mn,
-                                    "mse_base": mse_base, **eval.to_dict()})
+                    self.plot_posterior(
+                        pred_data=pred["data"],
+                        figname_suffix=f"{method_name}_bad_fit")
+                eval_output.append({"method": method_name,
+                                    "target_measure": mn, "mse_base": mse_base,
+                                    **eval.to_dict()})
 
         if self.output_path:
             pd.DataFrame(eval_output).to_csv(self.output_path / f"evaluate_target_measures.csv")
@@ -613,7 +613,8 @@ class GPSimulationEvaluator(GPSimulator):
         if figname_suffix and not figname_suffix.startswith("_"):
             figname_suffix = f"_{figname_suffix}"
         for method, pred in self.pred_baseline.items():
-            self.plot_posterior(pred_data=pred["data"], title=f"Prediction {method}", figname_suffix=f"{method}{figname_suffix}")
+            self.plot_posterior(pred_data=pred["data"],
+                                figname_suffix=f"{method}{figname_suffix}")
 
     def plot(self, **kwargs):
         super().plot(**kwargs)
