@@ -280,7 +280,7 @@
 	\frametitle{Bayesian Inference}
 	\begin{figure}
 			\includegraphics[width=0.5\linewidth]{bayesian_learining}
-			\caption{Bivariate Gaussian distribution. Joint (prior) distribtuion represented by ellipse. Black solid line
+			\caption{Bivariate Gaussian distribution. Joint (prior) distribution represented by ellipse. Black solid line
 			represent the marginal (prior) marginal distributions p(x1), p(x2). Observing X1 changes our believe about
 			X2, giving rise to the conditional (posterior) distribution (black dashed-dot line)}
 	\end{figure}
@@ -294,7 +294,7 @@
 	\frametitle{Gaussian Process Definition}
 
 
-A Gaussian process (GP) can be viewed as a gaussian distribution over functions or as an infinite set of random
+A Gaussian process (GP) can be viewed as a Gaussian distribution over functions or as an infinite set of random
 variables representing the values of the function $f(x)$ at location $x$.
 The Gaussian process is thus a generalization of the Gaussian distribution and a formal definition is given
 by:
@@ -371,7 +371,7 @@ In our running example we might consider $X$ to be the time interval $T_0=[0, T]
 
 \begin{frame}
 	\frametitle{Gaussian Process Examples}
-	Note that a GP with finite index set and hence with joint gaussian distribution is just a specific case
+	Note that a GP with finite index set and hence with joint Gaussian distribution is just a specific case
 of GP. \\
 
 	If we assume an ARMA process with gaussian innovations one can view the time series
@@ -625,7 +625,7 @@ as a collection of multivariate normally distributed random variables and thus a
 					Note: This is biased estimate of signal variance due to non-uniform sampling. In case
 					of periodic sampling pattern, variance would be underestimated}
 			\end{figure}
-		\item measurement (gaussian white) noise variance $=31 mmHg^2$
+		\item measurement (Gaussian white) noise variance $=31 mmHg^2$
 		\begin{itemize}
 			\item Measured standard deviation of differences between SBP determinations of the Aktiia bracelet
 			($BP_{Aktiia}$)  and double-auscultation ($BP_{Ref}$) = $7.92 mmHg$
@@ -699,7 +699,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
 					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_true_with_samples.pdf}
-					\caption{True function f(x) (red dottet) with noisy measurments (red points)}
+					\caption{True function f(x) (red dotted) with noisy measurements (red points)}
 				\end{figure}
 
 		\end{column}
@@ -783,7 +783,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\framesubtitle{Simulation and Evaluation Flow}
 		for i in $1 \dots n_{simulations}$:
 		\begin{enumerate}
-			\item Simulate from true GP (adversarial add non-gaussian noise)
+			\item Simulate from true GP (adversarial add non-Gaussian noise)
 			\item Subsample data (adversarial: different densities, non-uniform sampling)
 			\item Fit Regression
 			\begin{itemize}
@@ -896,7 +896,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\framesubtitle{Spline}
 		\begin{figure}
 			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_spline_9}
-			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
+			\caption{1 week BP time series with 2 samples per hour (uniformly sampled across time)}
 		\end{figure}
 
 	\begin{itemize}
@@ -1225,15 +1225,15 @@ as a collection of multivariate normally distributed random variables and thus a
 	Spline
 	& \cellcolor{green}
 	 \begin{itemize}
-		 \item extermly high CI for low data density
+		 \item very large CI for low data density
 	 \end{itemize}
 	& \cellcolor{green}
 	 \begin{itemize}
-		 \item extermly high CI for low data density
+		 \item very large CI for low data density
 	 \end{itemize}
 	& \cellcolor{yellow}
 	\begin{itemize}
-		\item reasonalbe CIs also for low data density
+		\item reasonable CI width also for low data density
 	\end{itemize} \\
   	\hline
 	\end{tabular}
@@ -1274,12 +1274,12 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{itemize}
 		\item Cyclic pattern does not evolve over time
 		\begin{itemize}
-			\item Multiply ExpSine kernel with RBF kernel
+			\item Multiply ExpSineSquare kernel with RBF kernel
 		\end{itemize}
-		\item GP used for simulation will favour GP regression
+		\item Using GPs for simulation might favor GP regression
 		\begin{itemize}
 			\item Use other simulation method
-			\item Add non-gaussian errors
+			\item Add non-Gaussian errors
 			\item Use different kernel combination for GP simulation and for
 			GP fitting
 		\end{itemize}
@@ -1639,4 +1639,5 @@ as a collection of multivariate normally distributed random variables and thus a
 
 % data fraction 0.5, amplitude as mean of day and night, measurement noise if doubled ?,
 % spline (fix it)
+
 
