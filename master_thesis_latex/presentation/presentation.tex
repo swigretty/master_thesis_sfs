@@ -199,9 +199,9 @@
 	\frametitle{Problem Statement}
 
 		\begin{figure}
-				\includegraphics[width=0.8\linewidth]{true_samples_ou_bounded_seasonal2_0.20}
+				\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sind_rbf_seasonal_default_plot_true_with_samples.pdf}
 				\caption{One week BP time series with unequally spaced samples. Sampling might not happen
-				uniformly across time, e.g. more samples at day vs. night time}
+				uniformly across time, e.g. more samples at day vs. night time}. Sampling frequency = 2/h
 		\end{figure}
 
 \end{frame}
@@ -229,7 +229,7 @@
 	\frametitle{Objective}
 
 		\begin{figure}
-				\includegraphics[width=0.8\linewidth]{predictive_distribution}
+				\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
 				\caption{Black solid line: predicted mean. Gray area: predicted standard deviation}
 		\end{figure}
 
@@ -640,7 +640,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{itemize}
 		\item cyclic pattern amplitude $\approx 8 mmHg$
 				\begin{figure}
-					\includegraphics[width=0.5\linewidth]{20230531_LinTrap_amplitude_distrib}
+					\includegraphics[width=0.3\linewidth]{20230531_LinTrap_amplitude_distrib}
 					\caption{Aktiia night dip detection. ampl = $\frac{(\text{max-min})*2}{\pi}$}
 				\end{figure}
 		\begin{itemize}
@@ -685,16 +685,17 @@ as a collection of multivariate normally distributed random variables and thus a
 	\end{verbatim}
 
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
+		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{true_decomposed_rescaled}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_mean_decomposed_true}
 					\caption{Decomposed posterior kernel function based on a sample drawn from
 					a GP with additive kernel function}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{data_fraction_test2_ou5_ou_bounded_sin_rbf_07_20_07_44_36_plot_true_with_samples}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_true_with_samples.pdf}
+					\caption{True function f(x) (red dottet) with noisy measurments (red points)}
 				\end{figure}
 
 		\end{column}
@@ -848,16 +849,6 @@ as a collection of multivariate normally distributed random variables and thus a
 %
 %\end{frame}
 
-\begin{frame}
-	\frametitle{Methods - GP Regression}
-	\framesubtitle{Example Uniform Sampling 1}
-
-	\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measurement_transform_quantile_sin_rbf_default_08_19_14_50_32_fit}
-			\caption{GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampled across time)}
-	\end{figure}
-
-\end{frame}
 
 \subsection{Baseline Methods}
 
@@ -866,7 +857,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\framesubtitle{Overall mean}
 
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_naive_overall_mean}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_naive_overall_mean_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 		\end{figure}
 
@@ -886,7 +877,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Methods - Baseline Methods}
 	\framesubtitle{Linear Regression}
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_linear}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_linear_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 		\end{figure}
 
@@ -900,7 +891,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Methods - Baseline Methods}
 	\framesubtitle{Spline}
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_transform_qunatile_sin_rbf_default_08_19_14_50_32_plot_posterior_spline}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_spline_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 		\end{figure}
 
@@ -920,7 +911,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		\item Calculation:
 		\begin{itemize}
 			\item General: Mean of predicted values within the time period
-			\item TTR Naive: Mean of available measurements within the time period. If no available measurement
+			\item Naive TTR: Mean of available measurements within the time period. If no available measurement
 			global mean is used
 		\end{itemize}
 	\end{itemize}
@@ -949,26 +940,183 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{frame}
 
 
-\subsection{Adversarial Analysis}
-
-\begin{frame}
-	\frametitle{Methods - Adversarial Analysis}
-
-	\begin{itemize}
-		\item Data density (0.5 to 4 mearurments per hour)
-		\item Seasonal sampling
-	\end{itemize}
-
-
-	\begin{figure}
-		\includegraphics[width=0.5\linewidth]{new_measures_transform_quantile_sin_rbf_seasonal_default_08_19_18_22_59_plot_true_with_samples.pdf}
-		\caption{Seasonal sampling with 2 samples per hour}
-	\end{figure}
-\end{frame}
+%\subsection{Adversarial Analysis}
+%
+%\begin{frame}
+%	\frametitle{Methods - Adversarial Analysis}
+%
+%	\begin{itemize}
+%		\item Data density (0.5 to 4 mearurments per hour)
+%		\item Seasonal sampling
+%	\end{itemize}
+%
+%
+%	\begin{figure}
+%		\includegraphics[width=0.5\linewidth]{new_measures_transform_quantile_sin_rbf_seasonal_default_08_19_18_22_59_plot_true_with_samples.pdf}
+%		\caption{Seasonal sampling with 2 samples per hour}
+%	\end{figure}
+%\end{frame}
 
 
 
 \section{Results}
+
+\begin{frame}
+	\frametitle{Results - GP Regression}
+	\framesubtitle{Uniform Sampling Example 1}
+
+	GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampled across time)
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_9}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_mean_decomposed_9.pdf}
+					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Results - GP Regression vs Baseline}
+	\framesubtitle{Uniform Sampling Example 1}
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_9}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_linear_9}
+					\caption{Linear}
+				\end{figure}
+
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_spline_9}
+					\caption{Spline}
+				\end{figure}
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Results - GP Regression}
+	\framesubtitle{Seasonal Sampling Example  1}
+
+	GP fitted to 1 week BP time series with 2 samples per hour (seasonal sampling)
+
+		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_mean_decomposed_5}
+					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Results - GP Regression vs Baseline}
+	\framesubtitle{Seasonal Sampling Example 1}
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_linear_5}
+					\caption{Linear}
+				\end{figure}
+
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_spline_5}
+					\caption{Spline}
+				\end{figure}
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+
+
+
+\begin{frame}
+	\frametitle{Results - GP Regression}
+	\framesubtitle{Seasonal Sampling Example  2}
+
+	GP fitted to 1 week BP time series with 2 samples per hour (seasonal sampling)
+
+		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_9}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_mean_decomposed_9}
+					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+\begin{frame}
+	\frametitle{Results - GP Regression vs Baseline}
+	\framesubtitle{Seasonal Sampling Example 2}
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_9}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_linear_9}
+					\caption{Linear}
+				\end{figure}
+
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_spline_9}
+					\caption{Spline}
+				\end{figure}
+		\end{column}
+	\end{columns}
+
+\end{frame}
 
 \begin{frame}
 	\frametitle{Results}
@@ -1032,13 +1180,15 @@ as a collection of multivariate normally distributed random variables and thus a
 \begin{frame}
 	\frametitle{Discussion}
 
-	\begin{itemize}
-		\item spline huge confidence intervals for very low data frequency
-		\item Linear does not improve with more data. Gives decent weekly mean estimates
-  also for very low data densities and when there is seasonal sampling.
-  Does not estimate the 1h mean and TTR values as well as GP and spline.
-		\item Naive TTR is not a good estimator of TTR.
-	\end{itemize}
+	Limitations
+
+%	\begin{itemize}
+%		\item spline huge confidence intervals for very low data frequency
+%		\item Linear does not improve with more data. Gives decent weekly mean estimates
+%  also for very low data densities and when there is seasonal sampling.
+%  Does not estimate the 1h mean and TTR values as well as GP and spline.
+%		\item Naive TTR is not a good estimator of TTR.
+%	\end{itemize}
 
 %	\begin{itemize}
 %		\item Measurement noise variance $\approx 0.5 *$ total variance
@@ -1063,98 +1213,6 @@ as a collection of multivariate normally distributed random variables and thus a
 %			\caption{Extreme Seasonal Sampling}
 %	\end{figure}
 %\end{frame}
-
-
-
-
-
-
-\begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Weekly Mean} % Optional subtitle
-
-	Uniform Sampling
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\begin{column}{0.45\textwidth} % Left column width
-				\begin{figure}
-					\includegraphics[width=\linewidth]{plot_posterior_gp_seasonal}
-					\caption{GP}
-
-				\end{figure}
-		\end{column}
-		\begin{column}{0.5\textwidth} % Right column width
-				\begin{figure}
-					\includegraphics[width=\linewidth]{plot_posterior_linear_seasonal}
-					\caption{Linear Regression}
-				\end{figure}
-
-		\end{column}
-	\end{columns}
-
-\end{frame}
-
-
-\begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Weekly Mean} % Optional subtitle
-
-	In the case of seasonal sampling pattern, GP Regression does not perform better than Linear Regression
-
-	\begin{itemize}
-		\item Measurement noise variance $\approx 0.5 *$ total variance
-		\item AR(1) component variance $\approx 0.1 *$ measurement noise variance
-		\item Seasonal Component variance $\approx 21 \approx 0.4 *$ total variance (for sinus this equal amplitude of 8. $Var(\sin{x}) = \frac{\text{ampl}^2}{2}$)
-		\item GP can assess local uncertainty due to missing value, which is not needed when evaluating 1 week mean
-		\item Simulation restricted to perfect seasonal patterns
-	\end{itemize}
-
-\end{frame}
-
-
-
-
-\begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Time in Target Range (TTR)} % Optional subtitle
-
-	Calculate TTR:
-	\begin{itemize}
-			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
-			\item GP: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
-			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
-	\end{itemize}
-
-
-	\bigskip
-
-	Values for Threshold $\gamma$:
-	\begin{itemize}
-		\item 24h: 90 to 125 (for systolic BP)
-		\item day: 90 to 130 (for systolic BP)
-		\item night: 80 to 120 (for systolic BP)
-	\end{itemize}
-
-	Performance Metrics:
-	\begin{itemize}
-		\item CI coverage + CI width
-	\end{itemize}
-
-\end{frame}
-
-
-
-\begin{frame}
-	\frametitle{Extract Target Measures and Evaluate}
-	\framesubtitle{Day vs Night BP} % Optional subtitle
-	\begin{itemize}
-			\item True: Tbd
-	\end{itemize}
-
-\end{frame}
-
-
-
-
 
 
 %\begin{frame}
@@ -1201,15 +1259,15 @@ as a collection of multivariate normally distributed random variables and thus a
 %
 
 
-\begin{frame}
-	\frametitle{Computational Complexity}
-
-	\begin{itemize}
-		\item update posterior (when new data arrives)
-		\item same user hyperparameters assume to be constant (updated every 2 weeks ?)
-	\end{itemize}
-
-\end{frame}
+%\begin{frame}
+%	\frametitle{Computational Complexity}
+%
+%	\begin{itemize}
+%		\item update posterior (when new data arrives)
+%		\item same user hyperparameters assume to be constant (updated every 2 weeks ?)
+%	\end{itemize}
+%
+%\end{frame}
 
 
 %%------------------------------------------------
