@@ -375,7 +375,7 @@ class GPSimulator():
 
         self.fit()
         self.plot_prior()
-        self.plot_posterior()
+        self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
         fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(2 * 10, 6))
@@ -392,7 +392,7 @@ class GPSimulator():
             plt.close(fig)
 
         # Plot Kernel functions
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 10, 2 * 6))
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 15, 2 * 6))
         self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0])
         scale = 1
         self.plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1])
@@ -675,7 +675,7 @@ class GPSimulationEvaluator(GPSimulator):
             self.output_path / "eval_measure_summary.csv")
         return eval_target_measure
 
-    def evaluate_multisample(self, n_samples=100, only_var=False):
+    def evaluate_multisample(self, n_samples=100, only_var=False, n_plots=10):
         current_config = copy(self.gps_kwargs_normalized)
         current_config["output_path"] = None
         # use the baseline method just identified, so you don't have to
@@ -701,7 +701,7 @@ class GPSimulationEvaluator(GPSimulator):
                     ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
 
-            if i % 10 == 0:
+            if i % int(n_samples/n_plots) == 0:
                 gps.output_path = self.output_path
                 gps.plot(figname_suffix=f"_{i}")
 
