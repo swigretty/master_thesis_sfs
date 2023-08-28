@@ -113,6 +113,10 @@
 \usepackage{amsmath}
 \usepackage{textcomp}
 \usepackage{stmaryrd}
+
+\usepackage{xcolor,colortbl}
+
+
 %----------------------------------------------------------------------------------------
 %	SELECT INNER THEME
 %----------------------------------------------------------------------------------------
@@ -1180,7 +1184,69 @@ as a collection of multivariate normally distributed random variables and thus a
 \begin{frame}
 	\frametitle{Discussion}
 
-	Limitations
+	\begin{table}
+	\small
+	\centering
+	\begin{tabular}{|m{1cm}|m{3.2cm}|m{3.2cm}|m{3.2cm}|}
+
+  	\hline
+
+  	Method & weekly mean & hourly mean & TTR \\
+	\hline
+
+	GP & \cellcolor{green}
+	 \begin{itemize}
+		 \item underestimates uncertainty
+	 \end{itemize}
+
+	& \cellcolor{green}Winner
+	&
+	\cellcolor{yellow}Winner
+	\\
+  	\hline
+
+	Linear
+	& \cellcolor{green}Winner
+	 \begin{itemize}
+		 \item does not improve much with more data
+	 \end{itemize}
+	& \cellcolor{red}
+	 \begin{itemize}
+		 \item underestimates uncertainty
+		 \item does not improve with more data
+	 \end{itemize}
+	& \cellcolor{red}
+	 \begin{itemize}
+	 \item does not improve with more data
+	 \end{itemize}
+	\\
+  	\hline
+
+	Spline
+	& \cellcolor{green}
+	 \begin{itemize}
+		 \item extermly high CI for low data density
+	 \end{itemize}
+	& \cellcolor{green}
+	 \begin{itemize}
+		 \item extermly high CI for low data density
+	 \end{itemize}
+	& \cellcolor{yellow}
+	\begin{itemize}
+		\item reasonalbe CIs also for low data density
+	\end{itemize} \\
+  	\hline
+	\end{tabular}
+	\end{table}
+
+	General observations:
+	\begin{itemize}
+		\item All methods perform worse with seasonal sampling
+		\item Naive overall mean does give reasonable estimates of the weekly
+		mean, when there is uniform sampling
+		\item Naive TTR is not a good estimator for TTR
+	\end{itemize}
+
 
 %	\begin{itemize}
 %		\item spline huge confidence intervals for very low data frequency
@@ -1199,6 +1265,36 @@ as a collection of multivariate normally distributed random variables and thus a
 %	\end{itemize}
 
 \end{frame}
+
+
+\begin{frame}
+	\frametitle{Limitations and Potential Next Steps}
+
+	Simulation:
+	\begin{itemize}
+		\item Cyclic pattern does not evolve over time
+		\begin{itemize}
+			\item Multiply ExpSine kernel with RBF kernel
+		\end{itemize}
+		\item GP used for simulation will favour GP regression
+		\begin{itemize}
+			\item Use other simulation method
+			\item Add non-gaussian errors
+			\item Use different kernel combination for GP simulation and for
+			GP fitting
+		\end{itemize}
+		\item Influence of measurement error is huge compared to the AR component
+	\end{itemize}
+
+	\bigskip
+
+	Baseline Method:
+	\begin{itemize}
+		\item Investigate failure of spline regression for very low data density
+	\end{itemize}
+
+\end{frame}
+
 
 
 
