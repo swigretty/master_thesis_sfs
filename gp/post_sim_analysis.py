@@ -4,6 +4,11 @@ from constants.constants import get_output_path
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from logging import getLogger
+from log_setup import setup_logging
+
+logger = getLogger(__name__)
+
 
 split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun",
                           "pred_logprob", "data_fraction",
@@ -153,17 +158,20 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None):
 
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():
+            logger.info(f"Plot {mode=} and {target_measure=}")
             df = target_measures_df[
                 target_measures_df["output_path"].str.contains(mode) &
                 (target_measures_df["target_measure"] == target_measure)]
-
+            if len(df) == 0:
+                continue
             fig = target_measure_perf_plot(df.copy(), annotate=annotate)
             fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
             plt.close(fig)
 
 
 if __name__ == "__main__":
-    experiment_name = "new_measures_ci_covered_confint"
+    setup_logging()
+    experiment_name = "new_measures_nonorm"
     plot_all(experiment_name, annotate=None)
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
