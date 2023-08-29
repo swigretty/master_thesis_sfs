@@ -232,7 +232,7 @@
 	\frametitle{Objective}
 
 		\begin{figure}
-				\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
+				\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_5}
 				\caption{Black solid line: predicted mean. Gray area: predicted standard deviation}
 		\end{figure}
 
@@ -697,7 +697,7 @@ as a collection of multivariate normally distributed random variables and thus a
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_true_with_samples.pdf}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_true_with_samples}
 					\caption{True function f(x) (red dotted) with noisy measurements (red points)}
 				\end{figure}
 
@@ -860,7 +860,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\framesubtitle{Overall mean}
 
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_naive_overall_mean_9}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_overall_mean_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 		\end{figure}
 
@@ -880,7 +880,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Methods - Baseline Methods}
 	\framesubtitle{Linear Regression}
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_linear_9}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_linear_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampleed across time)}
 		\end{figure}
 
@@ -894,7 +894,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\frametitle{Methods - Baseline Methods}
 	\framesubtitle{Spline}
 		\begin{figure}
-			\includegraphics[width=0.6\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_spline_9}
+			\includegraphics[width=0.6\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_spline_9}
 			\caption{1 week BP time series with 2 samples per hour (uniformly sampled across time)}
 		\end{figure}
 
@@ -973,13 +973,13 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_9}
+					\includegraphics[width=\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_9}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_mean_decomposed_9.pdf}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_mean_decomposed_9.pdf}
 					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
 				\end{figure}
 
@@ -997,18 +997,18 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_9}
+					\includegraphics[width=\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_9}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_linear_9}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_linear_9}
 					\caption{Linear}
 				\end{figure}
 
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_default_plot_posterior_spline_9}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_spline_9}
 					\caption{Spline}
 				\end{figure}
 		\end{column}
@@ -1016,6 +1016,58 @@ as a collection of multivariate normally distributed random variables and thus a
 
 \end{frame}
 
+
+\begin{frame}
+	\frametitle{Results - GP Regression}
+	\framesubtitle{Uniform Sampling Example 2}
+
+	GP fitted to 1 week BP time series with 2 samples per hour (uniformly sampled across time)
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_2}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_mean_decomposed_2}
+					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
+				\end{figure}
+
+		\end{column}
+	\end{columns}
+
+\end{frame}
+
+
+
+\begin{frame}
+	\frametitle{Results - GP Regression vs Baseline}
+	\framesubtitle{Uniform Sampling Example 2}
+
+	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
+		\begin{column}{0.5\textwidth} % Left column width
+				\begin{figure}
+					\includegraphics[width=\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_2}
+					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
+				\end{figure}
+		\end{column}
+		\begin{column}{0.5\textwidth} % Right column width
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_linear_2}
+					\caption{Linear}
+				\end{figure}
+
+				\begin{figure}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_mean_dec_plot_sin_rbf_default_plot_posterior_spline_2}
+					\caption{Spline}
+				\end{figure}
+		\end{column}
+	\end{columns}
+
+\end{frame}
 
 
 \begin{frame}
@@ -1027,13 +1079,13 @@ as a collection of multivariate normally distributed random variables and thus a
 		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_5}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_mean_decomposed_5}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_mean_decomposed_5}
 					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
 				\end{figure}
 
@@ -1049,18 +1101,18 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_5}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_5}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_linear_5}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_linear_5}
 					\caption{Linear}
 				\end{figure}
 
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_spline_5}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_spline_5}
 					\caption{Spline}
 				\end{figure}
 		\end{column}
@@ -1080,13 +1132,13 @@ as a collection of multivariate normally distributed random variables and thus a
 		\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_9}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_9}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_mean_decomposed_9}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_mean_decomposed_9}
 					\caption{True (upper figure) and predicted (lower figure) decomposed mean}
 				\end{figure}
 
@@ -1102,18 +1154,18 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
 		\begin{column}{0.5\textwidth} % Left column width
 				\begin{figure}
-					\includegraphics[width=\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_9}
+					\includegraphics[width=\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_9}
 					\caption{Predictive Distribution. True function (red dashed line) with 2 samples (red dots) per hour}
 				\end{figure}
 		\end{column}
 		\begin{column}{0.5\textwidth} % Right column width
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_linear_9}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_linear_9}
 					\caption{Linear}
 				\end{figure}
 
 				\begin{figure}
-					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_sin_rbf_seasonal_default_plot_posterior_spline_9}
+					\includegraphics[width=0.8\linewidth]{new_measures_normy_plot_mean_dec_sin_rbf_seasonal_default_plot_posterior_spline_9}
 					\caption{Spline}
 				\end{figure}
 		\end{column}
@@ -1273,6 +1325,10 @@ as a collection of multivariate normally distributed random variables and thus a
 		\item Naive TTR is not a good estimator for TTR
 		\item GP is very good at predicting the hourly mean and assessing
 		local uncertainty
+		\item Only GP models the AR component.
+		Since AR component it is much smaller
+		then the measurement noise (and the cyclic pattern) one can probably
+		do without it.
 	\end{itemize}
 
 %	\begin{itemize}
@@ -1311,7 +1367,11 @@ as a collection of multivariate normally distributed random variables and thus a
 			\item Use different kernel combination for GP simulation and for
 			GP fitting
 		\end{itemize}
-		\item Influence of measurement error is huge compared to the AR component
+		\item Measurement error and AR component largely unknown:
+		\begin{itemize}
+			\item Investigate performance when there is a larger AR component
+		\end{itemize}
+
 	\end{itemize}
 
 	\bigskip
