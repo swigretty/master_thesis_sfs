@@ -102,6 +102,9 @@ class GPR(GaussianProcessRegressor):
             y_mean = K_trans @ self.alpha_
 
             # undo normalisation
+            # Only add a fraction of self._y_train_mean backk to y_mean
+            # such that the sum of all kernel means will add up to
+            # self.predict(X)
             y_mean = self._y_train_std * y_mean + self._y_train_mean/len(
                 kernel_list)
 
