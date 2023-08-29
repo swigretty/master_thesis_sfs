@@ -683,8 +683,8 @@ class GPSimulationEvaluator(GPSimulator):
             n_success = np.sum(df["ci_covered"])
             if hasattr(df["ci_covered"].values[0], "__len__"):
                 n_val = len(df["ci_covered"].values[0])
-                n_success = np.sum(v[np.random.randint(
-                    0, n_val)] for v in df["ci_covered"].values)
+                n_success = np.sum([v[np.random.randint(
+                    0, n_val)] for v in df["ci_covered"].values])
             ci = proportion_confint(n_success, n)
             df["ci_covered_lb"] = ci[0]
             df["ci_covered_ub"] = ci[1]
@@ -775,7 +775,7 @@ class GPSimulationEvaluator(GPSimulator):
         if eval_target_measure:
             eval_target_measure_all = pd.DataFrame(eval_target_measure)
             self.write_csv(eval_target_measure_all,
-                           self.output_path / "eval_measure_all.csv" )
+                           self.output_path / "eval_measure_all.csv")
             eval_target_measure = self.summarize_eval_target_measures(
                 eval_target_measure_all)
             eval_target_measure.to_csv(
