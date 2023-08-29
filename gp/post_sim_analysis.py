@@ -183,8 +183,8 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
 
 if __name__ == "__main__":
     setup_logging()
-    experiment_name = "new_measures_normy_test1"
-    plot_all(experiment_name, annotate=None, reextract=True)
+    experiment_name = "new_measures_normy_plot_mean_dec"
+    plot_all(experiment_name, annotate=None, reextract=False)
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
