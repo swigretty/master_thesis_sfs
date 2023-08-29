@@ -393,11 +393,14 @@ class GPSimulator():
         self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
-        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6))
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6), sharey=True, sharex=True)
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             ax[0].plot(self.x, v, label=k)
         ax[0].legend()
-        for k, v in self.gpm_fit.predict_mean_decomposed(self.x).items():
+        fit_dict = self.gpm_fit.predict_mean_decomposed(self.x)
+        assert all(self.f_post.y_mean - np.sum(list(fit_dict.values()),
+                                               axis=0) < 0.01)
+        for k, v in fit_dict.items():
             ax[1].plot(self.x, v, label=k)
         fig.tight_layout()
 
@@ -407,9 +410,9 @@ class GPSimulator():
             plt.close(fig)
 
         # Plot Kernel functions
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 15, 2 * 6))
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 15, 2 * 6),
+                               sharey=True, sharex=True)
         self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0])
-        scale = 1
         self.plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1])
         if self.output_path:
             fig.savefig(self.output_path / f"plot_kernel{figname_suffix}.pdf")

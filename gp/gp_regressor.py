@@ -102,7 +102,8 @@ class GPR(GaussianProcessRegressor):
             y_mean = K_trans @ self.alpha_
 
             # undo normalisation
-            y_mean = self._y_train_std * y_mean + self._y_train_mean
+            y_mean = self._y_train_std * y_mean + self._y_train_mean/len(
+                kernel_list)
 
             # if y_mean has shape (n_samples, 1), reshape to (n_samples,)
             if y_mean.ndim > 1 and y_mean.shape[1] == 1:
