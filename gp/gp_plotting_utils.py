@@ -94,7 +94,7 @@ def plot_posterior(x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
         ax.plot(x, y_true, "r:")
     if (x_red is not None) and (y_red is not None):
         ax.scatter(x_red, y_red, color="red", zorder=5, label="Observations")
-    ax.set_title("Samples from posterior distribution")
+    # ax.set_title("Samples from posterior distribution")
 
 
 @ts_plotter()
