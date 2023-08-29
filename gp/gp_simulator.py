@@ -188,23 +188,28 @@ class GPSimulator():
             else:
                 weights = self.data_fraction_weights
 
-            self._train_idx = get_red_idx(len(self.x), data_fraction=self.data_fraction, weights=weights, rng=self.rng)
+            self._train_idx = get_red_idx(
+                len(self.x), data_fraction=self.data_fraction,
+                weights=weights, rng=self.rng)
 
         return self._train_idx
 
     @property
     def test_idx(self):
         """
-        this is very slow [idx for idx in range(len(self.x)) if idx not in self.train_idx]
+        this is very slow [idx for idx in range(len(self.x)) if idx not in
+        self.train_idx]
         """
         if not hasattr(self, "_test_idx"):
-            self._test_idx = np.setdiff1d(np.arange(len(self.x)), self.train_idx)
+            self._test_idx = np.setdiff1d(np.arange(len(self.x)),
+                                          self.train_idx)
         return self._test_idx
 
     @property
     def y_true_train(self):
         """
-        This represents the (potentially noisy) subsampled measurements, used to fit the GP
+        This represents the (potentially noisy) subsampled measurements, used
+        to fit the GP
         """
         if not hasattr(self, "_y_true_train"):
             self._y_true_train = self.y_true[self.train_idx]
@@ -213,7 +218,8 @@ class GPSimulator():
     @property
     def y_true_samples(self):
         if not hasattr(self, "_y_true_samples"):
-            self._y_true_samples = self.sim_gp(n_samples=5, predict_y=True) + [self.y_true]
+            self._y_true_samples = self.sim_gp(n_samples=5, predict_y=True) + [
+                self.y_true]
         return self._y_true_samples
 
     @property
@@ -229,13 +235,16 @@ class GPSimulator():
     @property
     def f_post(self):
         """
-        The posterior distribution over f based on the fitted gaussian process model
+        The posterior distribution over f based on the fitted gaussian process
+        model
         """
         if not hasattr(self.gpm_fit, "X_train_"):
             raise "GP has not been fitted yet"
         if not hasattr(self, "_f_post"):
-            f_post_mean, f_post_cov = self.gpm_fit.predict(self.x, return_cov=True)
-            self._f_post = GPData(x=self.x, y_mean=f_post_mean, y_cov=f_post_cov)
+            f_post_mean, f_post_cov = self.gpm_fit.predict(self.x,
+                                                           return_cov=True)
+            self._f_post = GPData(x=self.x, y_mean=f_post_mean,
+                                  y_cov=f_post_cov)
         return self._f_post
 
     @property
@@ -245,7 +254,8 @@ class GPSimulator():
         cov is calculated assuming iid data.
         """
         if not hasattr(self, "_pred_empirical_mean"):
-            sigma_mean = 1 / len(self.y_true_train.y) * np.var(self.y_true_train.y)
+            sigma_mean = 1 / len(self.y_true_train.y) * np.var(
+                self.y_true_train.y)
             y_cov = np.zeros((len(self.x), len(self.x)), float)
             np.fill_diagonal(y_cov, sigma_mean)
             y = np.repeat(np.mean(self.y_true_train.y), len(self.x))
@@ -253,17 +263,20 @@ class GPSimulator():
         return self._pred_empirical_mean
 
     @staticmethod
-    def subsample_data(data: GPData, data_fraction: float, data_fraction_weights=None, rng=None):
+    def subsample_data(data: GPData, data_fraction: float,
+                       data_fraction_weights=None, rng=None):
         if callable(data_fraction_weights):
             weights = data_fraction_weights(data.y)
         else:
             weights = data_fraction_weights
-        idx = get_red_idx(len(data), data_fraction=data_fraction, weights=weights, rng=rng)
+        idx = get_red_idx(len(data), data_fraction=data_fraction,
+                          weights=weights, rng=rng)
         return data[idx]
 
     @staticmethod
     def extract_params_from_kernel(kernel):
-        return {k: v for k, v in kernel.get_params().items() if ("__" in k) and ("bounds" not in k) and any(
+        return {k: v for k, v in kernel.get_params().items() if ("__" in k)
+                and ("bounds" not in k) and any(
             [pn in k for pn in PARAM_NAMES])}
 
     @staticmethod
@@ -325,7 +338,8 @@ class GPSimulator():
         ylim = None
         if max(y_prior_std) > plot_lim:
             ylim = [np.min(y[0, :]) - plot_lim, np.max(y[0, :]) + plot_lim]
-        plot_gpr_samples(data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim, ax=ax)
+        plot_gpr_samples(data0.x, data0.y_mean, y_prior_std, y=y, ylim=ylim,
+                         ax=ax)
 
     @Plotter
     def plot_posterior(self, ax=None, pred_data=None, y_true_subsampled=None,
@@ -378,7 +392,7 @@ class GPSimulator():
         self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
-        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(2 * 10, 6))
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6))
         for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
             ax[0].plot(self.x, v, label=k)
         ax[0].legend()
@@ -407,7 +421,8 @@ class GPSimulator():
         ncols = 2
         current_row = 0
         current_col = 0
-        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows*10, ncols*10))
+        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(nrows*10,
+                                                                   ncols*10))
         self.plot_posterior(ax=axs[current_row, current_col])
 
         for k, v in self.eval_config.items():
@@ -417,7 +432,8 @@ class GPSimulator():
             else:
                 current_col += 1
             ax = axs[current_row, current_col]
-            eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
+            eval_kwargs = {data_name: (data if v["idx"] is None else
+                                       data[v["idx"]]) for data_name, data in
                            self.eval_data.items()}
             GPEvaluator(**eval_kwargs).plot_errors(ax=ax)
             ax.set_title(k)
@@ -430,14 +446,17 @@ class GPSimulator():
 
     @property
     def eval_config(self):
-        eval_config = {"train_perf": {"idx": self.train_idx, "fun": "evaluate_fun"},
-                       "test_perf": {"idx": self.test_idx, "fun": "evaluate_fun"},
+        eval_config = {"train_perf": {"idx": self.train_idx,
+                                      "fun": "evaluate_fun"},
+                       "test_perf": {"idx": self.test_idx,
+                                     "fun": "evaluate_fun"},
                        "overall_perf": {"idx": None, "fun": "evaluate"}}
         return eval_config
 
     @property
     def eval_data(self):
-        return {"y_true": self.y_true.y, "f_true": self.f_true, "f_pred": self.f_post}
+        return {"y_true": self.y_true.y, "f_true": self.f_true,
+                "f_pred": self.f_post}
 
     def get_decomposed_variance(self):
         variance_out = {}
@@ -462,11 +481,13 @@ class GPSimulator():
 
         param_error = {}
         if self.kernel_sim == self.kernel_fit:
-            param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for k, v in self.param_fit.items()}
+            param_error = {k: (v-self.param_sim[k])/abs(self.param_sim[k]) for
+                           k, v in self.param_fit.items()}
         output_dict = {"param_error": param_error}
 
         for k, v in self.eval_config.items():
-            eval_kwargs = {data_name: (data if v["idx"] is None else data[v["idx"]]) for data_name, data in
+            eval_kwargs = {data_name: (data if v["idx"] is None else
+                                       data[v["idx"]]) for data_name, data in
                            self.eval_data.items()}
 
             gpe = GPEvaluator(**eval_kwargs, **eval_base_kwargs)
