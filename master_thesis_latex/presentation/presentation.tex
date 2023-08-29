@@ -116,7 +116,6 @@
 
 \usepackage{xcolor,colortbl}
 
-
 %----------------------------------------------------------------------------------------
 %	SELECT INNER THEME
 %----------------------------------------------------------------------------------------
@@ -1187,7 +1186,7 @@ as a collection of multivariate normally distributed random variables and thus a
 	\begin{table}
 	\small
 	\centering
-	\begin{tabular}{|m{1cm}|m{3.2cm}|m{3.2cm}|m{3.2cm}|}
+	\begin{tabular}{|c|m{3.2cm}|m{3.2cm}|m{3.2cm}|}
 
   	\hline
 
@@ -1199,17 +1198,17 @@ as a collection of multivariate normally distributed random variables and thus a
 		 \item underestimates uncertainty
 	 \end{itemize}
 
-	& \cellcolor{green}Winner
+	& \cellcolor{green}\textbf{Winner}
 	&
-	\cellcolor{yellow}Winner
+	\cellcolor{yellow}\textbf{Winner}
 	\\
   	\hline
 
 	Linear
-	& \cellcolor{green}Winner
-	 \begin{itemize}
-		 \item does not improve much with more data
-	 \end{itemize}
+	& \cellcolor{green}\textbf{Winner}
+%	 \begin{itemize}
+%		 \item does not improve much with more data
+%	 \end{itemize}
 	& \cellcolor{red}
 	 \begin{itemize}
 		 \item underestimates uncertainty
@@ -1239,14 +1238,42 @@ as a collection of multivariate normally distributed random variables and thus a
 	\end{tabular}
 	\end{table}
 
-	General observations:
+\end{frame}
+
+
+
+\begin{frame}
+
+	\frametitle{Discussion}
+
+
+	GP vs Spline vs Linear
+	\begin{itemize}
+		\item Linear regression performs best if there is very little data
+		and a lot of noise.
+		Very rigid assumption on the shape of the function.
+		(parametric)
+
+		\item Spline regression is more flexible and data dependent.
+		It makes no assumption on the periodicity of the function.
+		(non parametric)
+
+		\item GP does implicitly model the cyclic pattern by using a cyclic
+		kernel function but the shape of the predicted function is very flexible and
+		data dependent.
+		(non parametric and Bayesian)
+	\end{itemize}
+
+	\bigskip
+
 	\begin{itemize}
 		\item All methods perform worse with seasonal sampling
 		\item Naive overall mean does give reasonable estimates of the weekly
 		mean, when there is uniform sampling
 		\item Naive TTR is not a good estimator for TTR
+		\item GP is very good at predicting the hourly mean and assessing
+		local uncertainty
 	\end{itemize}
-
 
 %	\begin{itemize}
 %		\item spline huge confidence intervals for very low data frequency
@@ -1265,6 +1292,7 @@ as a collection of multivariate normally distributed random variables and thus a
 %	\end{itemize}
 
 \end{frame}
+
 
 
 \begin{frame}
