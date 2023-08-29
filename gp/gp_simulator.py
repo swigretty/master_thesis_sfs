@@ -1,3 +1,4 @@
+import ast
 import datetime
 import inspect
 from functools import partial
@@ -666,21 +667,25 @@ class GPSimulationEvaluator(GPSimulator):
                 f.write(json.dumps(eval_dict, default=str))
         return eval_dict
 
+    @staticmethod
     def summarize_eval_target_measures(
-            self, eval_target_measure_all:
-            pd.DataFrame | Path) -> pd.DataFrame:
+            eval_target_measure_all: pd.DataFrame | Path) -> pd.DataFrame:
 
         if isinstance(eval_target_measure_all, Path):
-            eval_target_measure_all = pd.read_csv(eval_target_measure_all)
+            eval_target_measure_all = GPSimulationEvaluator.read_csv(
+                eval_target_measure_all)
+
         group_by_cols = ["method", "target_measure"]
-        grouped_df = eval_target_measure_all.groupby(
-            ["method", "target_measure"])
+        grouped_df = eval_target_measure_all.groupby(group_by_cols)
 
         def ci_covered_confint(df: pd.DataFrame) -> tuple:
             n = len(df)
-            if hasattr(df["f_true"].values[0], "__len__"):
-                n *= len(df["f_true"].values[0])
-            ci = proportion_confint(np.mean(df["ci_covered"]) * n, n)
+            n_success = np.sum(df["ci_covered"])
+            if hasattr(df["ci_covered"].values[0], "__len__"):
+                n_val = len(df["ci_covered"].values[0])
+                n_success = np.sum(v[np.random.randint(
+                    0, n_val)] for v in df["ci_covered"].values)
+            ci = proportion_confint(n_success, n)
             df["ci_covered_lb"] = ci[0]
             df["ci_covered_ub"] = ci[1]
             return pd.DataFrame({"ci_covered_lb": [ci[0]],
@@ -692,9 +697,40 @@ class GPSimulationEvaluator(GPSimulator):
 
         eval_target_measure = pd.merge(mean_df, ci_covered_confint_df,
                                        on=group_by_cols)
-        eval_target_measure.to_csv(
-            self.output_path / "eval_measure_summary.csv")
+
         return eval_target_measure
+
+    @staticmethod
+    def df_array_col_to_list(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        for col in df.columns:
+            df[col] = (df[col].apply(lambda x: x.tolist() if isinstance(
+                x, np.ndarray) else x))
+        return df
+
+    @staticmethod
+    def write_csv(df, path):
+        df_out = GPSimulationEvaluator.df_array_col_to_list(df)
+        df_out.to_csv(path)
+
+    @staticmethod
+    def read_csv(path: Path):
+        def clean_cell(cell):
+            if not isinstance(cell, str):
+                return cell
+            try:
+                new_obj = ast.literal_eval(cell)
+                if isinstance(new_obj, list):
+                    new_obj = np.array(new_obj)
+                return new_obj
+            except ValueError:
+                return cell
+
+        eval_target_measure_all_df = pd.read_csv(path)
+        for col in eval_target_measure_all_df.columns:
+            eval_target_measure_all_df[col] = eval_target_measure_all_df[
+                col].apply(clean_cell)
+        return eval_target_measure_all_df
 
     def evaluate_multisample(self, n_samples=100, only_var=False, n_plots=10):
         current_config = copy(self.gps_kwargs_normalized)
@@ -722,7 +758,7 @@ class GPSimulationEvaluator(GPSimulator):
                     ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
 
-            if i % int(n_samples/n_plots) == 0:
+            if i % max(int(n_samples/n_plots), 1) == 0:
                 gps.output_path = self.output_path
                 gps.plot(figname_suffix=f"_{i}")
 
@@ -738,10 +774,12 @@ class GPSimulationEvaluator(GPSimulator):
 
         if eval_target_measure:
             eval_target_measure_all = pd.DataFrame(eval_target_measure)
-            eval_target_measure_all.to_csv(self.output_path /
-                                           "eval_measure_all.csv")
+            self.write_csv(eval_target_measure_all,
+                           self.output_path / "eval_measure_all.csv" )
             eval_target_measure = self.summarize_eval_target_measures(
                 eval_target_measure_all)
+            eval_target_measure.to_csv(
+                self.output_path / "eval_measure_summary.csv")
 
         plt.close("all")
         return eval_dict, eval_target_measure

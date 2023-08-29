@@ -27,18 +27,24 @@ class SimpleEvaluator:
         return np.mean(self.ci_ub - self.ci_lb)
 
     @property
-    def ci_coverd(self):
+    def ci_covered_prop(self):
+        return np.mean(self.ci_covered)
+
+    @property
+    def ci_covered(self) -> int:
         covered = (self.ci_lb <= self.f_true) & (self.f_true <= self.ci_ub)
         if not isinstance(covered, np.ndarray):
             return int(covered)
-        return np.mean(covered.astype(int))
+        return covered.astype(int)
 
     @property
     def mse(self):
         return np.mean((self.f_true - self.f_pred)**2)
 
     def to_dict(self):
-        return {"ci_width": self.ci_width, "ci_covered": self.ci_coverd, "mse": self.mse, **asdict(self)}
+        return {"ci_width": self.ci_width, "ci_covered": self.ci_covered,
+                "mse": self.mse, **asdict(self),
+                "ci_covered_prop": self.ci_covered_prop}
 
 
 class GPEvaluator:
