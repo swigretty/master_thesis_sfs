@@ -41,13 +41,15 @@ col_of_int = ["method", "data_fraction", "ci_width", "ci_covered_prop",
 
 
 def target_measure_perf_plot(target_measures_df, annotate="mse",
-                             ci_width_max=30, reextract=False):
+                             ci_width_max=30, reextract=False,
+                             ci_coverage_col="ci_covered_prop_v2"):
     # target_measures_df = target_measures_df[col_of_int].drop_duplicates()
 
     colors = plt.cm.rainbow(np.linspace(
         0, 1, len(target_measures_df["method"].unique())))
     cdict = {i: color for i, color in enumerate(colors)}
-    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple", 5: "cyan"}
+    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple",
+             5: "cyan"}
 
     method_col_map = {meth: i for i, meth in enumerate(
         target_measures_df["method"].unique())}
@@ -70,13 +72,13 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
 
         dff = dff[dff["ci_width"] <= ci_width_max]
         for ii, (method, df) in enumerate(dff.groupby("method")):
-            cur_ax.scatter(df["ci_width"], df["ci_covered_prop"], s=20,
+            cur_ax.scatter(df["ci_width"], df[ci_coverage_col], s=20,
                            c=df["color"], marker='o', label=method)
             y_err = (np.abs(df[["ci_covered_lb", "ci_covered_ub"]].values
-                            - df["ci_covered_prop"].values.reshape(-1, 1))).T
+                            - df[ci_coverage_col].values.reshape(-1, 1))).T
 
             try:
-                cur_ax.errorbar(df["ci_width"], df["ci_covered_prop"], 
+                cur_ax.errorbar(df["ci_width"], df[ci_coverage_col],
                                 yerr=y_err,
                                 markerfacecolor=df["color"],
                                 markeredgecolor=df["color"],
@@ -86,14 +88,17 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
             cur_ax.plot(df["ci_width"], df["ci_covered_ub"])
             cur_ax.set_ylim(- 0.1, 1.1)
             x_range = np.max(dff["ci_width"]) - np.min(dff["ci_width"])
-            cur_ax.set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range, np.max(dff["ci_width"]) + 0.2 * x_range)
+            cur_ax.set_xlim(np.min(dff["ci_width"]) - 0.2 * x_range,
+                            np.max(dff["ci_width"]) + 0.2 * x_range)
 
             if annotate:
                 x_offset, y_offset = get_offset_annotate(ii, x_range)
-                cur_ax.annotate(f"{df[annotate].values[0]:.3f}", xy=(df["ci_width"], df["ci_covered_prop"]),
-                               xytext=(df["ci_width"] + x_offset, df["ci_covered_prop"] + y_offset),
+                cur_ax.annotate(
+                    f"{df[annotate].values[0]:.3f}",
+                    xy=(df["ci_width"], df[ci_coverage_col]),
+                    xytext=(df["ci_width"] + x_offset,
+                            df[ci_coverage_col] + y_offset),
                                )
-        # cur_ax.plot(np.arange(np.min(dff["ci_width"]), np.max(dff["ci_width"])))
         cur_ax.axhline(0.95, color="black", linestyle="dashed")
     cur_ax.legend()
 
@@ -157,7 +162,7 @@ MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extrem
 
 
 def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
-             reextract=False):
+             reextract=False,  ci_coverage_col="ci_covered_prop_v2"):
     output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/"
                        f"repo_output/gp_experiments/{experiment_name}")
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
@@ -176,15 +181,16 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
             if reextract:
                 reextract = target_measure
             fig = target_measure_perf_plot(df.copy(), annotate=annotate,
-                                           reextract=reextract)
+                                           reextract=reextract,
+                                           ci_coverage_col=ci_coverage_col)
             fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
             plt.close(fig)
 
 
 if __name__ == "__main__":
     setup_logging()
-    experiment_name = "new_measures_normy_plot_mean_dec"
-    plot_all(experiment_name, annotate=None, reextract=False)
+    experiment_name = "new_measures_normy_v1"
+    plot_all(experiment_name, annotate=None, reextract=True)
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)

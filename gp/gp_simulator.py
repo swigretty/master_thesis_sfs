@@ -684,15 +684,16 @@ class GPSimulationEvaluator(GPSimulator):
         def ci_covered_confint(df: pd.DataFrame) -> tuple:
             n = len(df)
             n_success = np.sum(df["ci_covered"])
+            ci_covered_prop_v2 = np.mean(df["ci_covered_prop"])
             if hasattr(df["ci_covered"].values[0], "__len__"):
                 n_val = len(df["ci_covered"].values[0])
                 n_success = np.sum([v[np.random.randint(
                     0, n_val)] for v in df["ci_covered"].values])
+                ci_covered_prop_v2 = n_success/n
             ci = proportion_confint(n_success, n)
-            df["ci_covered_lb"] = ci[0]
-            df["ci_covered_ub"] = ci[1]
             return pd.DataFrame({"ci_covered_lb": [ci[0]],
-                                 "ci_covered_ub": [ci[1]]})
+                                 "ci_covered_ub": [ci[1]],
+                                 "ci_covered_prop_v2": [ci_covered_prop_v2]})
 
         mean_df = grouped_df.agg("mean").reset_index(drop=False)
         ci_covered_confint_df = grouped_df.apply(
