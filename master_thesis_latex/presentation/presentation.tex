@@ -777,37 +777,6 @@ as a collection of multivariate normally distributed random variables and thus a
 \end{frame}
 
 
-\begin{frame}
-	\frametitle{Methods - Performance Evaluation}
-	\framesubtitle{Simulation and Evaluation Flow}
-		for i in $1 \dots n_{simulations}$:
-		\begin{enumerate}
-			\item Simulate from true GP (adversarial add non-Gaussian noise)
-			\item Subsample data (adversarial: different densities, non-uniform sampling)
-			\item Fit Regression
-			\begin{itemize}
-				\item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
-				\item Fit Baseline Method
-			\end{itemize}
-			\item Extract target measure including its distribution.
-				\begin{itemize}
-					\item GP: sample from the posterior distribution (Multivariate Gaussian) to approx. it.
-					\item Baseline Methods: Use bootstrap to approx. it
-				\end{itemize}
-			\item Calculate performance metric between true and predicted values.
-		\end{enumerate}
-
-	\bigskip
-	Calculate mean performance over $n_{simulations}$
-		\begin{itemize}
-			\item CI coverage of true value and CI width
-		\end{itemize}
-
-	\bigskip
-
-	Compare performance of GP Regression to baseline methods
-
-\end{frame}
 %
 %\begin{frame}
 %	\frametitle{Methods - Performance Evaluation}
@@ -960,6 +929,38 @@ as a collection of multivariate normally distributed random variables and thus a
 %	\end{figure}
 %\end{frame}
 
+\begin{frame}
+	\frametitle{Methods - Performance Evaluation}
+	\framesubtitle{Simulation and Evaluation Flow}
+		for i in $1 \dots n_{simulations}$:
+		\begin{enumerate}
+			\item Simulate from true GP (adversarial add non-Gaussian noise)
+			\item Subsample data (adversarial: different densities, non-uniform sampling)
+			\item Fit Regression
+			\begin{itemize}
+				\item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
+				\item Fit Baseline Method
+			\end{itemize}
+			\item Extract target measure including its distribution.
+				\begin{itemize}
+					\item GP: sample from the posterior distribution (Multivariate Gaussian) to approx. it.
+					\item Baseline Methods: Use bootstrap to approx. it
+				\end{itemize}
+			\item Calculate performance metric between true and predicted values.
+			\begin{itemize}
+				\item CI coverage of true value and CI width
+			\end{itemize}
+
+		\end{enumerate}
+
+	\bigskip
+	Calculate mean performance over $n_{simulations}$
+
+	\bigskip
+
+	Compare performance of GP Regression to baseline methods
+
+\end{frame}
 
 
 \section{Results}
@@ -1318,6 +1319,7 @@ as a collection of multivariate normally distributed random variables and thus a
 
 	\bigskip
 
+	General observations:
 	\begin{itemize}
 		\item All methods perform worse with seasonal sampling
 		\item Naive overall mean does give reasonable estimates of the weekly
