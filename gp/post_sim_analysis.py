@@ -7,6 +7,7 @@ import matplotlib as mpl
 from logging import getLogger
 from log_setup import setup_logging
 from gp.gp_simulator import GPSimulationEvaluator
+from gp.gp_plotting_utils import CB_color_cycle
 
 logger = getLogger(__name__)
 
@@ -45,8 +46,7 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
                              ci_coverage_col="ci_covered_prop_v2"):
     # target_measures_df = target_measures_df[col_of_int].drop_duplicates()
 
-    colors = plt.cm.rainbow(np.linspace(
-        0, 1, len(target_measures_df["method"].unique())))
+    colors = CB_color_cycle
     cdict = {i: color for i, color in enumerate(colors)}
     cdict = {0: 'red', 1: 'blue', 2: 'green', 3: "orange", 4: "purple",
              5: "cyan"}
