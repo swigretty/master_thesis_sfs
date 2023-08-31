@@ -7,6 +7,11 @@ from constants.constants import OUTPUT_PATH
 logger = getLogger(__name__)
 
 
+CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                  '#f781bf', '#a65628', '#984ea3',
+                  '#999999', '#e41a1c', '#dede00']
+
+
 # TODO combine Plotter and ts_plotter
 class Plotter():
     def __init__(self, f):

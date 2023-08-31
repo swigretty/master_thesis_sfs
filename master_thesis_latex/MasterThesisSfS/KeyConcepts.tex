@@ -25,11 +25,11 @@ Sometimes a time series model will be expressed as a random function $f: \mathbb
 of a collection of random variables.
 Throughout the thesis, the term time series is used both to refer to the data $(x_t)$ and the process $(X_t)$ from which it is generated.
 
-\section{Moments of a Time Series}
+\section{Moments of a Time Series}\label{sec:time_series_moments}
 
 A time series process $(X_t)$ is usually characterized by its first and second moment.
 
-\begin{definition}(\citeauthor{brockwell_introduction_2016})
+\begin{definition}(\citeauthor{brockwell_introduction_2016})\label{def:time_series_moments}
     The \textbf{mean function} of a time series $(X_t)$ is:
     \[
         \mu_X(t) = E(X_t)
@@ -40,7 +40,7 @@ A time series process $(X_t)$ is usually characterized by its first and second m
     \]
 \end{definition}
 
-\section{Stationarity}
+\section{Stationarity}\label{sec:stationarity}
 
 Given that one has only one observation $x_t$ per time point $t$,
 a necessary condition to statistically learn from a time series is stationarity.

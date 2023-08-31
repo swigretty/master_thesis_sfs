@@ -573,8 +573,7 @@ since it is unaffected by the observations or by $m(x)$.
 
 Most frameworks for GP regression assume a zero mean prior.
 Therefore, when you have prior knowledge about $m(x)$, it's advisable to subtract it before fitting a GP.
-Additionally, it's common practice to normalize your response variable,
-to achieve a zero mean and unit variance, before fitting a GP.
+It is also common practice to subtract the empirical mean from your data, before fitting a GP.
 
 
 For readers interested in delving further into this subject,
@@ -582,40 +581,70 @@ the book by \citeauthor{rasmussen_gaussian_2006} provides additional insights on
 as elaborated on page 27.
 
 
-\section{Kernel Functions - draft}\label{subsec:kernel}
+\section{Kernel Functions}\label{subsec:kernel}
 
-TODO: finish
-\\
-
-
-
-In the last section we started of with a describing the prior distribution over
-$\mathbf{Y}$ or $F_X = [f(x_1) \dots f(x_n))]^{\top}$ and shoved that a kernel function $k(x, x')$ needs to be
-chosen to match this distribution.
+In the section \ref{sec:gaussian-process-regression} we started of with a
+describing the prior distribution over
+$\mathbf{Y}$ or $F_X = [f(x_1) \dots f(x_n))]^{\top}$ and shoved that a kernel
+function $k(x, x')$ needs to be chosen to match this distribution.
 However, in Gaussian process regression it generally goes the other way around.
-One would choose a prior distribution over $f(x)$ or $Y(x)$ first, which boils down to choosing a kernel function.
-The kernel function evaluated at your inputs $X=[x_1 \dots x_n]^{\top}$ is then needed to calculate the
-predictive distribution of $f^{\ast}$ or $y^{\ast}$.
+One would choose a prior distribution over $f(x)$ or $Y(x)$ first,
+which boils down to choosing a kernel function.
+The kernel function evaluated at your inputs $X=[x_1 \dots x_n]^{\top}$ is then needed
+to calculate the predictive distribution of $f^{\ast}$ or $y^{\ast}$.
 
-The choice of kernel function depends on the assumptions about correlation in your output given arbitrary input pairs
-$x$ and $x'$.
+The choice of kernel function depends on the assumptions about correlation in
+your output given arbitrary input pairs $x$ and $x'$.
+For the sake of modeling the BP time series, three popular covariance
+functions have been deemed relevant and will be presented in this section.
+The three covariance function share the property of being stationary,
+i.e. they are a function of $\tau = x - x'$.
+Note that we have encountered covariance functions and stationarity
+for time series already in Section \ref{sec:time_series_moments} and
+\ref{sec:stationarity}, respectively
+
+The following subsection are based on the doctoral thesis of
+\citeauthor{duvenaud_automatic_2014} and the book of
+\citeauthor{rasmussen_gaussian_2006}, which cover covariance functions for
+Gaussian Processes in more detail.
+
+\subsection{The Squared Exponential Kernel Function}
+
+The squared exponential kernel is also known as radial basis function (RBF)
+kernel or Gaussian kernel and has the form:
+\begin{gather*}
+k(\tau) = \exp(-\frac{\tau^2}{2 l^2})
+\end{gather*}
+with $l$ being the length scale and $\tau = x-x'$.
+
+The length scales determines how fast the function is changing, which is
+illustrated in figure \ref{fig:rbf}.
+Regardless of the length scale, the RBF kernel generates function, which are
+infinitely differentiable and thus very smooth.
+
+\begin{figure}[!htb]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!'
+    \centering
+    \includegraphics[width=\textwidth]{RBF_length_scale} %<< no file extension
+    \caption[RBF Kernel: Kernel function wiht sample path]%<<-- Legend for the list of figures at the beginning of you thesis
+   {RBF Kernel function for different length scale (left) and a sample
+    generate by such a GP (right)}
+    \label{fig:rbf}
+\end{figure}
 
 
-\subsection{Stationary Covariance Function}
-Does only depend on $\tau = x - x'$.
+\subsection{The Matérn Class of Kernel Functions}
 
-\subsubsection{The Matérn Class of Covariance Functions}
-
-A expression for the Matérn covariance function is given by \citeauthor{rasmussen_gaussian_2006}:
+An expression for the Matérn covariance function is given by:
 
 \begin{gather*}
     k_{\nu}(\tau) = \sigma^2 \frac{2^{1-\nu}}{\Gamma(\nu)}(\frac{\sqrt{2\nu} \tau}{l})^{\nu} K_{\nu}
     (\frac{\sqrt{2\nu} \tau}{l})
 \end{gather*}
-where $\nu$ and $l$ are positive parameters, $K_{\nu}$ is a modified Bessel function and
-$\sigma^2$ = $k_{\nu}(0)$
+where $\nu$ and $l$ are positive parameters, $K_{\nu}$ is a modified Bessel
+function and $\sigma^2$ = $k_{\nu}(0)$
 
-For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance function can be simplified:
+For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance
+function can be simplified to:
 
 \begin{gather}\label{kernel-matern}
     k_{\nu=r+1/2}(\tau) = \sigma^2 \exp(-\frac{\sqrt{2r + 1} \tau}{l}) \frac{r!}{(2p)!}
@@ -623,15 +652,14 @@ For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance 
 \end{gather}
 
 
-Or also with \texttt{includegraphics}:
 \begin{figure}[hbt!]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!' Try to
                     %impose your will to LaTeX
   \centering
-  \includegraphics[width=\textwidth]{Matern_3} %<< no file extension
+  \includegraphics[width=\textwidth]{Matern_nu} %<< no file extension
   %%         --- .5\textwidth stands for 50% of text width
-  \caption[Geyser data: binned histogram, Silverman's and another
-  kernel]%<<-- Legend for the list of figures at the beginning of you thesis
-  {Matérn kernel function and sample path for different $\nu$}% legend displayed below the graph.
+  \caption[Matérn Kernel: Kernel function wiht sample path]%<<-- Legend for the list of figures at the beginning of you thesis
+   {Matérn kernel function for different $\nu$ (left) and a sample
+    generate by the corresponding GP (right)}
   \label{fig:matern}
 \end{figure}
 

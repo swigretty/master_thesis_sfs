@@ -6,18 +6,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from log_setup import setup_logging
 from logging import getLogger
-from matplotlib.colors import CSS4_COLORS
+from gp.gp_plotting_utils import CB_color_cycle
 import matplotlib as mpl
 import pandas as pd
 
 logger = getLogger(__name__)
+
+plt.style.use('tableau-colorblind10')
 
 
 def get_info(sample):
     return {"var": np.var(sample), "max-min": np.max(sample) - np.min(sample)}
 
 
-def plot_sample_path(t, kernel, ax=None, nsim=1):
+def plot_sample_path(t, kernel, ax=None, nsim=1, **kwargs):
     mu = np.zeros(len(t))
     K = kernel(np.array(t).reshape(-1, 1))
     sim_info = []
@@ -25,9 +27,11 @@ def plot_sample_path(t, kernel, ax=None, nsim=1):
 
     plot_sample = y_sim[0]
     if ax is not None:
-        ax.set_title("Sample Path")
-        ax.plot(t, plot_sample, label=f"var: {get_info(plot_sample)['var']:.2f}, "
-                                      f"max-min: {get_info(plot_sample)['max-min']}")
+        ax.plot(t, plot_sample,
+                label=f"var: {get_info(plot_sample)['var']:.2f}, max-min: "
+                      f"{get_info(plot_sample)['max-min']}", **kwargs)
+        ax.set_xlabel("x")
+        ax.set_ylabel("f(x)")
 
     for sample in y_sim:
         sim_info.append(get_info(sample))
@@ -39,19 +43,21 @@ def plot_sample_path(t, kernel, ax=None, nsim=1):
     return sim_info_mean
 
 
-def plot_kernel(t, kernel, ax):
-    ax.set_title("Kernel Function")
-
+def plot_kernel(t, kernel, ax, **kwargs):
     K = kernel(np.array(t).reshape(-1, 1))
     k_1d = K[0, :]
-    ax.plot(t, k_1d, label=f"{kernel}")
+    ax.plot(t, k_1d, label=f"{kernel}", **kwargs)
+    ax.set_xlabel("tau=x-x'")
+    ax.set_ylabel("k(tau)")
     # logger.info(kernel)
     # logger.info(f"Kmax-Kmin: {np.max(K) - np.min(K)}")
 
 
-def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values=None, mode_name="mode", nsim=1):
+def plot_kernels(kernels, t=np.linspace(0, 20, 200),
+                 plot_file=None, mode_values=None, mode_name="mode", nsim=1):
     nrows = 1
     ncols = 2
+    sim_info = None
     if mode_values is not None:
         ncols += 1
     mpl.style.use('seaborn-v0_8')
@@ -64,7 +70,7 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
         plot_file = f"{first_kernel.__class__.__name__}"
     plot_file = f"{plot_file}_{mode_name}.pdf"
 
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12*ncols, 8*nrows))
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5*ncols, 4*nrows))
     try:
         max_length_scale = max([k.length_scale for k in kernels])
         t_max = max_length_scale * 5
@@ -78,14 +84,15 @@ def plot_kernels(kernels, t=np.linspace(0, 20, 200), plot_file=None, mode_values
 
     for i, k in enumerate(kernels):
         # color = CSS4_COLORS[i * 3]
-        plot_kernel(t[:idx_max], k, ax[0])
-        plot_sample_path(t, k, ax=ax[1], nsim=nsim)
+        plot_kernel(t[:idx_max], k, ax[0], color=CB_color_cycle[i])
+        plot_sample_path(t, k, ax=ax[1], nsim=nsim, color=CB_color_cycle[i])
 
     if mode_values is not None:
-        sim_info = plot_sim_info(kernels, mode_values=mode_values, mode_name=mode_name, t=t, ax=ax[2])
+        sim_info = plot_sim_info(kernels, mode_values=mode_values,
+                                 mode_name=mode_name, t=t, ax=ax[2])
 
-    [a.legend() for a in ax]
-
+    ax[0].legend()
+    fig.tight_layout()
     fig.savefig(plot_path / plot_file)
     return sim_info
 
@@ -115,11 +122,12 @@ if __name__ == "__main__":
     var = [5, 62, 14**2]
     length_scale = [1, 10, 100]
 
-    # kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
-    # plot_kernels(kernels)
+    kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
+    plot_kernels(kernels, mode_name="nu")
     # #
-    # kernels = [ExpSineSquared(length_scale=sc, periodicity=h_per_day) for sc in [0.1, 1, 10]]
-    # plot_kernels(kernels, plot_file="sin_len.pdf", t=t)
+    kernels = [ExpSineSquared(length_scale=ls, periodicity=h_per_day) for ls
+               in [0.5, 1, 2]]
+    plot_kernels(kernels, t=t, mode_name="length_scale")
     # #
     # kernels = [ExpSineSquared(length_scale=1, periodicity=h_per_day) * RBF(length_scale=ls) for ls in [0.1, 1, 10,
     #                                                                                                     100]]
@@ -128,18 +136,19 @@ if __name__ == "__main__":
     # kernels = [c * RBF(length_scale=1) for c in [0.1, 1, 10, 100]]
     # plot_kernels(kernels, plot_file="RBF_scale.pdf", t=t)
     #
-    # kernels = [RBF(length_scale=ls) for ls in length_scale]
-    # plot_kernels(kernels, t=t, mode_name="length_scale", mode_values=length_scale)
+    kernels = [RBF(length_scale=ls) for ls in length_scale]
+    plot_kernels(kernels, t=t, mode_name="length_scale")
+
     #
     # kernels = [RBF(length_scale=50) * c for c in var]
-    # plot_kernels(kernels, t=t, mode_name="rbf50_var", mode_values=var)
+    # plot_kernels(kernels, t=t, mode_name="rbf50_var", modlength_scalee_values=var)
     # #
     # kernels = [Matern(length_scale=3, nu=0.5) * c for c in var]
     # plot_kernels(kernels, mode_name="rbf50_var", t=t, mode_values=var)
 
-    kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
-    sim_info = plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=1000)
-    print("Hello")
+    # kernels = [ExpSineSquared(length_scale=3, periodicity=h_per_day) * c for c in var]
+    # sim_info = plot_kernels(kernels, t=t, mode_name="sin3_var", mode_values=var, nsim=1000)
+    # print("Hello")
 
     # kernels = [WhiteKernel(noise_level=c)for c in var]
     # plot_kernels(kernels, t=t, mode_name="white_var", mode_values=var)
