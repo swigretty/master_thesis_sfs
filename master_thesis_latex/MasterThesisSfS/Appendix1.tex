@@ -1,10 +1,56 @@
-\chapter{Complementary information}
-\label{app:complement}
+\chapter{Complementary information}\label{app:complement}
+
 
 Additional material. For example long mathematical derivations could be
 given in the appendix. Or you could include part of your code that is
 needed in printed form. You can add several Appendices to your thesis (as
 you can include several chapters in the main part of your work).
+
+\section{Ornstein-Uhlenbeck Process}\label{app:ou}
+
+The autocovariance function of an Ornstein-Uhlenbeck process can be derived by solving the stochastic differential equation (SDE) that defines the process.
+
+Starting with the SDE for an OU process:
+
+$$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
+
+where $X_t$ is the value of the process at time $t$, $\theta$ is a positive constant that determines the speed of mean reversion,
+$\mu$ is the long-term mean of the process, $\sigma_w$ is the standard deviation of the random shocks, and $W_t$ is a standard Wiener process or Brownian motion.
+
+The solution to the SDE is:
+
+$$ X_t = X_0 e^{-\theta t} + \mu (1-e^{-\theta t}) +
+\sigma_w e^{-\theta t} \int_{0}^{t} e^{\theta s} dW_s$$
+
+The process is stationary if $\theta > 0$.
+The autocovariance function of an OU process is given by
+$Cov(X_t, X_{t-k}) = \frac{\sigma_w^2}{2\theta} e^{-\theta k}$,
+where $k\geq 0$ and $\theta > 0$.
+
+This is the same expression as we have obtained in \ref{kernel-matern-ar1}, where
+$k(0) = \sigma^2 = \frac{\sigma_w^2}{2\theta}$ and $l=1/\theta$
+
+To see how the Ornstein-Uhlenbeck can be considered a continuous time analogue to the discrete time
+AR(1) process one can use the Euler-Maryuama discretization of the process.
+Considering again the SDE for an OU process:
+$$dX_t = \theta (\mu - X_t)dt + \sigma_w dW_t,$$
+The process can be discretized at times $(k \Delta t)_{k \in \mathbb{N}_0}$:
+
+$$ X_{k+1} - X_k = \theta \mu \delta t - \theta X_k \Delta t + \sigma_w (W_{k+1} - W_k)$$
+
+The random variables $(W_{k+1} - W_k)$ are independent and identically distributed normal random variables
+with expected value zero and variance $\Delta t$.
+Therefore, we can set $\sigma_w (W_{k+1} - W_k) = \sigma_w \sqrt{\Delta t} \epsilon$ with $\epsilon \sim \N(0,1)$
+to obtain the following recursion:
+$$ X_{k+1} = \theta \mu \Delta t - (\theta \Delta t - 1) X_k + \sigma_w \sqrt{\Delta t} \epsilon$$
+
+The recursion for an AR(1) process is:
+$$ X_{k+1} = c + a X_k + b \epsilon$$
+Which is identical to the expression above if $c= \theta \mu \Delta t$, $a=1- \theta \Delta t$ and
+$b= \sigma_w \sqrt{\Delta t}$
+
+
+
 
 \section{Including \Rp code with verbatim}
 A simple (rather too simple, see~\ref{App:listings}) way to include code or
