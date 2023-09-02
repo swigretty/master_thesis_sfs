@@ -73,6 +73,17 @@ literate={<-}{{$\leftarrow$}}1 {~}{{$\sim$}}1}
 \lstset{escapeinside={(*}{*)}} % for (*\ref{ }*) inside lstlistings (Scode) 
 %%----------------------------------------------------------------------------
 
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+
+\newcommand{\iidsim}{\text{ iid }{\sim} \text{ }}
+%\newcommand\iidsim{\stackrel{\mathclap{\normalfont\mbox{\tiny{idd}}}}{\sim}}
+
+\algnewcommand\algorithmicforeach{\textbf{for each}}
+\algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicdo}
+
+
 %%------- Theoreme ---
 \newtheorem{definition}{Definition}[subsection]
 \newtheorem{lemma}[definition]{Lemma}

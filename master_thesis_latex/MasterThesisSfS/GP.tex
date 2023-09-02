@@ -34,8 +34,8 @@ We write
 \end{gather*}
 with
 \begin{gather*}
-    m(x) = \mathbb{E}[f(x)] \\
-    k(x,x') = \mathbb{E}[(f(x)-m(x))(f(x')-m(x'))]
+    m(x) = \ERW{f(x)} \\
+    k(x,x') = \ERW{(f(x)-m(x))(f(x')-m(x'))}
 \end{gather*}
 
 If we assume $X$ to be the index set or set of possible inputs of $f$, then there is a random variable
@@ -94,35 +94,35 @@ Consequently, in Bayesian linear regression, a distribution over the regression 
 Recall the linear regression model from chapter \ref{ch:time-series-decomposition-and-regression}.
 However, we are assuming a more general setting, where the data generating process does not need to be a time series process.
 The function is denoted with $f(x)$ instead of $\mu(t)$ and $Y_i$ is again a noisy observation of
-$f(x_i)$, where the additive error $E_i$ does not necessarily need to be from a time series process $(E_t: t \in \{t_1, t_2, \dots  t_n \})$.
+$f(x_i)$, where the additive error $R_i$ does not necessarily need to be from a time series process $(R_t: t \in \{t_1, t_2, \dots  t_n \})$.
 We obtain the following data generating model:
 \begin{align*}
-    f(x_i) &= x_i^{\top}\beta, & Y_i &= f(x_i) + E_i,  & (i = 1, \dots n)
+    f(x_i) &= x_i^{\top}\beta, & Y_i &= f(x_i) + R_i,  & (i = 1, \dots n)
 \end{align*}
 with $x_i \in \mathbb{R}^p$ being again the input vector and $\beta \in \mathbb{R}^p$ is the vector with
 the regression coefficients.
 
 In matrix from:
 \begin{align*}
-    \mathbf{Y} = X \beta + \mathbf{E}
+    \mathbf{Y} = X \beta + \mathbf{R}
 \end{align*}
 Where $\mathbf{Y} = [Y_{1}, \dots Y_{n}]^{\top}$ is the observed data,
 $X = [x_{1}, \dots x_{n}]^{\top} \in \mathbb{R}^{n \times p}$ is the design matrix.
-We assume again gaussian but potentially correlated errors $\mathbf{E} = [E_{1}, \dots E_{n}]^{\top}$:
+We assume again gaussian but potentially correlated errors $\mathbf{R} = [R_{1}, \dots R_{n}]^{\top}$:
 \begin{gather*}
-    \mathbf{E} \sim \N(0, \Sigma_e)
+    \mathbf{R} \sim \N(0, \Sigma_r)
 \end{gather*}
-If $\mathbf{E}$ is an ARMA process, then every element of the time series $E_{i}$
+If $\mathbf{R}$ is an ARMA process, then every element of the time series $R_{i}$
 is itself a sum of innovations.
-Therefore, $\mathbf{E}$ is gaussian as long as it has gaussian innovations.
+Therefore, $\mathbf{R}$ is gaussian as long as it has gaussian innovations.
 
 The likelihood, i.e. the probability of the observations $\mathbf{Y}$ given $X$ and $\beta$ is then:
 
 \begin{gather*}
     p(\mathbf{Y}|X,\beta)
-    = \frac{1}{(2\pi)^{n/2} \sqrt {\det(\Sigma_e)}}
-    \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_e^{-1}(y-X\beta))
-    = \N(X \beta, \Sigma_e)
+    = \frac{1}{(2\pi)^{n/2} \sqrt {\det(\Sigma_r)}}
+    \exp(-\frac{1}{2}(y - X\beta)^{\top} \Sigma_r^{-1}(y-X\beta))
+    = \N(X \beta, \Sigma_r)
 \end{gather*}
 
 Until now the regression model is exactly the same as in chapter \ref{ch:time-series-decomposition-and-regression}.
@@ -145,7 +145,7 @@ One approach is to just plug in the expressions for
 $p(\mathbf{Y}|X,\beta)$ and $p(\beta|\mathbf{Y}, X)$ from above, with the marginal likelihood:
 
 \begin{gather}\label{eq:marginal-likelihood}
-    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
+    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_r)
 \end{gather}
 
 The term marginal likelihood arises from the marginalization over the parameter values $\beta$.
@@ -158,7 +158,7 @@ multivariate normal distribution:
         \mathbf{Y} \\
         \beta
     \end{bmatrix}
-    = \begin{bmatrix} X \\ I_p \end{bmatrix} \beta + \begin{bmatrix} I_n \\ 0 \end{bmatrix}  \mathbf{E}
+    = \begin{bmatrix} X \\ I_p \end{bmatrix} \beta + \begin{bmatrix} I_n \\ 0 \end{bmatrix}  \mathbf{R}
     \sim \N \left(
         \begin{bmatrix}
         0 \\
@@ -175,7 +175,7 @@ multivariate normal distribution:
                 & & \\
                 & & \\
                 & & \\
-                & X \Sigma_p X^{\top} + \Sigma_e & \\
+                & X \Sigma_p X^{\top} + \Sigma_r & \\
                 & & \\
                 & & \\
                 & & \\
@@ -189,7 +189,7 @@ multivariate normal distribution:
     = p(\mathbf{Y}, \beta | X)
 \end{gather}
 
-with $\Sigma_p X^{\top} + \Sigma_e \in \mathbb{R}^{n\times n}$ and $\Sigma_p X^{\top} \in \mathbb{R}^{p\times n}$.
+with $\Sigma_p X^{\top} + \Sigma_r \in \mathbb{R}^{n\times n}$ and $\Sigma_p X^{\top} \in \mathbb{R}^{p\times n}$.
 
 To find now the posterior distribution $p(\beta | \mathbf{Y}, X)$ one can use the rules for deriving conditional
 distributions for multivariate Gaussian's presented in theorem \ref{thrm:Gaussian-Conditioning}.
@@ -227,14 +227,14 @@ with mean $\bar{\mu}$ and covariance $\bar{\Sigma}$ of the following form:
 Using theorem \ref{thrm:Gaussian-Conditioning} the posterior distribution over $\beta$ is then given by:
 \begin{gather*}
     p(\beta | \mathbf{Y}=y, X) \sim \N(\bar{\mu}, \bar{\Sigma}), \\
-    \bar{\Sigma} = \Sigma_{p} - \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_e)^{-1} X  \Sigma_p, \\
-    \bar{\mu} = \mu_{\beta} + \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_e)^{-1}y
+    \bar{\Sigma} = \Sigma_{p} - \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_r)^{-1} X  \Sigma_p, \\
+    \bar{\mu} = \mu_{\beta} + \Sigma_p X^{\top}(X \Sigma_p X^{\top} + \Sigma_r)^{-1}y
 \end{gather*}
 
 The expression for the posterior mean and covariance matrix can be further simplified using Woodbury matrix identity
 and we obtain:
 \begin{align}\label{def:conditional-mean-var}
-    \bar{\Sigma} = (X^{\top}\Sigma_e^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\mu} = \bar{\Sigma} X^{\top} \Sigma_e^{-1} y
+    \bar{\Sigma} = (X^{\top}\Sigma_r^{-1}X + \Sigma_p^{-1})^{-1} & & \bar{\mu} = \bar{\Sigma} X^{\top} \Sigma_r^{-1} y
 \end{align}
 
 Since $f(x) = x^{\top}\beta$, one can use the posterior mean and covariance matrix from
@@ -252,7 +252,7 @@ Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X
         \mathbf{Y} \\
         f^{\ast}
     \end{bmatrix}
-    = \begin{bmatrix} X \\ x^{\ast} \end{bmatrix} \beta + \begin{bmatrix} I_n \\ 0 \end{bmatrix}  \mathbf{E}
+    = \begin{bmatrix} X \\ x^{\ast} \end{bmatrix} \beta + \begin{bmatrix} I_n \\ 0 \end{bmatrix}  \mathbf{R}
     \sim \N \left(
         \begin{bmatrix}
         0 \\
@@ -267,7 +267,7 @@ Similar to before we can write the joint distribution $p(\mathbf{Y}, f^{\ast}| X
                 & & \\
                 & & \\
                 & & \\
-                & X \Sigma_p X^{\top} + \Sigma_e & \\
+                & X \Sigma_p X^{\top} + \Sigma_r & \\
                 & & \\
                 & & \\
                 & & \\
@@ -323,10 +323,10 @@ input pairs $x$ and $x'$ only entering as a dot product.
 
 %For example if we assume $\Sigma_p = \sigma_p I$, we would choose $k(x,x') = \sigma_p x^{\top} x'$.
 
-%Assuming $\Sigma_p = \sigma_p I$ and $\Sigma_e = \Sigma_e I)$ we get for the kernel function:
+%Assuming $\Sigma_p = \sigma_p I$ and $\Sigma_r = \Sigma_r I)$ we get for the kernel function:
 %
 %\begin{gather*}
-%    k(x, x') = \sigma_p x^{\top} x' +  \mathbbm{1}_{x = x'}\Sigma_e
+%    k(x, x') = \sigma_p x^{\top} x' +  \mathbbm{1}_{x = x'}\Sigma_r
 %\end{gather*}
 
 %δ pq is a Kronecker delta which is one iff p = q and zero otherwise.
@@ -347,7 +347,7 @@ The joint distribution of $f^{\ast}$ and $\mathbf{Y}$ can be expressed as follow
         0
         \end{bmatrix},
         \begin{bmatrix}
-        K_{XX} + \Sigma_e & K_{Xx^{\ast}} \\
+        K_{XX} + \Sigma_r & K_{Xx^{\ast}} \\
         K_{x^{\ast}X} & K_{x^{\ast}x^{\ast}}
         \end{bmatrix}
         \right)
@@ -375,23 +375,23 @@ where:
 
 Unlike in chapter \ref{ch:time-series-decomposition-and-regression}, $f(x)$ is no longer assumed to be a
 deterministic and parametric function.
-This way, GP regression allows us to treat $\mathbf{E}$ not simply as an error
-term but an actual part of our signal which we can predict. If $\mathbf{E}$ is not independent noise but for example a
-time series, where the elements of $\mathbf{E}$ are correlated, we want to leverage the information we have about an
+This way, GP regression allows us to treat $\mathbf{R}$ not simply as an error
+term but an actual part of our signal which we can predict. If $\mathbf{R}$ is not independent noise but for example a
+time series, where the elements of $\mathbf{R}$ are correlated, we want to leverage the information we have about an
 unobserved time point given our observations.
 Hence, we are not interested in the posterior distribution of $f^{\ast}$ only, but also of
-$Y^{\ast} := Y(x^{\ast}) = f(x^{\ast}) + E(x^{\ast})$.
+$Y^{\ast} := Y(x^{\ast}) = f(x^{\ast}) + R(x^{\ast})$.
 
 Recall the expression for the marginal likelihood $p(\mathbf{Y}| X)$ from \ref{eq:marginal-likelihood}:
 \begin{gather*}
-    \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_e) \\
+    \mathbf{Y}|X \sim \N(0,  X \Sigma_p X^{\top} + \Sigma_r) \\
 \end{gather*}
 
 Alternatively, this can be expressed as a distribution over the function $Y(x)$:
 \begin{gather*}
     Y(x) \sim GP(0, k(x, x'))
 \end{gather*}
-The kernel function $k(x,x')$ needs to be chosen such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$.
+The kernel function $k(x,x')$ needs to be chosen such that for an index set X we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_r$.
 One can then follow again the same procedure as before and combine $Y^{\ast}$ and $\mathbf{Y}$ into a single random vector:
 
 \begin{gather}
@@ -414,43 +414,43 @@ One can then follow again the same procedure as before and combine $Y^{\ast}$ an
 
 The predictive distribution $p(Y^{\ast} | \mathbf{Y}, X, x^{\ast})$ is then again derived by conditioning.
 
-One could also assume additional measurement noise on the time series $f(x) + E(x)$.
+One could also assume additional idd measurement noise on the time series $f(x) + R(x)$.
 We then have for the observed time series $Y(x)$:
 \begin{align*}
-    Y(x) = f(x) + E(x) + \epsilon   && \epsilon \sim \N(0, \sigma_n^{2})
+    Y(x_i) = f(x_i) + R(x_i) + \epsilon_i   && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
 \end{align*}
 To be inline with the literature on Gaussian process regression, we will from now on consider
 our goal to find some function $f(x)$, which is a combination of the mean function, until now denoted by $f(x)$,
-and the stationary time series $E(x)$.
-The observed time series $Y(x)$ will thus be equivalent to $f(x)$ up to some additive independent noise term $\epsilon$.
+and the stationary time series $R(x)$.
+The observed time series $Y(x$ will thus be equivalent to $f(x)$ up to some additive independent noise term $\epsilon$.
 We can write:
 \begin{align*}
-    Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
+    Y(x_i) = f(x_i) + \epsilon_i && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
 \end{align*}
 
 Assuming the same linear model as before, we have for $F_X = [f(x_1), \dots f(x_n)]^{\top}$:
 \begin{gather*}
-    F_X = X \beta + \mathbf{E}, \text{ with $\beta \sim \N(0, \Sigma_p)$ and $\mathbf{E} \sim \N(0, \Sigma_e)$}
+    F_X = X \beta + \mathbf{R}, \text{ with $\beta \sim \N(0, \Sigma_p)$ and $\mathbf{R} \sim \N(0, \Sigma_r)$}
 \end{gather*}
-%with $\mathbf{E} = [E(x_1) \dots E(x_n)]^{\top} \sim \N(0, \Sigma_e)$ for some input $x_1 \dots x_n$.
+%with $\mathbf{R} = [R(x_1) \dots R(x_n)]^{\top} \sim \N(0, \Sigma_r)$ for some input $x_1 \dots x_n$.
 %
 %For some inputs $(x_i: i = 1 \dots n)$ we assume:
 %\begin{gather*}
-%    f(x_i) = x_i^{\top}\beta + E(x_i) \\
+%    f(x_i) = x_i^{\top}\beta + R(x_i) \\
 %    \text{with $\beta \sim \N(0, \Sigma_p)$} \\
-%    \text{and  $\mathbf{E} = [E(x_1) \dots E(x_n)]^{\top} \sim \N(0, \Sigma_e$),}
+%    \text{and  $\mathbf{R} = [R(x_1) \dots R(x_n)]^{\top} \sim \N(0, \Sigma_r$),}
 %\end{gather*}
 
 %For some inputs $(x_i: i = 1 \dots n)$ we assume:
 %\begin{gather*}
-%    f(x_i) = x_i^{\top}\beta + E(x_i) \\
-%    \text{with $\beta \sim \N(0, \Sigma_p)$ and  $\mathbf{E} = [E(x_1) \dots E(x_n)]^{\top} \sim \N(0, \Sigma_e$),}
+%    f(x_i) = x_i^{\top}\beta + R(x_i) \\
+%    \text{with $\beta \sim \N(0, \Sigma_p)$ and  $\mathbf{R} = [R(x_1) \dots R(x_n)]^{\top} \sim \N(0, \Sigma_r$),}
 %\end{gather*}
 Analogously we can write:
 \begin{gather*}
     f(x) \sim GP(0, k(x, x')),
 \end{gather*}
-with $k(x,x')$ such that for an input $X = [x_1 \dots x_n]^{\top}$ we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$.
+with $k(x,x')$ such that for an input $X = [x_1 \dots x_n]^{\top}$ we obtain $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_r$.
 
 The joint distribution of $\mathbf{Y}$ and $f^{\ast} := f(x^{\ast})$ is given by:
 \begin{gather}
@@ -481,7 +481,7 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
 
 If we are interested in predicting $Y(X)$, i.e. the iid gaussian noise term $\epsilon$
 should be included in the prediction. We choose $k(x,x')$ such that
-$K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e + \sigma_n^2 I$.
+$K_{XX} =  X \Sigma_p X^{\top} + \Sigma_r + \sigma_n^2 I$.
 The predictive distribution over
 $Y^{\ast} := Y(x^{\ast})$ is then simply:
 \begin{gather}\label{eq:posterior-gp-noise}
@@ -497,10 +497,10 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}})
 %\begin{gather*}
 %    Y(x) \sim GP(0, k(x, x') + \delta_{x,x'}\sigma_n)),
 %\end{gather*}
-%where $k(x,x')$ is the same as above with $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_e$ and $\delta_{x,x'}$ is the Kronecker delta which
+%where $k(x,x')$ is the same as above with $K_{XX} =  X \Sigma_p X^{\top} + \Sigma_r$ and $\delta_{x,x'}$ is the Kronecker delta which
 %is one if $x = x'$ and zero otherwise.
 %We define a new kernel function $\tilde{k}(x,x') := k(x, x') + \delta_{x,x'}\sigma_n$, then
-%$\tilde{K}_{XX} =  X \Sigma_p X^{\top} + \Sigma_e + \sigma_n^2 I$ and the predictive distribution over
+%$\tilde{K}_{XX} =  X \Sigma_p X^{\top} + \Sigma_r + \sigma_n^2 I$ and the predictive distribution over
 %$Y^{\ast} := Y(x^{\ast})$ is then:
 %\begin{gather}\label{eq:posterior-gp-noise}
 %    p(Y^{\ast}| \mathbf{Y}, X) = \N(
@@ -510,8 +510,8 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}})
 
 
 
-Also note how until now we have still assumed $\Sigma_e$, the covariance matrix of $\mathbf{E}$, to be known.
-However, deriving $\Sigma_e$ for an ARMA process with irregularly spaced samples is not straight forward, as has already
+Also note how until now we have still assumed $\Sigma_r$, the covariance matrix of $\mathbf{R}$, to be known.
+However, deriving $\Sigma_r$ for an ARMA process with irregularly spaced samples is not straight forward, as has already
 been shown in chapter \ref{ch:time-series-decomposition-and-regression}.
 The next section will illustrate how choosing a specific kernel function solves this problem.
 
@@ -522,7 +522,7 @@ and its covariance function, $k(x, x')$. However, the mean function can always b
 the observed data without altering the covariance structure. In Gaussian process regression,
 this implies that the predictive variance remains entirely independent of the mean function.
 To demonstrate this, we assume a model $Y(x) = f(x) + \epsilon$,
-with $f(x) = m(x) + E(x)$ where $m(x)$ is a deterministic mean function, $E(x)$ is a time series
+with $f(x) = m(x) + R(x)$ where $m(x)$ is a deterministic mean function, $R(x)$ is a time series
 process, and $\epsilon$ is independent and identically distributed Gaussian noise with variance $\sigma_n^{2}$.
 
 This allows us to model $f(x)$ using a Gaussian Process:
@@ -541,20 +541,20 @@ Applying the conditioning rule leads us to the predictive distribution for $f^{\
 
 It's worth noting that the predictive variance $\bar{\Sigma}$ remains unaffected by $m(x)$.
 
-If instead a GP is fitted to $f(x) - m(x) = E(x)$ we can write:
+If instead a GP is fitted to $f(x) - m(x) = R(x)$ we can write:
 \begin{gather*}
-    E(x) = f(x) - m(x) \sim GP(0, k(x,x'))
+    R(x) = f(x) - m(x) \sim GP(0, k(x,x'))
 \end{gather*}
 
-The predictive distribution over $E^{\ast} := E(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is then:
+The predictive distribution over $R^{\ast} := R(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is then:
 
 \begin{gather*}
-    p(E^{\ast}| \mathbf{Z} = z, X, x^{\ast}) = N(\bar{\mu}_{E^{\ast}}, \bar{\Sigma}), \\
-    \bar{\mu}_{E^{\ast}} = K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} z,\\
+    p(R^{\ast}| \mathbf{Z} = z, X, x^{\ast}) = N(\bar{\mu}_{R^{\ast}}, \bar{\Sigma}), \\
+    \bar{\mu}_{R^{\ast}} = K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} z,\\
 \end{gather*}
 
 Since $ z = y - m(X)$, the predictive distribution over $f^{\ast}$ is recovered by adding $m(x^{\ast})$ to
-the predictive mean $\bar{\mu}_{E^{\ast}}$. The predictive variance $\bar{\Sigma}$ remains unchanged,
+the predictive mean $\bar{\mu}_{R^{\ast}}$. The predictive variance $\bar{\Sigma}$ remains unchanged,
 since it is unaffected by the observations or by $m(x)$.
 
 %For the special case where $m(x)$ is a constant $c$, you can equivalently add $c^2$ to the covariance function
@@ -844,11 +844,11 @@ the given problem.
 In the context of Bayesian linear regression, the marginal likelihood expression was previously
 introduced in subsection \ref{subsec:bayesian-linear-regression},
 assuming a prior distribution of $p(\beta) = \mathcal{N}(0, \Sigma_p)$ and a likelihood function of
-$p(\mathbf{Y} | X, \beta) = \mathcal{N}(X \beta, \Sigma_e)$.
+$p(\mathbf{Y} | X, \beta) = \mathcal{N}(X \beta, \Sigma_r)$.
 The following expression for the marginal likelihood is obtained by marginalizing over $\beta$:
 
 \begin{gather}\label{eq:marginal-likelihood2}
-    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_e)
+    p(\mathbf{Y}|X) = \int p(\mathbf{Y}|X,\beta) p(\beta) d\beta = \N(0, X \Sigma_p X^{\top} + \Sigma_r)
 \end{gather}
 
 Furthermore, as discussed in section \ref{sec:gaussian-process-regression},
@@ -857,7 +857,7 @@ the marginal likelihood can also be represented as a distribution over the funct
     Y(x) \sim GP(0, k(x, x'))
 \end{gather*}
 Here, the kernel function $k(x, x')$ is chosen such that for an index set $X$,
-we obtain $K_{XX} = X \Sigma_p X^{\top} + \Sigma_e$.
+we obtain $K_{XX} = X \Sigma_p X^{\top} + \Sigma_r$.
 
 By the definition of a Gaussian process, $\mathbf{Y}|X$ follows a multivariate normal distribution
 with a covariance matrix of $K_{XX}(\theta)$, which is a function of the hyperparameters $\theta$.

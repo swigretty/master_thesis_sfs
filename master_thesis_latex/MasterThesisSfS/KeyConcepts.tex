@@ -32,11 +32,11 @@ A time series process $(X_t)$ is usually characterized by its first and second m
 \begin{definition}(\citeauthor{brockwell_introduction_2016})\label{def:time_series_moments}
     The \textbf{mean function} of a time series $(X_t)$ is:
     \[
-        \mu_X(t) = E(X_t)
+        \mu_X(t) = \ERW{X_t}
     \]
     The \textbf{covariance function} of a time series $(X_t)$ is:
     \[
-        \gamma_X(r,s) = Cov(X_r, X_s) = E[(X_r - \mu_X(r))(X_s-\mu_X(s))]
+        \gamma_X(r,s) = \COV{X_r, X_s} = \ERW{(X_r - \mu_X(r))(X_s-\mu_X(s))}
     \]
 \end{definition}
 

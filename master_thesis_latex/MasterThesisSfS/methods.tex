@@ -3,15 +3,126 @@
 
 
 
-\section{Current Setup}
+\section{Overview}
+
+
+
+	\begin{itemize}
+		\item Simulate BP Time Series
+	\end{itemize}
+
+	\bigskip % Vertical whitespace
+
+	\begin{itemize}
+		\item For target measure compare performance of GP regression to baseline methods:
+		\begin{itemize}
+			\item Target measures: weekly daily and hourly mean, TTR
+			\item Baseline Methods: Linear Regression, empirical overall mean, ttr naive, cubic spline
+		\end{itemize}
+	\end{itemize}
+
+	\bigskip % Vertical whitespace
+
+	\begin{itemize}
+		\item Adversarial analysis: compare performance of baseline and GP regression introducing different adversarial
+		factors
+		\begin{itemize}
+			\item Model mis-specification (mis-specified kernel or hyperparameters and non-gausianities)
+			\item Missing data. More or less data available, more or less extreme non-uniform sampling patterns
+		\end{itemize}
+
+	\end{itemize}
+
+
+\begin{enumerate}
+    \item Simulate from true GP (adversarial add non-Gaussian noise)
+    \item Subsample data (adversarial: different densities, non-uniform sampling)
+    \item Fit Regression
+    \begin{itemize}
+        \item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
+        \item Fit Baseline Method
+    \end{itemize}
+    \item Extract target measure including its distribution.
+        \begin{itemize}
+            \item GP: sample from the posterior distribution (Multivariate Gaussian) to approx. it.
+            \item Baseline Methods: Use bootstrap to approx. it
+        \end{itemize}
+    \item Calculate performance metric between true and predicted values.
+    \begin{itemize}
+        \item CI coverage of true value and CI width
+    \end{itemize}
+
+\end{enumerate}
+
+
+\begin{algorithm} \caption{Simulation and Evaluation Flow}
+ \hspace*{\algorithmicindent} \textbf{Input:} $t$, SamplingScheme, $GP_{true}$,
+RegressionMethod, TargetMeasure\\
+ \hspace*{\algorithmicindent} \textbf{Output:} CiCoverage, CiWidth
+\begin{algorithmic}[1]
+    \For {$i \gets 1$ to $N$}
+
+        \State $f \gets$ Sample from $GP_{true}$
+        \State $y \gets f + \epsilon$, $\epsilon_i \text{ i.i.d.} \sim \N(0, \sigma_n^2)$
+        \State $y_{train} \gets$ subsample $y$ based on sampling scheme
+        \State RegressionMethod.fit($y_{train} $)
+        \State $\hat{y} \gets$ RegressionMethod.predict($t$)
+        \State ci coverage $\gets$ vla
+        \EndFor
+    \Ensure $V \approx V^\pi$
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Simulation and Evaluation Flow GP}
+
+Simulation of true BP signal and measurements:
+    \begin{itemize}
+        \item $X=\{x_1, \dots x_n\}$: The input time points of interest, i.e. 1 week with 10 BP values per hour.
+        \item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
+        \item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
+    \end{itemize}
+
+Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
 \begin{itemize}
-    \item
+    \item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
+    \item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
 \end{itemize}
 
-\section{Error Plots}
-\begin{itemize}
-    \item
-\end{itemize}
+
+	Fit GP regression model to training data $y_{train}$, $X_{train}$:
+    \begin{itemize}
+        \item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
+        $p(y_{train}| \theta)$
+        \item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
+        The posterior (predictive) probability density of $f_X$. The posterior mean vector
+        $\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
+        \begin{itemize}
+            \item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
+            \item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
+
+        \end{itemize}
+    \end{itemize}
+
+	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
+		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
+			\begin{itemize}
+				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
+				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
+				\bar{\Sigma}_{X_{train}})$
+				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
+			\end{itemize}
+
+
+
+
+\section{Blood Pressure Time Series Simulation}
+
+
+
+
+
+
 
 
 
