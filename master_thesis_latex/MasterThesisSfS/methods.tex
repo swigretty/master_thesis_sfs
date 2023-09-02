@@ -4,14 +4,36 @@ The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
 corresponding BP value.
 Since Gaussian Processes are capable of modeling time series in continuous
-time they seem to be a good candidate for the problem at hand.
-In order to to identify how suited GPs are, the plan is to compare the GP
-performance to baseline methods.
+time and hence deal with irregularly spaced data,
+they seem to be a good candidate for modeling a time series from which
+we only have irregularly sampled noisy measurement.
+To identify how suited GPs are for the problem at hand, the plan is to:
+\begin{itemize}
+    \item Simulate a BP time series and some noisy measurements of the time series
+    \item Estimate certain time series characteristics (target measures) from these measurements.
+    \item Compare the aptness of GP regression to estimate the time target measures to that of some baseline methods.
+    \item Investigate the impact of adversarial factor on the target measure estimates, e.g
+    How densely does the data need to be sampled to get good estimates?
+    What happens if the data is not uniformly sampled across time ?
+\end{itemize}
+
 The next section will provide you with an overview of the steps involved
-to quantify the performance of a given method.
+in quantifying the performance of a given method.
 
 
 \section{Overview}
+
+\begin{enumerate}
+    \item Simulate BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
+    \item Subsample data (section \ref{sec:adversarial-analysis})
+    \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
+    for baseline methods see \ref{sec:baseline-methods})
+    \item Extract target measure including CI (section \ref{sec:target-measures})
+    \item Calculate performance metric between true and predicted values (section \ref{sec:performance-metric})
+
+\end{enumerate}
+
+
 
 
 	\begin{itemize}
@@ -41,25 +63,6 @@ to quantify the performance of a given method.
 	\end{itemize}
 
 
-\begin{enumerate}
-    \item Simulate from true GP (adversarial add non-Gaussian noise)
-    \item Subsample data (adversarial: different densities, non-uniform sampling)
-    \item Fit Regression
-    \begin{itemize}
-        \item Fit GP-Regression model (adversarial: prior covariance function diverges from true)
-        \item Fit Baseline Method
-    \end{itemize}
-    \item Extract target measure including its distribution.
-        \begin{itemize}
-            \item GP: sample from the posterior distribution (Multivariate Gaussian) to approx. it.
-            \item Baseline Methods: Use bootstrap to approx. it
-        \end{itemize}
-    \item Calculate performance metric between true and predicted values.
-    \begin{itemize}
-        \item CI coverage of true value and CI width
-    \end{itemize}
-
-\end{enumerate}
 
 
 \begin{algorithm} \caption{Simulation and Evaluation Flow}
@@ -120,17 +123,25 @@ Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ 
 				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
 			\end{itemize}
 
-
-\section{Performance Metric}
-
-\section{Baseline Methods}
-
-\section{Target Measures}
+\section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 
 
 
+\section{Gaussian Process Regression}\label{sec:gaussian-process-regression}
 
-\section{Blood Pressure Time Series Simulation}
+
+\section{Baseline Methods}\label{sec:baseline-methods}
+
+
+\section{Target Measures}\label{sec:target-measures}
+
+
+\section{Adversarial Analysis}\label{sec:adversarial-analysis}
+
+
+\section{Performance Metrics}\label{sec:performance-metric}
+
+
 
 
 

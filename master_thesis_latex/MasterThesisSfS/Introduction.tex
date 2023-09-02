@@ -5,18 +5,11 @@
 
 \section{Thesis Objective}\label{sec:thesis-objective}
 
-The thesis aims at giving an overview of time series analysis methods for irregularly sampled data.
+The thesis aims at presenting Gaussian process regression as
+a time series analysis method for irregularly sampled data.
 
-The standard time series analysis methods usually assume discrete equispaced time and introductory textbooks on
-time series analysis either completely omit the irregularly spaced case or they only dedicate
-a very small section to continuous time models or to state-space models
-with missing observations (\citeauthor{brockwell_time_1991}, \citeauthor{brockwell_introduction_2016},
-\citeauthor{cryer_time_2008}, \citeauthor{chatfield_analysis_2003}).
-
-I will thereafter present the most important concepts and what I have identified to be the basic methods for
-the analysis of irregularly spaced time series.
-
-The topic is motivated by a "real world" problem from medicine.
+The topic is motivated by a "real world" problem from medicine which will
+serve as a running example throughout the thesis.
 %
 %Motivated by a "real world" problem from medicine, I have tried to identify the most important concepts and basic
 %methods for the analysis of irregularly space time series, which I will be presented in this thesis.
@@ -30,13 +23,13 @@ Typically, the system will yield approximately 1.5 BP measurements per hour, but
 this sampling frequency can widely vary and the expected range lies roughly between 0 and 5 measurements per hour.
 Having good estimates of the true BP values at any, potentially not observed, time would allow for a better estimation
 of the person’s cardiovascular risk, and enable the development of novel valuable metrics.
-The thesis will focus on a set of time series characteristics, which have been considered most relevant for estimating
-the person’s cardiovascular risk.
-The characteristics of interest are:
+The thesis will focus on a set of time series characteristics (target measures),
+which have been considered most relevant for estimating the person’s cardiovascular risk.
+The target measures are:
 \begin{itemize}
     \item the mean function of the BP time series
-    \item the one-week mean BP value
-    \item any "long-term" trends
+    \item the one-hour, one-day and one-week mean BP value
+    \item Time in target range
     \item characteristics of the circadian cycle, such as the mean day and night BP
 \end{itemize}
 Besides the point estimates also their CIs are of interest.
@@ -47,14 +40,33 @@ The described endpoints are all based on prediction at the not observed passed t
 the future.
 Hence, the thesis will only focus on the task of reconstructing BP values between the first and last time point in the dataset.
 
-This "real world" problem will serve as a running example throughout the Thesis.
+The standard time series analysis methods usually assume discrete equispaced
+time and introductory textbooks on time series analysis either completely omit
+the irregularly spaced case or they only dedicate
+a very small section to continuous time models or to state-space models
+with missing observations (\citeauthor{brockwell_time_1991}, \citeauthor{brockwell_introduction_2016},
+\citeauthor{cryer_time_2008}, \citeauthor{chatfield_analysis_2003}).
+The aim is thus to understand the problem of irregularly sampled time series data
+and why standard time series method cannot deal with it.
+Furthermore, the BP time series example should elucidate why and when Gaussian processes are a
+suitable method to model a time series from which we only have observations sampled at
+irregularly spaced time points.
 Although the topic is motivated by a real dataset we will restrict ourselves to simulated data,
 which will mimic the most important characteristics of BP time series data.
+
+\section{Characteristics of the Blood Pressure Time Series}\label{sec:characteristics-of-the-blood-pressure-time-series}
+TODO
+circadian cycle
+
 
 
 \section{Thesis Outline}
 
-TODO
+The aim is thus to understand the problem of irregularly sampled time series data
+and why standard time series method cannot deal with it.
+Furthermore, it should be elucidated why and when Gaussian processes are a
+suitable method to model a time series from which we only have observations sampled at
+irregularly spaced time points.
 
 
 
