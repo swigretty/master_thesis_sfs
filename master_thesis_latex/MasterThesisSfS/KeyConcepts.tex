@@ -112,19 +112,19 @@ Whenever the term stationary is used, it is referring to weak stationarity.
 \section{Characteristics of the Blood Pressure Time Series and Observations}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
 This section sets the stage for simulating and modeling systolic blood pressure (BP).
-First there is the distinction between the
-true BP process and the BP measurements which are observations of this process.
+First there one needs to make the distinction between the
+true BP process and the BP measurements.
 The former is usually unknown but is going to be simulated for the sake of this thesis.
 The latter, are assumed to be noisy observations of this BP process.
-We assume the following model for the BP measurement $Y(x)$
-and the time series process $f(x)$, at some time point $x$:
+We assume the following model for the BP measurement $Y(t)$
+and the time series process $f(t)$, at some time point $t$:
 \begin{align*}
-    Y(x) = f(x) + \epsilon && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
+    Y(t) = f(t) + \epsilon_t && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
 \end{align*}
 
-The properties of the measurements can be extracted from Aktiia's
+The properties of the measurements are given by Aktiia's
 user data but for the underlying time series process and the measurement noise
-$\epsilon$ assumptions need to be made.
+$\epsilon_t$ assumptions need to be made.
 
 
 \subsection{Blood Pressure Time Series Process}\label{subsec:blood-pressure-time-series-process}
