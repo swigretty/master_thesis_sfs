@@ -581,7 +581,7 @@ the book by \citeauthor{rasmussen_gaussian_2006} provides additional insights on
 as elaborated on page 27.
 
 
-\section{Kernel Functions}\label{subsec:kernel}
+\section{Kernel Functions}\label{sec:kernel}
 
 In the section \ref{sec:gaussian-process-regression} we started of with a
 describing the prior distribution over
@@ -679,7 +679,7 @@ see chapter 4 from the Book of \citeauthor{rasmussen_gaussian_2006}.
 
 \subsection{The Periodic Kernel Function}
 
-A periodic kernel allows to model functions that feature a repeating pattern
+The periodic kernel allows to model functions that feature a repeating pattern
 and has the following form:
 
 \begin{gather*}
@@ -700,6 +700,8 @@ The impact of different length scales are illustrated in figure \ref{fig:periodi
   \label{fig:periodic}
 \end{figure}
 
+Throughout the thesis we will also refer to the periodic kernel as the
+ExpSineSquared kernel.
 
 
 \subsection{Additive Kernels and Decomposition of Predictive Mean}

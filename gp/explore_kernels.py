@@ -122,12 +122,12 @@ if __name__ == "__main__":
     var = [5, 62, 14**2]
     length_scale = [1, 10, 100]
 
-    kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
-    plot_kernels(kernels, mode_name="nu")
+    # kernels = [Matern(nu=nu) for nu in [0.5, 2.5, np.inf]]
+    # plot_kernels(kernels, mode_name="nu")
     # #
-    kernels = [ExpSineSquared(length_scale=ls, periodicity=h_per_day) for ls
+    kernels = [ExpSineSquared(length_scale=ls, periodicity=5) for ls
                in [0.5, 1, 2]]
-    plot_kernels(kernels, t=t, mode_name="length_scale")
+    plot_kernels(kernels, mode_name="length_scale")
     # #
     # kernels = [ExpSineSquared(length_scale=1, periodicity=h_per_day) * RBF(length_scale=ls) for ls in [0.1, 1, 10,
     #                                                                                                     100]]

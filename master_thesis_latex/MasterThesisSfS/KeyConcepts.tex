@@ -4,9 +4,9 @@
 
 \chapter{Characteristics of Time Series}
 
-\section{Time Series Definition}
+\section{Time Series Definition}\label{sec:time-series-definition}
 
-    A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
+A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
     with strictly increasing observation times.
     Let $\mathbb{T}$ be a set of observation time points,
     then the sequence of random variables $(X_t: t \in \mathbb{T})$ or simply $(X_t)$ is a \textbf{time series process}
@@ -116,25 +116,29 @@ First there one needs to make the distinction between the
 true BP process and the BP measurements.
 The former is usually unknown but is going to be simulated for the sake of this thesis.
 The latter, are assumed to be noisy observations of this BP process.
-We assume the following model for the BP measurement $Y(t)$
-and the time series process $f(t)$, at some time point $t$:
+We assume the following model for the BP measurement $Y(x)$
+and the time series process $f(x)$, at some time point $x$:
 \begin{align*}
-    Y(t) = f(t) + \epsilon_t && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
+    Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
+Note that both time series $f(x)$ and $Y(x)$ are described as random
+functions. However, as mentioned in section \ref{sec:time-series-definition},
+they could instead be described as collections of random variables with
+$(Y_{t_i}: i \in \{1, 2, \dots n\})$ and $(f_{t_i}: i \in \{1, 2, \dots n\})$ with
+$\epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})$.
 
-The properties of the measurements are given by Aktiia's
-user data but for the underlying time series process and the measurement noise
-$\epsilon_t$ assumptions need to be made.
-
+The properties of the measurements $Y(x)$ are given by Aktiia's
+user data, but for the underlying time series process $f(x)$ and the measurement noise
+$\epsilon$, additional assumptions need to be made.
 
 \subsection{Blood Pressure Time Series Process}\label{subsec:blood-pressure-time-series-process}
 For the sake of this thesis, a BP time series process,
 is expected to be the sum of the following components:
 \begin{itemize}
-    \item A seasonal component representing the circadian cycle since BP is known to be higher during the day then during the night
-    which is potentially evolving.
-    \item An autoregressive component
-    \item A long term trend
+    \item A seasonal component, representing the circadian cycle.
+    BP is known to be higher during the day than during the night.
+    \item An autoregressive component, since we assume the output variable to depend on its own previous values.
+    \item A long term trend.
 \end{itemize}
 
 
@@ -142,13 +146,13 @@ is expected to be the sum of the following components:
 Based on the Aktiia user data, the following properties of
 the blood pressure measurements have been identified:
 \begin{enumerate}[\roman{enumi}.)]
-    \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies
+    \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies.
     \item Measurements are not uniformly sampled across time but the density of the observations should
-    follow the circadian cycle (seasonal sampling)
-    \item The sampling frequency varies from 0.5 to 4 measurements per hour
+    follow the circadian cycle (seasonal sampling).
+    \item The sampling frequency varies from 0.5 to 4 measurements per hour.
     \item The difference between the average day and average night BP measurements is between
     0 and 20 mmHg and is on average 10 mmHg.
-    \item The mean BP overall users is 120 mmHg
+    \item The mean BP overall users is 120 mmHg.
     \item The within subject one-week sample variance is between 16 and
     144 mmHg\textsuperscript{2} and is on average 49 mmHg\textsuperscript{2}.
 \end{enumerate}

@@ -1,4 +1,4 @@
-\chapter{Methods}\label{ch:methods}
+\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -10,9 +10,9 @@ we only have irregularly sampled noisy measurement.
 To identify how suited GPs are for the problem at hand, the plan is to:
 \begin{itemize}
     \item Simulate a BP time series and some noisy measurements of the time series
-    \item Estimate certain time series characteristics (target measures) from these measurements.
-    \item Compare the aptness of GP regression to estimate the time target measures to that of some baseline methods.
-    \item Investigate the impact of adversarial factor on the target measure estimates, e.g
+    \item Estimate some target measures from these measurements.
+    \item Compare the aptness of GP regression to estimate the target measures to that of some baseline methods.
+    \item Investigate the impact of the sampling pattern on the target measure estimates, e.g
     How densely does the data need to be sampled to get good estimates?
     What happens if the data is not uniformly sampled across time ?
 \end{itemize}
@@ -23,46 +23,17 @@ in quantifying the performance of a given method.
 
 \section{Overview}
 
+This is a list of the steps involved in assessing the performance of a given
+method. More information can be found in the referenced sections:
+
 \begin{enumerate}
-    \item Simulate BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
-    \item Subsample data (section \ref{sec:adversarial-analysis})
+    \item Simulate true BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
+    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{sec:adversarial-analysis})
     \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
     for baseline methods see \ref{sec:baseline-methods})
     \item Extract target measure including CI (section \ref{sec:target-measures})
     \item Calculate performance metric between true and predicted values (section \ref{sec:performance-metric})
-
 \end{enumerate}
-
-
-
-
-	\begin{itemize}
-		\item Simulate BP Time Series
-	\end{itemize}
-
-	\bigskip % Vertical whitespace
-
-	\begin{itemize}
-		\item For target measure compare performance of GP regression to baseline methods:
-		\begin{itemize}
-			\item Target measures: weekly daily and hourly mean, TTR
-			\item Baseline Methods: Linear Regression, empirical overall mean, ttr naive, cubic spline
-		\end{itemize}
-	\end{itemize}
-
-	\bigskip % Vertical whitespace
-
-	\begin{itemize}
-		\item Adversarial analysis: compare performance of baseline and GP regression introducing different adversarial
-		factors
-		\begin{itemize}
-			\item Model mis-specification (mis-specified kernel or hyperparameters and non-gausianities)
-			\item Missing data. More or less data available, more or less extreme non-uniform sampling patterns
-		\end{itemize}
-
-	\end{itemize}
-
-
 
 
 \begin{algorithm} \caption{Simulation and Evaluation Flow}
@@ -125,6 +96,39 @@ Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ 
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 
+In section \ref{sec:characteristics-of-the-blood-pressure-time-series} listed
+the properties the simulated BP time series process and the measurements should have.
+
+Recall that we assume the following model for the BP measurements $Y(x)$ at a time point $x$, as
+described in section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
+
+\begin{align*}
+    Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
+\end{align*}
+
+The BP measurements $Y(x)$ are obtained by adding iid Gaussian measurement noise
+$\epsilon$ to the BP time series process $f(x)$, which is assumed
+to be a random function.
+
+The time series process $f(x)$ was decided to be modeled by a Gaussian process.
+
+The following Gaussian process was chosen to match the properties from
+section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
+
+\begin{gather*}
+    f(x) \sim GP(120, k(x,x'))
+\end{gather*}
+with:
+\begin{align*}
+    k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(length\_scale=3, nu=0.5)} \\
+             &+  14^{2} * \text{ExpSineSquared(length\_scale=3, periodicity=24)} \\
+             &+  2.24^{2} * \text{RBF(length\_scale=50)}
+\end{align*}
+
+
+where Matern, ExpSineSquared and RBF refer to the kernels desribed in
+section \ref{sec:kernel}.
+
 
 
 \section{Gaussian Process Regression}\label{sec:gaussian-process-regression}
@@ -135,8 +139,12 @@ Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ 
 
 \section{Target Measures}\label{sec:target-measures}
 
+\subsection{Time in Target Range}
 
-\section{Adversarial Analysis}\label{sec:adversarial-analysis}
+
+
+
+\section{Impact of the Sampling Pattern}\label{sec:adversarial-analysis}
 
 
 \section{Performance Metrics}\label{sec:performance-metric}
