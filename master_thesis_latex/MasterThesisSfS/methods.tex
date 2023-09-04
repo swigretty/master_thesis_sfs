@@ -120,14 +120,24 @@ section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
 \end{gather*}
 with:
 \begin{align*}
-    k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(length\_scale=3, nu=0.5)} \\
-             &+  14^{2} * \text{ExpSineSquared(length\_scale=3, periodicity=24)} \\
-             &+  2.24^{2} * \text{RBF(length\_scale=50)}
+    k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(l=3, $\nu$=0.5)} \\
+             &+  14^{2} * \text{Periodic(l=3, p=24)} \\
+             &+  2.24^{2} * \text{RBF(l=50)}
 \end{align*}
+where l denotes the length scale and p denotes the periodicity
+of the corresponding kernel function in hours.
+The formal definition of the Matérn, Periodic and RBF kernel
+functions and their parameters is provided in section \ref{sec:kernel}.
+Each of these kernels models one of the components described in
+\ref{subsec:blood-pressure-time-series-process}:
+\begin{itemize}
+    \item The Matérn kernel with $\nu$=0.5 models the AR(1) component
+    \item The Periodic kernel models the circadian cycle
+    \item The RBF kernel model a long term trend
+\end{itemize}
 
 
-where Matern, ExpSineSquared and RBF refer to the kernels desribed in
-section \ref{sec:kernel}.
+
 
 
 
