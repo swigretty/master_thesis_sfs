@@ -583,15 +583,13 @@ as elaborated on page 27.
 
 \section{Kernel Functions}\label{sec:kernel}
 
-In the section \ref{sec:gaussian-process-regression} we started of with a
-describing the prior distribution over
-$\mathbf{Y}$ or $F_X = [f(x_1) \dots f(x_n))]^{\top}$ and shoved that a kernel
-function $k(x, x')$ needs to be chosen to match this distribution.
-However, in Gaussian process regression it generally goes the other way around.
-One would choose a prior distribution over $f(x)$ or $Y(x)$ first,
-which boils down to choosing a kernel function.
-The kernel function evaluated at your inputs $X=[x_1 \dots x_n]^{\top}$ is then needed
-to calculate the predictive distribution of $f^{\ast}$ or $y^{\ast}$.
+Our prior believe about the function $f(x)$ or $Y(x)$ is fully
+described by the mean and covariance function of the Gaussian Process.
+Assuming a zero mean Gaussian process, as suggested in the previous section,
+defining a prior distribution over $f(x)$ or $Y(x)$
+boils down to choosing a kernel function.
+The kernel function is then evaluated at your inputs $X=[x_1 \dots x_n]^{\top}$
+to arrive at the predictive (posterior) distribution of $f^{\ast}$ or $y^{\ast}$.
 
 The choice of kernel function depends on the assumptions about correlation in
 your output given arbitrary input pairs $x$ and $x'$.
