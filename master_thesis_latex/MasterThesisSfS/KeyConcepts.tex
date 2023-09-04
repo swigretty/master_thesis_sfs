@@ -111,14 +111,23 @@ Whenever the term stationary is used, it is referring to weak stationarity.
 
 \section{Characteristics of the Blood Pressure Time Series and Observations}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
-This section is listing the assumed properties
-of a systolic blood pressure (BP) time series process and
-the Aktiia bracelet measurements that we have from such a series.
+This section sets the stage for simulating and modeling systolic blood pressure (BP).
+First there is the distinction between the
+true BP process and the BP measurements which are observations of this process.
+The former is usually unknown but is going to be simulated for the sake of this thesis.
+The latter, are assumed to be noisy observations of this BP process.
+We assume the following model for the BP measurement $Y(x)$
+and the time series process $f(x)$, at some time point $x$:
+\begin{align*}
+    Y(x) = f(x) + \epsilon && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
+\end{align*}
 
-The properties of the measurments can be extracted from Aktiia's
-user data but for the underlying time series process one can
-only make assumptions.
+The properties of the measurements can be extracted from Aktiia's
+user data but for the underlying time series process and the measurement noise
+$\epsilon$ assumptions need to be made.
 
+
+\subsection{Blood Pressure Time Series Process}\label{subsec:blood-pressure-time-series-process}
 For the sake of this thesis, a BP time series process,
 is expected to be the sum of the following components:
 \begin{itemize}
@@ -129,9 +138,10 @@ is expected to be the sum of the following components:
 \end{itemize}
 
 
+\subsection{Blood Pressure Measurements}\label{subsec:blood-pressure-measurements}
 Based on the Aktiia user data, the following properties of
 the blood pressure measurements have been identified:
-\begin{enumerate}
+\begin{enumerate}[\roman{enumi}.)]
     \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies
     \item Measurements are not uniformly sampled across time but the density of the observations should
     follow the circadian cycle (seasonal sampling)
@@ -139,31 +149,29 @@ the blood pressure measurements have been identified:
     \item The difference between the average day and average night BP measurements is between
     0 and 20 mmHg and is on average 10 mmHg.
     \item The mean BP overall users is 120 mmHg
-    \item The within subject one-week sample variance is between 16 and 144 mmHg² and is on average 49 mmHg².
-    \item \label{it:measurement_noise} The measured variance of the differences between Atkiia measurements
-    and some reference is 62 mmHg^2.
+    \item The within subject one-week sample variance is between 16 and $144 mmHg²$ and is on average $49 mmHg²$.
 \end{enumerate}
 
-The Atkiia measurments $Y(x)$ at some time point $x$ are assumed to be the
-sum of the true BP value $f(x)$
-with some additional iid measurement noise $\epsilon$:
 
+\subsection{Measurement Noise}
+
+The Aktiia measurements have been validated against some
+reference method.
+The measured variance of the differences between Atkiia measurements
+and this reference is $62 mmHg^2$.
+We can thus write:
 \begin{align*}
-    Y(x) = f(x) + \epsilon && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
+    \Var(BP_{Ref} - BP_{Aktiia})
+    & = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{Aktiia}) \\
+    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{Aktiia}) - 2\Cov(\epsilon_{Ref},
+    \epsilon_{Aktiia})
 \end{align*}
 
-Based on point \ref{it:measurement_noise} variance $\sigma_n^{2}$
-of the measurement noise is expected to be 31 mmHg². This follows
-from the assumption that the measurement noise variance of the reference method
-($Var(BP_{Ref}$) equals that of the Aktiia measurements $Var(BP_{Aktiia}$
-and that $COV(Noise_{Ref}, Noise_{Aktiia})=0$
-
-\begin{gather*}
-    Var(BP_{Ref} - BP_{Aktiia}) = 62 mmHg^2 =
-    Var(Noise_{Ref} - Noise_{Aktiia})
-    = Var(Noise_{Ref}) + Var(Noise_{Aktiia}) - 2COV(Noise_{Ref}, Noise_{Aktiia})
-\end{gather*}
-
+If one further assumes that the noise variance of the reference method,
+$\Var(\epsilon_{Ref})$, equals that of the Aktiia measurements, $\Var(\epsilon_{Aktiia})$,
+and that $\Cov(\epsilon_{Ref}, \epsilon_{Aktiia})=0$, we obtain a noise variance
+for the Aktiia measurments,
+$\Var(\epsilon_{Aktiia})$, of 31 mmHg\textsuperscript{2}.
 
 
 

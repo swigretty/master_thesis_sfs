@@ -49,9 +49,18 @@ and why standard time series method cannot deal with it.
 Furthermore, the BP time series example should elucidate why and when Gaussian processes are a
 suitable method to model a time series from which we only have observations sampled at
 irregularly spaced time points.
-Although the topic is motivated by a real dataset we will restrict ourselves to simulated data,
-which will mimic the most important characteristics of BP time series data.
-For simplicity reasons, the thesis deals only with systolic and never with diastolic
+
+Although the topic is motivated by a real dataset we will restrict ourselves to
+simulations.
+Simulating the true underlying BP time series
+brings the advantage of knowing about the true target measure values.
+Which in turn allows us to assess how well GP regression can estimate these
+target measures.
+However, this approach imposes the additional challenge
+of simulating a time series and observations that mimic reality as close
+as possible.
+
+Note that for simplicity reasons, the thesis deals only with systolic and never with diastolic
 blood pressure.
 Whenever blood pressure or BP is mentioned it refers to systolic blood pressure.
 
