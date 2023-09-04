@@ -5,16 +5,16 @@
 
 \section{Thesis Objective}\label{sec:thesis-objective}
 
-The thesis aims at presenting Gaussian process regression as
-a time series analysis method for irregularly sampled data.
+The thesis aims at presenting Gaussian process regression for modeling time
+series based on irregularly spaced observations.
 
 The topic is motivated by a "real world" problem from medicine which will
 serve as a running example throughout the thesis.
 %
 %Motivated by a "real world" problem from medicine, I have tried to identify the most important concepts and basic
 %methods for the analysis of irregularly space time series, which I will be presented in this thesis.
-The problem at hand is the one of extracting time series characteristics from a dataset
-featuring blood pressure (BP) measurements sampled at irregularly spaced time points.
+The problem at hand is the one of estimating certain time series properties (target measures) from a dataset
+featuring systolic blood pressure (BP) measurements sampled at irregularly spaced time points.
 High BP is known to be a risk factor for cardiovascular disease.
 A person’s BP level is generally summarized using the average BP value over available measurements within a given time range.
 A novel monitoring device already allows to collect BP estimates round the clock.
@@ -23,14 +23,12 @@ Typically, the system will yield approximately 1.5 BP measurements per hour, but
 this sampling frequency can widely vary and the expected range lies roughly between 0 and 5 measurements per hour.
 Having good estimates of the true BP values at any, potentially not observed, time would allow for a better estimation
 of the person’s cardiovascular risk, and enable the development of novel valuable metrics.
-The thesis will focus on a set of time series characteristics (target measures),
-which have been considered most relevant for estimating the person’s cardiovascular risk.
-The target measures are:
+The thesis will focus on a set of target measures,
+which have been considered most relevant for estimating the person’s cardiovascular risk:
 \begin{itemize}
-    \item the mean function of the BP time series
-    \item the one-hour, one-day and one-week mean BP value
+    \item One-hour, one-day and one-week mean BP value
     \item Time in target range
-    \item characteristics of the circadian cycle, such as the mean day and night BP
+    \item Day vs night BP
 \end{itemize}
 Besides the point estimates also their CIs are of interest.
 Importantly, the CI should be able to capture the uncertainty due to the lack of data in the proximity of the point of prediction.
@@ -53,11 +51,9 @@ suitable method to model a time series from which we only have observations samp
 irregularly spaced time points.
 Although the topic is motivated by a real dataset we will restrict ourselves to simulated data,
 which will mimic the most important characteristics of BP time series data.
-
-\section{Characteristics of the Blood Pressure Time Series}\label{sec:characteristics-of-the-blood-pressure-time-series}
-TODO
-circadian cycle
-
+For simplicity reasons, the thesis deals only with systolic and never with diastolic
+blood pressure.
+Whenever blood pressure or BP is mentioned it refers to systolic blood pressure.
 
 
 \section{Thesis Outline}

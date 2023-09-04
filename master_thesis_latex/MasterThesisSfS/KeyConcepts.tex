@@ -109,4 +109,61 @@ Whenever the term stationary is used, it is referring to weak stationarity.
 
 
 
+\section{Characteristics of the Blood Pressure Time Series and Observations}\label{sec:characteristics-of-the-blood-pressure-time-series}
+
+This section is listing the assumed properties
+of a systolic blood pressure (BP) time series process and
+the Aktiia bracelet measurements that we have from such a series.
+
+The properties of the measurments can be extracted from Aktiia's
+user data but for the underlying time series process one can
+only make assumptions.
+
+For the sake of this thesis, a BP time series process,
+is expected to be the sum of the following components:
+\begin{itemize}
+    \item A seasonal component representing the circadian cycle since BP is known to be higher during the day then during the night
+    which is potentially evolving.
+    \item An autoregressive component
+    \item A long term trend
+\end{itemize}
+
+
+Based on the Aktiia user data, the following properties of
+the blood pressure measurements have been identified:
+\begin{enumerate}
+    \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies
+    \item Measurements are not uniformly sampled across time but the density of the observations should
+    follow the circadian cycle (seasonal sampling)
+    \item The sampling frequency varies from 0.5 to 4 measurements per hour
+    \item The difference between the average day and average night BP measurements is between
+    0 and 20 mmHg and is on average 10 mmHg.
+    \item The mean BP overall users is 120 mmHg
+    \item The within subject one-week sample variance is between 16 and 144 mmHg² and is on average 49 mmHg².
+    \item \label{it:measurement_noise} The measured variance of the differences between Atkiia measurements
+    and some reference is 62 mmHg^2.
+\end{enumerate}
+
+The Atkiia measurments $Y(x)$ at some time point $x$ are assumed to be the
+sum of the true BP value $f(x)$
+with some additional iid measurement noise $\epsilon$:
+
+\begin{align*}
+    Y(x) = f(x) + \epsilon && \epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})
+\end{align*}
+
+Based on point \ref{it:measurement_noise} variance $\sigma_n^{2}$
+of the measurement noise is expected to be 31 mmHg². This follows
+from the assumption that the measurement noise variance of the reference method
+($Var(BP_{Ref}$) equals that of the Aktiia measurements $Var(BP_{Aktiia}$
+and that $COV(Noise_{Ref}, Noise_{Aktiia})=0$
+
+\begin{gather*}
+    Var(BP_{Ref} - BP_{Aktiia}) = 62 mmHg^2 =
+    Var(Noise_{Ref} - Noise_{Aktiia})
+    = Var(Noise_{Ref}) + Var(Noise_{Aktiia}) - 2COV(Noise_{Ref}, Noise_{Aktiia})
+\end{gather*}
+
+
+
 
