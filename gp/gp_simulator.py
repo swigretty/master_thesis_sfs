@@ -358,9 +358,11 @@ class GPSimulator():
                        x_red=data_dict["y_true_subsampled"].x,
                        y_red=data_dict["y_true_subsampled"].y,
                        y_true=data_dict["f_true"].y, ax=ax)
+        ax.set_xlabel("time [h]")
+        ax.set_ylabel("BP [mmHg]")
 
     @Plotter
-    def plot_true_with_samples(self, ax=None, **kwargs):
+    def plot_true_with_samples(self, ax=None, legend=False, **kwargs):
         f_true = self.f_true
         y_true = self.y_true
         data = self.y_true_train
@@ -369,19 +371,54 @@ class GPSimulator():
                       f"var(y_true): {np.var(y_true.y)}")
         ax.scatter(data.x, data.y, color="red", zorder=5,
                    label=f"var(data): {np.var(data.y)}")
-        ax.legend()
+        if legend:
+            ax.legend()
+
+        ax.set_xlabel("time [h]")
+        ax.set_ylabel("BP [mmHg]")
 
     @Plotter
-    def plot_kernel_function(self, x, kernel, ax=None, **kwargs):
+    def plot_true_mean_decomposed(self, ax=None, **kwargs):
+        # Plot mean decomposed
+        for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
+            ax.plot(self.x, v, label=k)
+        ax.set_xlabel("time [h]")
+        ax.set_ylabel("BP [mmHg]")
+
+
+    @Plotter
+    def plot_predicted_mean_decomposed(self, ax=None, **kwargs):
+        # Plot mean decomposed
+        fit_dict = self.gpm_fit.predict_mean_decomposed(self.x)
+        assert all(self.f_post.y_mean - np.sum(list(fit_dict.values()),
+                                               axis=0) < 0.01)
+        for k, v in fit_dict.items():
+            ax.plot(self.x, v, label=k)
+        ax.set_xlabel("time [h]")
+        ax.set_ylabel("BP [mmHg]")
+
+    @Plotter
+    def plot_kernel_function(self, x, kernel, ax=None, title=False, **kwargs):
         if x.ndim == 1:
             x = x.reshape(-1, 1)
         kxx = kernel(x)
         if x.shape[1] > 1:
             x = x[:, 1]
         ax.plot(x, kxx[0, :])
-        title = re.sub("(.{120})", "\\1\n", str(kernel), 0,
-                       re.DOTALL)
-        ax.set_title(title)
+        if title:
+            title = re.sub("(.{120})", "\\1\n", str(kernel), 0,
+                           re.DOTALL)
+            ax.set_title(title)
+        ax.set_xlabel("x-x'")
+        ax.set_ylabel("k(x-x')")
+
+    @Plotter
+    def plot_kernel_true(self, ax=None, **kwargs):
+        self.plot_kernel_function(self.x, self.kernel_sim, ax=ax)
+
+    @Plotter
+    def plot_kernel_predicted(self, ax=None, **kwargs):
+        self.plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax)
 
     def plot(self, figname_suffix=""):
 
@@ -390,18 +427,14 @@ class GPSimulator():
 
         self.fit()
         self.plot_prior()
+        self.plot_true_mean_decomposed()
         self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
-        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6), sharey=True, sharex=True)
-        for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
-            ax[0].plot(self.x, v, label=k)
-        ax[0].legend()
-        fit_dict = self.gpm_fit.predict_mean_decomposed(self.x)
-        assert all(self.f_post.y_mean - np.sum(list(fit_dict.values()),
-                                               axis=0) < 0.01)
-        for k, v in fit_dict.items():
-            ax[1].plot(self.x, v, label=k)
+        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6),
+                               sharey=True, sharex=True)
+        self.plot_true_mean_decomposed(ax=ax[0])
+        self.plot_predicted_mean_decomposed(ax=ax[1])
         fig.tight_layout()
 
         if self.output_path:
@@ -410,13 +443,8 @@ class GPSimulator():
             plt.close(fig)
 
         # Plot Kernel functions
-        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(2 * 15, 2 * 6),
-                               sharey=True, sharex=True)
-        self.plot_kernel_function(self.x, self.kernel_sim, ax=ax[0])
-        self.plot_kernel_function(self.x, self.gpm_fit.kernel_, ax=ax[1])
-        if self.output_path:
-            fig.savefig(self.output_path / f"plot_kernel{figname_suffix}.pdf")
-            plt.close(fig)
+        self.plot_kernel_true()
+        self.plot_kernel_predicted()
 
         return fig
 

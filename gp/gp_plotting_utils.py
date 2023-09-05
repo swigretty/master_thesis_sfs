@@ -23,7 +23,7 @@ class Plotter():
         output_path = getattr(instance, "output_path", None)
 
         if ax is None:
-            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10, 6))
+            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6.6, 4))
 
         value = self.func(instance, *args, ax=ax, **kwargs)
 
@@ -135,7 +135,6 @@ def plot_gpr_samples(x, y_mean, y_std=None, y=None, ylim=None, ax=None):
             color="black",
             label=r"$\pm$ 1 std. dev.",
         )
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
+
     if ylim:
         ax.set_ylim(ylim)
