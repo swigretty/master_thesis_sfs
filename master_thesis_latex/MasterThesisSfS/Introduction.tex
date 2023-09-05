@@ -6,22 +6,19 @@ This thesis aims to present Gaussian process regression as a powerful tool for
 modeling time series based on irregularly spaced observations.
 
 The motivation for this research stems from a pressing real-world problem in the
-field of medicine, which will serve as a recurring example throughout this
-thesis. The problem revolves around estimating critical time series properties,
-specifically related to systolic blood pressure (BP), from a dataset consisting
-of irregularly spaced BP measurements.
-
+field of medicine, which will serve as a recurring example throughout this thesis. 
+The problem revolves around estimating critical time series properties,
+from a dataset consisting of irregularly spaced blood pressure (BP) measurements.
 High BP is a well-established risk factor for cardiovascular disease, and
 summarizing an individual's BP levels typically involves calculating the average
 BP value over available measurements within a specified time range. A novel
 monitoring device has been developed to collect continuous BP estimates by
-converting photoplethysmography (PPG) signals into BP measurements.
-
+converting photoplethysmography (PPG) signals into BP measurements. 
 The sampling frequency of this system can vary widely, typically yielding around
-1.5 BP measurements per hour. However, factors such as PPG signal quality and
-external conditions can influence this frequency, resulting in irregularly spaced
-measurements, with the expected range spanning from 0 to 5 measurements per hour.
-
+1.5 BP measurements per hour. 
+However, factors such as PPG signal quality and external conditions can 
+influence this frequency, resulting in irregularly spaced
+measurements.
 Obtaining accurate estimates of true BP values at unobserved time points is
 essential for improving cardiovascular risk assessment and developing valuable
 metrics.
@@ -34,8 +31,8 @@ continuous time models or state-space models with missing observations (\citeaut
 
 Therefore, the primary objective of this thesis is to address the challenges
 posed by irregularly sampled time series data and demonstrate why conventional
-time series methods fall short. Additionally, we will elucidate why Gaussian
-processes serve as a suitable approach for modeling time series with irregularly
+time series methods fail to deal with it. Additionally, we will elucidate why Gaussian
+processes are a suitable approach for modeling time series with irregularly
 spaced observations, using the BP time series example.
 
 \section{Problem Statement}
@@ -50,8 +47,8 @@ distributed (iid) Gaussian measurement noise $\epsilon$:
 
 Both time series, $f(x)$ and $Y(x)$, are described as random functions.
 While the former is completely unobserved we have
-unequally spaced observations from the latter, $(Y_{t_i}: i \in \{1, 2, \dots n\})$.
-These observations represent AAAA's user data.
+unequally spaced observations from the latter, i.e. $(Y_{t_i}: i \in \{1, 2, \dots n\})$.
+These observations represent Aktiia's user data.
 
 The goal of this research is to learn about the underlying true BP process
 $f(x)$ based on one week of irregularly spaced observations.
@@ -80,7 +77,7 @@ pertain to systolic blood pressure.
 
 \subsection{Characteristics of the Blood Pressure Time Series}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
-Based on the AAAA user data, several properties of \textbf{the BP
+Based on the Aktiia user data, several properties of \textbf{the BP
 measurements, $(Y_{t_i}: i \in \{1, 2, \dots n\})$}, have been identified:
 
 \begin{enumerate}[\roman{enumi}.)]
@@ -110,20 +107,20 @@ variable on its previous values.
 \end{itemize}
 
 The magnitude of the measurement noise, denoted as $\epsilon,$ remains unknown.
-Nevertheless, AAAA measurements have undergone validation against a reference
-method. The measured variance of the differences between AAAA measurements and
+Nevertheless, Aktiia measurements have undergone validation against a reference
+method. The measured variance of the differences between Aktiia measurements and
 this reference is 62 mmHg². Consequently, we can express:
 
 \begin{align*}
-    \Var(BP_{Ref} - BP_{AAAA})
-    & = \text{62 mmHg\textsuperscript{2}} = \Var(\epsilon_{Ref} - \epsilon_{AAAA}) \\
-    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{AAAA}) - 2\Cov(\epsilon_{Ref},
-    \epsilon_{AAAA})
+    \Var(BP_{Ref} - BP_{Aktiia})
+    & = \text{62 mmHg\textsuperscript{2}} = \Var(\epsilon_{Ref} - \epsilon_{Aktiia}) \\
+    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{Aktiia}) - 2\Cov(\epsilon_{Ref},
+    \epsilon_{Aktiia})
 \end{align*}
 
 Assuming that the noise variance of the reference method, $\Var(\epsilon_{Ref}),$
-equals that of the AAAA measurements, $\Var(\epsilon_{AAAA}),$ and that
-$\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0,$ we obtain a noise variance for the AAAA
+equals that of the Aktiia measurements, $\Var(\epsilon_{Aktiia}),$ and that
+$\Cov(\epsilon_{Ref}, \epsilon_{Aktiia})=0,$ we obtain a noise variance for the Aktiia
 measurements of 31 mmHg².
 
 \subsection{Target Measures}\label{subsec:target-measures}
