@@ -2,120 +2,118 @@
 
 \section{Motivation and Thesis Objective}\label{sec:thesis-objective}
 
-The thesis aims at presenting Gaussian process regression for modeling time
-series based on irregularly spaced observations.
+This thesis aims to present Gaussian process regression as a powerful tool for
+modeling time series based on irregularly spaced observations.
 
-The topic is motivated by a "real world" problem from medicine which will
-serve as a running example throughout the thesis.
-%
-%Motivated by a "real world" problem from medicine, I have tried to identify the most important concepts and basic
-%methods for the analysis of irregularly space time series, which I will be presented in this thesis.
-The problem at hand is the one of estimating certain time series properties (target measures) from a dataset
-featuring systolic blood pressure (BP) measurements sampled at irregularly spaced time points.
-High BP is known to be a risk factor for cardiovascular disease.
-A person’s BP level is generally summarized using the average BP value over available measurements within a given time range.
-A novel monitoring device already allows to collect BP estimates round the clock.
-The device is collecting photoplethysmography (PPG) signals and converting them into BP measurements.
-Typically, the system will yield approximately 1.5 BP measurements per hour, but depending on the quality of the PPG signal and some additional external factors,
-this sampling frequency can widely vary and the expected range lies roughly between 0 and 5 measurements per hour.
-Having good estimates of the true BP values at any, potentially not observed, time would allow for a better estimation
-of the person’s cardiovascular risk, and enable the development of novel valuable metrics.
+The motivation for this research stems from a pressing real-world problem in the
+field of medicine, which will serve as a recurring example throughout this
+thesis. The problem revolves around estimating critical time series properties,
+specifically related to systolic blood pressure (BP), from a dataset consisting
+of irregularly spaced BP measurements.
 
-The standard time series analysis methods usually assume discrete equispaced
-time and introductory textbooks on time series analysis either completely omit
-the irregularly spaced case or they only dedicate
-a very small section to continuous time models or to state-space models
-with missing observations (\citeauthor{brockwell_time_1991}, \citeauthor{brockwell_introduction_2016},
+High BP is a well-established risk factor for cardiovascular disease, and
+summarizing an individual's BP levels typically involves calculating the average
+BP value over available measurements within a specified time range. A novel
+monitoring device has been developed to collect continuous BP estimates by
+converting photoplethysmography (PPG) signals into BP measurements.
+
+The sampling frequency of this system can vary widely, typically yielding around
+1.5 BP measurements per hour. However, factors such as PPG signal quality and
+external conditions can influence this frequency, resulting in irregularly spaced
+measurements, with the expected range spanning from 0 to 5 measurements per hour.
+
+Obtaining accurate estimates of true BP values at unobserved time points is
+essential for improving cardiovascular risk assessment and developing valuable
+metrics.
+
+Standard time series analysis methods traditionally assume discrete equispaced
+time intervals. Introductory textbooks on time series analysis either neglect
+the irregularly spaced case entirely or dedicate only a limited section to
+continuous time models or state-space models with missing observations (\citeauthor{brockwell_time_1991}, \citeauthor{brockwell_introduction_2016},
 \citeauthor{cryer_time_2008}, \citeauthor{chatfield_analysis_2003}).
-The aim is thus to understand the problem of irregularly sampled time series data
-and why standard time series method cannot deal with it.
-Furthermore, the BP time series example should elucidate why and when Gaussian processes are a
-suitable method to model a time series from which we only have observations sampled at
-irregularly spaced time points.
 
+Therefore, the primary objective of this thesis is to address the challenges
+posed by irregularly sampled time series data and demonstrate why conventional
+time series methods fall short. Additionally, we will elucidate why Gaussian
+processes serve as a suitable approach for modeling time series with irregularly
+spaced observations, using the BP time series example.
 
 \section{Problem Statement}
 
-Let us start by modelling the BP measurements with a time series process, that we call
-$Y(x)$ and that is a combination of the true BP process $f(x)$ and some iid
-Gaussian measurement noise $\epsilon$:
+To begin modeling BP measurements, we introduce the time series process $Y(x)$,
+which combines the true BP process $f(x)$ with independent and identically
+distributed (iid) Gaussian measurement noise $\epsilon$:
 
 \begin{align*}
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
-Note that both time series $f(x)$ and $Y(x)$ are described as random functions,
-whereas the former is completely unobserved and from the latter we have
-unequally spaced observations $(Y_{t_i}: i \in \{1, 2, \dots n\})$.
+Both time series, $f(x)$ and $Y(x)$, are described as random functions.
+While the former is completely unobserved we have
+unequally spaced observations from the latter, $(Y_{t_i}: i \in \{1, 2, \dots n\})$.
 These observations represent AAAA's user data.
 
-The goal is to learn something about $f(x)$ based on one week of such unequally
-spaced observations.
-Instead of using real data, data will be simulated through simulation of the
-true BP process, $f(x)$, and by adding measurement noise, $\epsilon$.
-This way we have complete knowledge about $f(x)$, allowing us to quantify
-how well it was reconstructed from data.
-However, this approach also imposes the additional challenge
-of simulating a time series and observations that mimic reality as close
-as possible.
+The goal of this research is to learn about the underlying true BP process
+$f(x)$ based on one week of irregularly spaced observations.
+Instead of using real data, data will be simulated by generating the true BP
+process $f(x)$ and adding measurement noise $\epsilon$.
+This approach offers the advantage of
+complete knowledge about $f(x),$ enabling us to quantify the accuracy of its
+reconstruction from data. However, it also introduces the challenge of simulating
+a time series and observations that closely mimic reality.
 The time series characteristics to mimic are desribed in the next subsection
 \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
-Instead of assessing the performance of predicting $f(x)$,
-the thesis will focus on a set of target measures,
-which have been considered most relevant for estimating the person’s cardiovascular risk.
-These target measure are desribed in subsection \ref{subsec:target-measures}.
+Instead of solely focusing on predicting $f(x),$ this thesis emphasizes a set of
+target measures deemed most relevant for assessing cardiovascular risk. These
+target measures are detailed in subsection \ref{subsec:target-measures}.
 
-Besides the point estimates also their CIs are of interest.
-Importantly, the CI should be able to capture the uncertainty due to the lack
-of data in the proximity of the point of prediction.
-This implies, that the width of the CI intervals around the mean function will
-not be constant over time but depend, among
-other factors, on how much data is available in the proximity of a given time point.
+In addition to point estimates, this research considers the construction of
+confidence intervals (CIs) around these estimates. Notably, the width of the CI
+intervals around the mean function varies over time, depending on factors such as
+the availability of data in the vicinity of a given time point.
 
-Note, for simplicity reasons, we only consider systolic and never diastolic
-blood pressure.
-Whenever blood pressure or BP is mentioned, it refers to systolic blood pressure.
+For simplicity, this study exclusively deals with systolic blood pressure and does
+not consider diastolic measurements. All references to "blood pressure" or "BP"
+pertain to systolic blood pressure.
 
 
 \subsection{Characteristics of the Blood Pressure Time Series}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
-Based on the AAAA user data, the following properties of \textbf{the BP
+Based on the AAAA user data, several properties of \textbf{the BP
 measurements, $(Y_{t_i}: i \in \{1, 2, \dots n\})$}, have been identified:
 
 \begin{enumerate}[\roman{enumi}.)]
-    \item Measurements are irregularly spaced, i.e., the time between two
-    consecutive measurements varies.
-    \item Measurements are not uniformly sampled across time, but the density of
-    the observations should follow the circadian cycle (seasonal sampling).
-    \item The sampling frequency varies from 0.5 to 4 measurements per hour.
-    \item The difference between the average day and average night BP measurements
-    is between 0 and 20 mmHg and is on average 10 mmHg.
-    \item The mean BP overall users is 120 mmHg.
-    \item The within-subject one-week sample variance is between 16 and 144
-    mmHg\textsuperscript{2} and is on average 49 mmHg\textsuperscript{2}.
+\item The measurements are irregularly spaced, meaning that the time between
+consecutive measurements varies.
+\item Observations are not uniformly sampled across time; instead, their
+density follows a circadian cycle, resulting in seasonal sampling.
+\item The sampling frequency ranges from 0.5 to 4 measurements per hour.
+\item The difference between average daytime and nighttime BP measurements
+falls within the range of 0 to 20 mmHg, with an average difference of 10 mmHg.
+\item The mean BP across all users is 120 mmHg.
+\item The within-subject one-week sample variance spans from 16 to 144
+mmHg², with an average of 49 mmHg².
 \end{enumerate}
 
 
-\textbf{The true BP time series process, $f(x)$}, cannot be directly observed,
-however in the context of this thesis, it
+\textbf{The true BP time series process, $f(x)$}, cannot be directly observed.
+However, in this thesis, it
 is assumed to be a combination of the following components:
 
 \begin{itemize}
-    \item A seasonal component, representing the circadian cycle. BP is known to
-    be higher during the day than during the night.
-    \item An autoregressive component, since we assume the output variable to
-    depend on its own previous values.
-    \item A long-term trend.
+\item A seasonal component representing the circadian cycle, as BP tends to be
+higher during the day than at night.
+\item An autoregressive component, reflecting the dependence of the output
+variable on its previous values.
+\item A long-term trend.
 \end{itemize}
 
+The magnitude of the measurement noise, denoted as $\epsilon,$ remains unknown.
+Nevertheless, AAAA measurements have undergone validation against a reference
+method. The measured variance of the differences between AAAA measurements and
+this reference is 62 mmHg². Consequently, we can express:
 
-The magnitude of the \textbf{measurement noise}, $\epsilon$, is also unknown.
-However, the AAAA measurements have been validated against some
-reference method.
-The measured variance of the differences between AAAA measurements
-and this reference is 62 mmHg\textsuperscript{2}.
-We can thus write:
 \begin{align*}
     \Var(BP_{Ref} - BP_{AAAA})
     & = \text{62 mmHg\textsuperscript{2}} = \Var(\epsilon_{Ref} - \epsilon_{AAAA}) \\
@@ -123,49 +121,31 @@ We can thus write:
     \epsilon_{AAAA})
 \end{align*}
 
-If one further assumes that the noise variance of the reference method,
-$\Var(\epsilon_{Ref})$, equals that of the AAAA measurements, $\Var(\epsilon_{AAAA})$,
-and that $\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0$, we obtain a noise variance
-for the AAAA measurements,
-$\Var(\epsilon_{AAAA})$, of 31 mmHg\textsuperscript{2}.
-
+Assuming that the noise variance of the reference method, $\Var(\epsilon_{Ref}),$
+equals that of the AAAA measurements, $\Var(\epsilon_{AAAA}),$ and that
+$\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0,$ we obtain a noise variance for the AAAA
+measurements of 31 mmHg².
 
 \subsection{Target Measures}\label{subsec:target-measures}
-The set of target measures,
-which have been considered most relevant for estimating the person’s cardiovascular risk are
-the mean BP over different time windows and time in target range:
 
-\textbf{The mean BP} should be calculated over different time-windows,
-i.e. one-hour, one-day and one-week mean BP.
-The mean is the most relevant and most often reported quantity.
-Currently the mean is calculated based on the available measurements
-within the corresponding time range.
+The primary focus of this research lies on a set of target measures crucial for
+estimating an individual's cardiovascular risk. These measures include:
 
-\textbf{Time in Target Range (TTR)} assesses the time period where the
-BP values are within a specified target range, relative to the total time.
-It is currently calculated by dividing the number of BP measurements which are
-within the range of 90 to 125 mmHg by the total number of BP measurements
-available within one week.
+\textbf{The mean BP} calculated over different time windows, such as one-hour,
+one-day, and one-week mean BP. The mean BP is a pivotal and frequently reported
+metric. Presently, it is computed based on the available measurements within the
+corresponding time range.
 
-Note that the estimation of these target measures does not depend on
-forecasted future BP values but only on predicted BP values within the
-one-week range of available data.
-Hence, the thesis will only focus on the task of reconstructing BP values
-between the first and last time point in the dataset.
+\textbf{Time in Target Range (TTR)} evaluates the duration during which BP values
+fall within a specified target range relative to the total time. It is currently
+determined by dividing the number of BP measurements within the range of 90 to
+125 mmHg by the total number of BP measurements available within one week.
 
+It is noteworthy that the estimation of these target measures does not depend on
+forecasting future BP values but solely relies on predicting BP values within the
+one-week range of available data. Consequently, this thesis concentrates on
+reconstructing BP values between the first and last time point in the dataset.
 
 \section{Thesis Outline}
 
-
-
-
-
-
-
-
-
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "MasterThesisSfS"
-%%% End: 
+[Insert your thesis outline here]
