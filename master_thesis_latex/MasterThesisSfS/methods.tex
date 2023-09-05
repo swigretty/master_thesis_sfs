@@ -28,7 +28,7 @@ method. More information can be found in the referenced sections:
 
 \begin{enumerate}
     \item Simulate true BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
-    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{sec:adversarial-analysis})
+    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{subsec:sampling-patterns})
     \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
     for baseline methods see \ref{sec:baseline-methods})
     \item Extract target measure including CI (section \ref{sec:target-measures})
@@ -100,17 +100,18 @@ In section \ref{sec:characteristics-of-the-blood-pressure-time-series} listed
 the properties the simulated BP time series process and the measurements should have.
 
 Recall that we assume the following model for the BP measurements $Y(x)$ at a time point $x$, as
-described in section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
+described in section \ref{sec:problem-statement}:
 
 \begin{align*}
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
-The BP measurements $Y(x)$ are obtained by adding iid Gaussian measurement noise
-$\epsilon$ to the BP time series process $f(x)$, which is assumed
-to be a random function.
+The goal is to generate the true BP time series process, $f(x)$, from which
+$Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
-The time series process $f(x)$ was decided to be modeled by a Gaussian process.
+The time series process $f(x)$ was decided to be modeled by a Gaussian process,
+since GPs are flexible enough to represent the properties
+specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}
 
 The following Gaussian process was chosen to match the properties from
 section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
@@ -128,17 +129,19 @@ where l denotes the length scale and p denotes the periodicity
 of the corresponding kernel function in hours.
 The formal definition of the Matérn, Periodic and RBF kernel
 functions and their parameters is provided in section \ref{sec:kernel}.
+
 Each of these kernels models one of the components described in
-\ref{subsec:blood-pressure-time-series-process}:
+\ref{sec:characteristics-of-the-blood-pressure-time-series}:
 \begin{itemize}
     \item The Matérn kernel with $\nu$=0.5 models the AR(1) component
     \item The Periodic kernel models the circadian cycle
     \item The RBF kernel model a long term trend
 \end{itemize}
 
+A GP sample with
 
 
-
+\subsection{Sampling Patterns}\label{subsec:sampling-patterns}
 
 
 \section{Gaussian Process Regression}\label{sec:methods-gaussian-process-regression}
@@ -152,9 +155,6 @@ Each of these kernels models one of the components described in
 \subsection{Time in Target Range}
 
 
-
-
-\section{Impact of the Sampling Pattern}\label{sec:adversarial-analysis}
 
 
 \section{Performance Metrics}\label{sec:performance-metric}

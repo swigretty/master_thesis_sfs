@@ -513,25 +513,23 @@ K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} K_{XX}^{-1} K_{Xx^{\ast}})
 Also note how until now we have still assumed $\Sigma_r$, the covariance matrix of $\mathbf{R}$, to be known.
 However, deriving $\Sigma_r$ for an ARMA process with irregularly spaced samples is not straight forward, as has already
 been shown in chapter \ref{ch:time-series-decomposition-and-regression}.
-The next section will illustrate how choosing a specific kernel function solves this problem.
+Section \ref{sec:kernel} will illustrate how choosing a specific kernel function solves this problem.
 
 \section{Mean Function}\label{subsec:mean-function}
 
-A Gaussian process is fully defined by its mean function, $\mu(x)$,
-and its covariance function, $k(x, x')$. However, the mean function can always be subtracted from
-the observed data without altering the covariance structure. In Gaussian process regression,
-this implies that the predictive variance remains entirely independent of the mean function.
-To demonstrate this, we assume a model $Y(x) = f(x) + \epsilon$,
-with $f(x) = m(x) + R(x)$ where $m(x)$ is a deterministic mean function, $R(x)$ is a time series
-process, and $\epsilon$ is independent and identically distributed Gaussian noise with variance $\sigma_n^{2}$.
+A Gaussian process is defined by its mean function, $\mu(x)$, and covariance function, $k(x, x')$.
+The mean function can be subtracted from the data without affecting covariance.
+In Gaussian process regression, this means the predictive variance remains independent of the mean function.
+Consider $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + R(x)$, where $m(x)$ is the
+mean function, $R(x)$ is a time series process, and $\epsilon$ is Gaussian noise with variance $\sigma_n^{2}$.
 
-This allows us to model $f(x)$ using a Gaussian Process:
+This setup allows us to model $f(x)$ using a Gaussian Process:
 
 \begin{gather*}
     f(x) \sim GP(m(x), k(x,x'))
 \end{gather*}
 
-Applying the conditioning rule leads us to the predictive distribution for $f^{\ast} := f(x^{\ast})$:
+Conditioning leads to the predictive distribution for $f^{\ast} := f(x^{\ast})$:
 
 \begin{gather*}
     p(f^{\ast}| \mathbf{Y}= y, X, x^{\ast}) = N(\bar{\mu}, \bar{\Sigma}), \\
@@ -539,23 +537,25 @@ Applying the conditioning rule leads us to the predictive distribution for $f^{\
     \bar{\Sigma} = K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X} (K_{XX} +  \sigma_{n}^2 I )^{-1} K(X, x^{\ast})
 \end{gather*}
 
-It's worth noting that the predictive variance $\bar{\Sigma}$ remains unaffected by $m(x)$.
+The predictive variance $\bar{\Sigma}$ remains unaffected by $m(x)$.
 
-If instead a GP is fitted to $f(x) - m(x) = R(x)$ we can write:
+Alternatively, fitting a GP to $f(x) - m(x) = R(x)$ gives:
+
 \begin{gather*}
     R(x) = f(x) - m(x) \sim GP(0, k(x,x'))
 \end{gather*}
 
-The predictive distribution over $R^{\ast} := R(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is then:
+The predictive distribution over
+$R^{\ast} := R(x^{\ast})$ given $\mathbf{Z} := \mathbf{Y} - m(X)$ is:
 
 \begin{gather*}
     p(R^{\ast}| \mathbf{Z} = z, X, x^{\ast}) = N(\bar{\mu}_{R^{\ast}}, \bar{\Sigma}), \\
     \bar{\mu}_{R^{\ast}} = K_{x^{\ast}X} (K_{XX} + \sigma^{n} I )^{-1} z,\\
 \end{gather*}
 
-Since $ z = y - m(X)$, the predictive distribution over $f^{\ast}$ is recovered by adding $m(x^{\ast})$ to
-the predictive mean $\bar{\mu}_{R^{\ast}}$. The predictive variance $\bar{\Sigma}$ remains unchanged,
-since it is unaffected by the observations or by $m(x)$.
+The Predictive distribution over $f^{\ast}$ is recovered by adding
+$m(x^{\ast})$ to $\bar{\mu}_{R^{\ast}}$.
+The predictive variance $\bar{\Sigma}$ remains unchanged, unaffected by observations or $m(x)$.
 
 %For the special case where $m(x)$ is a constant $c$, you can equivalently add $c^2$ to the covariance function
 %to achieve a zero mean GP. To see this, consider a mean-zero GP with the following covariance function:
@@ -575,79 +575,69 @@ Most frameworks for GP regression assume a zero mean prior.
 Therefore, when you have prior knowledge about $m(x)$, it's advisable to subtract it before fitting a GP.
 It is also common practice to subtract the empirical mean from your data, before fitting a GP.
 
-
-For readers interested in delving further into this subject,
-the book by \citeauthor{rasmussen_gaussian_2006} provides additional insights on this topic,
-as elaborated on page 27.
-
+For further insights, \citeauthor{rasmussen_gaussian_2006}
+elaborates on this topic in his book, particularly on page 27.
 
 \section{Kernel Functions}\label{sec:kernel}
 
-Our prior believe about the function $f(x)$ or $Y(x)$ is fully
-described by the mean and covariance function of the Gaussian Process.
-Assuming a zero mean Gaussian process, as suggested in the previous section,
-defining a prior distribution over $f(x)$ or $Y(x)$
-boils down to choosing a kernel function.
-The kernel function is then evaluated at your inputs $X=[x_1 \dots x_n]^{\top}$
-to arrive at the predictive (posterior) distribution of $f^{\ast}$ or $y^{\ast}$.
+The Gaussian Process is defined by its mean and covariance functions.
+Assuming a zero-mean Gaussian process, defining a prior distribution over
+$f(x)$ or $Y(x)$ involves selecting a kernel function only.
+The kernel is evaluated at inputs $X=[x_1, \ldots, x_n]^{\top}$ to establish the
+predictive distribution of $f^{\ast}$ or $y^{\ast}$.
 
-The choice of kernel function depends on the assumptions about correlation in
-your output given arbitrary input pairs $x$ and $x'$.
-For the sake of modeling the BP time series, three popular covariance
-functions have been deemed relevant and will be presented in this section.
-The three covariance function share the property of being stationary,
-i.e. they are a function of $\tau = x - x'$.
-Note that we have encountered covariance functions and stationarity
-for time series already in Section \ref{sec:time_series_moments} and
-\ref{sec:stationarity}, respectively
+Kernel choice depends on assumptions about correlation in your output
+for input pairs $x$ and $x'$. For modeling the BP time series,
+three relevant stationary covariance functions are considered,
+presented in this section. Following form stationarity, these functions depend on
+$\tau = x - x'$ only.
+We discussed covariance functions and stationarity for time series in
+Sections \ref{sec:time_series_moments} and \ref{sec:stationarity}, respectively.
 
-The following subsection are based on the doctoral thesis of
-\citeauthor{duvenaud_automatic_2014} and the book of
-\citeauthor{rasmussen_gaussian_2006}, which cover covariance functions for
-Gaussian Processes in more detail.
+The following subsections draw upon the doctoral
+thesis of \citeauthor{duvenaud_automatic_2014} and the
+book of \citeauthor{rasmussen_gaussian_2006}, which provide comprehensive coverage
+of covariance functions for Gaussian Processes.
 
-\subsection{The Squared Exponential Kernel Function}
+\subsection{Squared Exponential Kernel}
 
 The squared exponential kernel is also known as radial basis function (RBF)
 kernel or Gaussian kernel and has the form:
 \begin{gather*}
 k(\tau) = \exp(-\frac{\tau^2}{2 l^2})
 \end{gather*}
-with $l$ being the length scale and $\tau = x-x'$.
 
-The length scales determines how fast the function is changing, which is
-illustrated in figure \ref{fig:rbf}.
-Regardless of the length scale, the RBF kernel generates function, which are
-infinitely differentiable and thus very smooth.
+Here, $l$ is the length scale, and $\tau = x - x'$.
+The length scale governs the rate of function change, as shown in Figure \ref{fig:rbf}.
+The RBF kernel generates infinitely differentiable, smooth outputs, regardless of the length scale.
 
 \begin{figure}[!htb]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!'
     \centering
     \includegraphics[width=\textwidth]{RBF_length_scale} %<< no file extension
-    \caption[RBF Kernel: Kernel function wiht sample path]%<<-- Legend for the list of figures at the beginning of you thesis
+    \caption[RBF Kernel: Kernel function with sample path]%<<-- Legend for the list of figures at the beginning of you thesis
    {RBF Kernel function for different length scale (left panel) and a sample
-    generate by such a GP (right panel)}
+    generated by such a GP (right panel)}
     \label{fig:rbf}
 \end{figure}
 
 
-\subsection{The Matérn Class of Kernel Functions}
+\subsection{Matérn Class of Kernels}
 
-An expression for the Matérn covariance function is given by:
+The Matérn covariance function is expressed as:
 
 \begin{gather*}
-    k_{\nu}(\tau) = \frac{2^{1-\nu}}{\Gamma(\nu)}(\frac{\sqrt{2\nu} \tau}{l})^{\nu} K_{\nu}
-    (\frac{\sqrt{2\nu} \tau}{l})
+k_{\nu}(\tau) = \frac{2^{1-\nu}}{\Gamma(\nu)}\left(\frac{\sqrt{2\nu} \tau}{l}\right)^{\nu} K_{\nu}\left(\frac{\sqrt{2\nu} \tau}{l}\right)
 \end{gather*}
-where $\nu$ and $l$ are positive parameters and $K_{\nu}$ is a modified Bessel
-function. The Matérn covariance function and corresponding sample path for different
-$\nu$ are shown in figure \ref{fig:matern}.
 
-For $\nu = r + 1/2, r \in \mathbb{N}$ the expression for the Matérn covariance
-function can be simplified to:
+Here, $\nu$ and $l$ are positive parameters,
+and $K_{\nu}$ is a modified Bessel function.
+Figure \ref{fig:matern} illustrates the Matérn covariance function and
+corresponding sample paths for various $\nu$ values.
+
+For $\nu = r + 1/2, r \in \mathbb{N}$, the Matérn covariance function simplifies to:
 
 \begin{gather}\label{kernel-matern}
-    k_{\nu=r+1/2}(\tau) = \exp(-\frac{\sqrt{2r + 1} \tau}{l}) \frac{r!}{(2p)!}
-    \sum_{i=0}^{r} \frac{(r+i)!}{i!(r-i)!}(\frac{2 \sqrt{2 r + 1} \tau}{l})^{r-i}
+k_{\nu=r+1/2}(\tau) = \exp\left(-\frac{\sqrt{2r + 1} \tau}{l}\right) \frac{r!}{(2p)!} \sum_{i=0}^{r} \frac{(r+i)!}{i!(r-i)!}\left(\frac{2 \sqrt{2 r + 1} \tau}{l}\right)^{r-i}
 \end{gather}
 
 \begin{figure}[!hbt]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!' Try to
@@ -655,52 +645,48 @@ function can be simplified to:
   \centering
   \includegraphics[width=\textwidth]{Matern_nu} %<< no file extension
   %%         --- .5\textwidth stands for 50% of text width
-  \caption[Matérn Kernel: Kernel function wiht sample path]%<<-- Legend for the list of figures at the beginning of you thesis
+  \caption[Matérn Kernel: Kernel function with sample path]%<<-- Legend for the list of figures at the beginning of you thesis
    {Matérn kernel function for different $\nu$ (left panel) and a sample
-    generate by the corresponding GP (right panel)}
+    generated by the corresponding GP (right panel)}
   \label{fig:matern}
 \end{figure}
 
+Setting $\nu = 1/2$ with input domain $X \subset \mathbb{R}$ results in a continuous-time AR(1) process,
+also known as the Ornstein-Uhlenbeck process. With $\nu = 1/2$, i.e., $r=0$, the Matérn covariance function becomes:
 
-Setting $\nu = 1/2$ with input domain $X \subset \mathbb{R}$ gives raise to a continuous-time AR(1) process,
-also called Ornstein-Uhlenbeck process.
-With $\nu = 1/2$, i.e. $r=0$, the Matérn covariance function is given by:
 \begin{gather}\label{kernel-matern-ar1}
-    k(\tau) = exp(- \tau/l)
+k(\tau) = \exp\left(- \frac{\tau}{l}\right)
 \end{gather}
-More generally, for $\nu = p - 1/2$ and $X \subset \mathbb{R}$ the Matérn kernel
-matches the covariance function of a particular case of continuous AR(p) process.
-For further details on this matter
-see chapter 4 from the Book of \citeauthor{rasmussen_gaussian_2006}.
+More generally, for $\nu = p - 1/2$ and $X \subset \mathbb{R}$,
+the Matérn kernel matches the covariance function of a specific case of a continuous AR(p) process.
+For a deeper understanding of this topic, please refer to chapter 4 of the book
+by \citeauthor{rasmussen_gaussian_2006}.
 
 %and for more on the Ornstein-Uhlenbeck process see section \ref{app:ou}.
 
-\subsection{The Periodic Kernel Function}
+\subsection{Periodic Kernel}
 
-The periodic kernel allows to model functions that feature a repeating pattern
-and has the following form:
+
+The periodic kernel allows modeling functions with repeating patterns and is defined as:
 
 \begin{gather*}
-k(x, x') = \sigma^2 \exp(- \frac{2 \sin^2(\pi |x-x'| \backslash p)}{l^2})
+k(x, x') = \sigma^2 \exp\left(- \frac{2 \sin^2(\pi |x-x'| / p)}{l^2}\right)
 \end{gather*}
 
-where $p$ is the period, and $l$ is the length scale.
-The impact of different length scales are illustrated in figure \ref{fig:periodic}.
+Here, $p$ represents the period, and $l$ is the length scale. Figure \ref{fig:periodic} illustrates the impact of different length scales.
 
 \begin{figure}[!hbt]%--- Picture 'H'ere, 'B'ottom or 'T'op; '!' Try to
                     %impose your will to LaTeX
   \centering
   \includegraphics[width=\textwidth]{ExpSineSquared_length_scale} %<< no file extension
   %%         --- .5\textwidth stands for 50% of text width
-  \caption[Periodic Kernel: Kernel function wiht sample path]%<<-- Legend for the list of figures at the beginning of you thesis
+  \caption[Periodic Kernel: Kernel function with sample path]%<<-- Legend for the list of figures at the beginning of you thesis
    {Periodic kernel function for different length scales (left panel) and a sample
-    generate by the corresponding GP (right panel)}
+    generated by the corresponding GP (right panel)}
   \label{fig:periodic}
 \end{figure}
 
-Throughout the thesis we will also refer to the periodic kernel as the
-ExpSineSquared kernel.
-
+Throughout this thesis, we will also refer to the periodic kernel as the ExpSineSquared kernel.
 
 \subsection{Additive Kernels and Decomposition of Predictive Mean}
 
