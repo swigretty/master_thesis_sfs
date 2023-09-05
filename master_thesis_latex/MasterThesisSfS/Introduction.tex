@@ -1,7 +1,4 @@
-%! Author = gianna
-%! Date = 05.04.23
 \chapter{Introduction}\label{ch:introduction}
-
 
 \section{Motivation and Thesis Objective}\label{sec:thesis-objective}
 
@@ -50,7 +47,7 @@ Gaussian measurement noise $\epsilon$:
 Note that both time series $f(x)$ and $Y(x)$ are described as random functions,
 whereas the former is completely unobserved and from the latter we have
 unequally spaced observations $(Y_{t_i}: i \in \{1, 2, \dots n\})$.
-These observations represent Aktiia's user data.
+These observations represent AAAA's user data.
 
 The goal is to learn something about $f(x)$ based on one week of such unequally
 spaced observations.
@@ -83,8 +80,8 @@ Whenever blood pressure or BP is mentioned, it refers to systolic blood pressure
 
 \subsection{Characteristics of the Blood Pressure Time Series}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
-Based on the Aktiia user data, the following properties of \textbf{the
-blood pressure measurements, $(Y_{t_i}: i \in \{1, 2, \dots n\})$}, have been identified:
+Based on the AAAA user data, the following properties of \textbf{the BP
+measurements, $(Y_{t_i}: i \in \{1, 2, \dots n\})$}, have been identified:
 
 \begin{enumerate}[\roman{enumi}.)]
     \item Measurements are irregularly spaced, i.e., the time between two
@@ -114,23 +111,23 @@ is assumed to be a combination of the following components:
 
 
 The magnitude of the \textbf{measurement noise}, $\epsilon$, is also unknown.
-However, the Aktiia measurements have been validated against some
+However, the AAAA measurements have been validated against some
 reference method.
-The measured variance of the differences between Atkiia measurements
-and this reference is $62 mmHg^2$.
+The measured variance of the differences between AAAA measurements
+and this reference is 62 mmHg\textsuperscript{2}.
 We can thus write:
 \begin{align*}
-    \Var(BP_{Ref} - BP_{Aktiia})
-    & = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{Aktiia}) \\
-    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{Aktiia}) - 2\Cov(\epsilon_{Ref},
-    \epsilon_{Aktiia})
+    \Var(BP_{Ref} - BP_{AAAA})
+    & = \text{62 mmHg\textsuperscript{2}} = \Var(\epsilon_{Ref} - \epsilon_{AAAA}) \\
+    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{AAAA}) - 2\Cov(\epsilon_{Ref},
+    \epsilon_{AAAA})
 \end{align*}
 
 If one further assumes that the noise variance of the reference method,
-$\Var(\epsilon_{Ref})$, equals that of the Aktiia measurements, $\Var(\epsilon_{Aktiia})$,
-and that $\Cov(\epsilon_{Ref}, \epsilon_{Aktiia})=0$, we obtain a noise variance
-for the Aktiia measurements,
-$\Var(\epsilon_{Aktiia})$, of 31 mmHg\textsuperscript{2}.
+$\Var(\epsilon_{Ref})$, equals that of the AAAA measurements, $\Var(\epsilon_{AAAA})$,
+and that $\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0$, we obtain a noise variance
+for the AAAA measurements,
+$\Var(\epsilon_{AAAA})$, of 31 mmHg\textsuperscript{2}.
 
 
 \subsection{Target Measures}\label{subsec:target-measures}
