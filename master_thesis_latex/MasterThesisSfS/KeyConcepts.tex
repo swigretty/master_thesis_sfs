@@ -4,6 +4,8 @@
 
 \chapter{Characteristics of Time Series}
 
+
+
 \section{Time Series Definition}\label{sec:time-series-definition}
 
 A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
@@ -127,7 +129,7 @@ they could instead be described as collections of random variables with
 $(Y_{t_i}: i \in \{1, 2, \dots n\})$ and $(f_{t_i}: i \in \{1, 2, \dots n\})$ with
 $\epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})$.
 
-The properties of the measurements $Y(x)$ are given by Aktiia's
+The properties of the measurements $Y(x)$ are given by AAAA's
 user data, but for the underlying time series process $f(x)$ and the measurement noise
 $\epsilon$, additional assumptions need to be made.
 
@@ -143,7 +145,7 @@ is expected to be the sum of the following components:
 
 
 \subsection{Blood Pressure Measurements}\label{subsec:blood-pressure-measurements}
-Based on the Aktiia user data, the following properties of
+Based on the AAAA user data, the following properties of
 the blood pressure measurements have been identified:
 \begin{enumerate}[\roman{enumi}.)]
     \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies.
@@ -160,23 +162,23 @@ the blood pressure measurements have been identified:
 
 \subsection{Measurement Noise}
 
-The Aktiia measurements have been validated against some
+The AAAA measurements have been validated against some
 reference method.
 The measured variance of the differences between Atkiia measurements
 and this reference is $62 mmHg^2$.
 We can thus write:
 \begin{align*}
-    \Var(BP_{Ref} - BP_{Aktiia})
-    & = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{Aktiia}) \\
-    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{Aktiia}) - 2\Cov(\epsilon_{Ref},
-    \epsilon_{Aktiia})
+    \Var(BP_{Ref} - BP_{AAAA})
+    & = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{AAAA}) \\
+    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{AAAA}) - 2\Cov(\epsilon_{Ref},
+    \epsilon_{AAAA})
 \end{align*}
 
 If one further assumes that the noise variance of the reference method,
-$\Var(\epsilon_{Ref})$, equals that of the Aktiia measurements, $\Var(\epsilon_{Aktiia})$,
-and that $\Cov(\epsilon_{Ref}, \epsilon_{Aktiia})=0$, we obtain a noise variance
-for the Aktiia measurements,
-$\Var(\epsilon_{Aktiia})$, of 31 mmHg\textsuperscript{2}.
+$\Var(\epsilon_{Ref})$, equals that of the AAAA measurements, $\Var(\epsilon_{AAAA})$,
+and that $\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0$, we obtain a noise variance
+for the AAAA measurements,
+$\Var(\epsilon_{AAAA})$, of 31 mmHg\textsuperscript{2}.
 
 
 
