@@ -1,35 +1,36 @@
 %! Author = gianna
 %! Date = 06.04.23
 
-
 \chapter{Characteristics of Time Series}
-
-
 
 \section{Time Series Definition}\label{sec:time-series-definition}
 
-A potentially unevenly spaced \textbf{time series} is a sequence of observation time and value pair $(t_i, x_i)$
-    with strictly increasing observation times.
-    Let $\mathbb{T}$ be a set of observation time points,
-    then the sequence of random variables $(X_t: t \in \mathbb{T})$ or simply $(X_t)$ is a \textbf{time series process}
-    with observation times $t \in \mathbb{T}$.
-    More specifically:
+A potentially unevenly spaced \textbf{time series} is a sequence of observation
+time and value pairs $(t_i, x_i)$ with strictly increasing observation times. Let
+$\mathbb{T}$ be a set of observation time points; then the sequence of random
+variables $(X_t: t \in \mathbb{T})$ or simply $(X_t)$ is a \textbf{time series
+process} with observation times $t \in \mathbb{T}$. More specifically:
+
 \begin{itemize}
-    \item $(X_t: t \in \{1, 2, \dots n\})$ refers to a discrete and equispaced time series of length n
-    \item $(X_{t_i}: i \in \{1, 2, \dots n\})$ refers to an irregularly spaced time series of length n
-    with observations at time points $t_1 < t_2 < \dots t_n$
-    \item $(X_{t}: t \in (0, T])$ refers to a continuous time series
+    \item $(X_t: t \in \{1, 2, \dots, n\})$ refers to a discrete and equispaced
+    time series of length $n$.
+    \item $(X_{t_i}: i \in \{1, 2, \dots, n\})$ refers to an irregularly spaced
+    time series of length $n$ with observations at time points $t_1 < t_2 < \dots
+    < t_n$.
+    \item $(X_{t}: t \in (0, T])$ refers to a continuous time series.
 \end{itemize}
 
-When $\mathbb{T}$ has finite length, we will often use a random column vector $\mathbf{X}$ to refer to
-the time series process $(X_t)$.
-Sometimes a time series model will be expressed as a random function $f: \mathbb{T} \to \mathbb{R}$ instead
-of a collection of random variables.
-Throughout the thesis, the term time series is used both to refer to the data $(x_t)$ and the process $(X_t)$ from which it is generated.
+When $\mathbb{T}$ has finite length, we will often use a random column vector
+$\mathbf{X}$ to refer to the time series process $(X_t)$. Sometimes a time series
+model will be expressed as a random function $f: \mathbb{T} \to \mathbb{R}$ instead
+of a collection of random variables. Throughout the thesis, the term time series
+is used both to refer to the data $(x_t)$ and the process $(X_t)$ from which it is
+generated.
 
 \section{Moments of a Time Series}\label{sec:time_series_moments}
 
-A time series process $(X_t)$ is usually characterized by its first and second moment.
+A time series process $(X_t)$ is usually characterized by its first and second
+moments.
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})\label{def:time_series_moments}
     The \textbf{mean function} of a time series $(X_t)$ is:
@@ -44,31 +45,30 @@ A time series process $(X_t)$ is usually characterized by its first and second m
 
 \section{Stationarity}\label{sec:stationarity}
 
-Given that one has only one observation $x_t$ per time point $t$,
-a necessary condition to statistically learn from a time series is stationarity.
+Given that one has only one observation $x_t$ per time point $t$, a necessary
+condition to statistically learn from a time series is stationarity.
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})
-    A time series $(X_t)$ is strictly stationary iff
-    the distribution of $(X_{t_1}, \dots X_{t_n})$ is identical to the distribution of
-    $(X_{t_{1+h}}, \dots ,X_{t_{n+h}})$ for all $n \in \mathbb{N}^{+}$
-    and shifts $h \in \mathbb{Z}$:
+    A time series $(X_t)$ is strictly stationary if and only if the distribution of
+    $(X_{t_1}, \dots, X_{t_n})$ is identical to the distribution of
+    $(X_{t_{1+h}}, \dots, X_{t_{n+h}})$ for all $n \in \mathbb{N}^{+}$ and shifts
+    $h \in \mathbb{Z}$:
 \end{definition}
-
 
 \begin{definition}(\citeauthor{brockwell_introduction_2016})
     A time series $(X_t)$ is weakly stationary if
     \[
-        \mu_X(t) \text{ is independent of t,}
+        \mu_X(t) \text{ is independent of } t,
     \]
     and
     \[
-        \gamma_X(t+h, t) \text{ is indpendent of $t$ for each $h$}
+        \gamma_X(t+h, t) \text{ is independent of } t \text{ for each } h.
     \]
 \end{definition}
 
 Whenever the term stationary is used, it is referring to weak stationarity.
 
-\section{Special cases of Time Series Processes}\label{sec:example-of-time-series-processes}
+\section{Special Cases of Time Series Processes}\label{sec:example-of-time-series-processes}
 
 \begin{example} If $(X_t)$ is a \textbf{white noise} process,
     then $X_t \sim WN(0, \sigma^2)$, that is $X_t \sim F$ iid for some
@@ -76,109 +76,110 @@ Whenever the term stationary is used, it is referring to weak stationarity.
     noise where $W_t \sim \N(0, \sigma^2)$ and $F= \Phi$
 \end{example}
 
+
 \begin{example}
-    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive process}
-    of order p or AR(p) if:
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called an
+    \textbf{autoregressive process} of order $p$ or AR($p$) if:
     \[
         X_t = \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + W_t
     \]
-    where $\phi_p \neq 0$ and $(W_t)$ is a white noise process.
-    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
+    where $\phi_p \neq 0$ and $(W_t)$ is a white noise process. The variable $W_t$
+    is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
 \end{example}
 
 \begin{example}
-    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{moving average process}
-    of order q or MA(q) if:
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called a
+    \textbf{moving average process} of order $q$ or MA($q$) if:
     \[
         X_t = W_t + \theta_1 W_{t-1} + \dots \theta_q W_{t-q}
     \]
-    where $\theta_q \neq 0$ and $(W_t)$ is a white noise process.
-    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
+    where $\theta_q \neq 0$ and $(W_t)$ is a white noise process. The variable $W_t$
+    is called the innovation at time $t$ and is independent of all $X_k$, $k < t$.
 \end{example}
-
 
 \begin{example}
-    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called \textbf{autoregressive moving average process}
-    of autoregressive order p and moving average oder q or ARMA(p,q) if:
+    An equispaced time series process $(X_t: t \in \{1,2, \dots\})$ is called an
+    \textbf{autoregressive moving average process} of autoregressive order $p$ and
+    moving average order $q$ or ARMA($p,q$) if:
     \[
-        X_t =  \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + \theta_1 W_{t-1} + \dots \theta_q W_{t-q} + W_t
+        X_t =  \phi_1 X_{t-1} + \dots + \phi_p X_{t-p} + \theta_1 W_{t-1} + \dots
+        \theta_q W_{t-q} + W_t
     \]
     where $\phi_p \neq 0, \theta_q \neq 0$ and $(W_t)$ is a white noise process.
-    The variable $W_t$ is called the innovation at time $t$ and is independent of all $X_k$, $k < t$
-
+    The variable $W_t$ is called the innovation at time $t$ and is independent of all
+    $X_k$, $k < t$.
 \end{example}
-
-
-
 
 \section{Characteristics of the Blood Pressure Time Series and Observations}\label{sec:characteristics-of-the-blood-pressure-time-series}
 
-This section sets the stage for simulating and modeling systolic blood pressure (BP).
-First there one needs to make the distinction between the
-true BP process and the BP measurements.
-The former is usually unknown but is going to be simulated for the sake of this thesis.
-The latter, are assumed to be noisy observations of this BP process.
-We assume the following model for the BP measurement $Y(x)$
-and the time series process $f(x)$, at some time point $x$:
+This section sets the stage for simulating
+and modeling systolic blood pressure (BP). First, there is a need to make the
+distinction between the true BP process and the BP measurements. The former is
+usually unknown but is going to be simulated for the sake of this thesis. The
+latter is assumed to be noisy observations of this BP process. We assume the
+following model for the BP measurement $Y(x)$ and the time series process $f(x)$ at
+some time point $x$:
+
 \begin{align*}
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
-Note that both time series $f(x)$ and $Y(x)$ are described as random
-functions. However, as mentioned in section \ref{sec:time-series-definition},
-they could instead be described as collections of random variables with
-$(Y_{t_i}: i \in \{1, 2, \dots n\})$ and $(f_{t_i}: i \in \{1, 2, \dots n\})$ with
-$\epsilon_1 \dots \epsilon_n \iidsim \N(0, \sigma_n^{2})$.
 
-The properties of the measurements $Y(x)$ are given by AAAA's
-user data, but for the underlying time series process $f(x)$ and the measurement noise
-$\epsilon$, additional assumptions need to be made.
+Note that both time series $f(x)$ and $Y(x)$ are described as random functions.
+However, as mentioned in section \ref{sec:time-series-definition}, they could
+instead be described as collections of random variables with $(Y_{t_i}: i \in
+\{1, 2, \dots n\})$ and $(f_{t_i}: i \in \{1, 2, \dots n\})$ with $\epsilon_1,
+\epsilon_2, \dots, \epsilon_n \iidsim \N(0, \sigma_n^{2})$.
+
+The properties of the measurements $Y(x)$ are given by AAAA's user data, but for
+the underlying time series process $f(x)$ and the measurement noise $\epsilon$,
+additional assumptions need to be made.
 
 \subsection{Blood Pressure Time Series Process}\label{subsec:blood-pressure-time-series-process}
-For the sake of this thesis, a BP time series process,
-is expected to be the sum of the following components:
+
+For the sake of this thesis, a BP time series process is expected to be the sum of
+the following components:
+
 \begin{itemize}
-    \item A seasonal component, representing the circadian cycle.
-    BP is known to be higher during the day than during the night.
-    \item An autoregressive component, since we assume the output variable to depend on its own previous values.
-    \item A long term trend.
+    \item A seasonal component, representing the circadian cycle. BP is known to
+    be higher during the day than during the night.
+    \item An autoregressive component, since we assume the output variable to
+    depend on its own previous values.
+    \item A long-term trend.
 \end{itemize}
 
-
 \subsection{Blood Pressure Measurements}\label{subsec:blood-pressure-measurements}
-Based on the AAAA user data, the following properties of
-the blood pressure measurements have been identified:
-\begin{enumerate}[\roman{enumi}.)]
-    \item Measurements are irregularly spaced, i.e. the time between two consecutive measurements varies.
-    \item Measurements are not uniformly sampled across time but the density of the observations should
-    follow the circadian cycle (seasonal sampling).
-    \item The sampling frequency varies from 0.5 to 4 measurements per hour.
-    \item The difference between the average day and average night BP measurements is between
-    0 and 20 mmHg and is on average 10 mmHg.
-    \item The mean BP overall users is 120 mmHg.
-    \item The within subject one-week sample variance is between 16 and
-    144 mmHg\textsuperscript{2} and is on average 49 mmHg\textsuperscript{2}.
-\end{enumerate}
 
+Based on the AAAA user data, the following properties of the blood pressure
+measurements have been identified:
+
+\begin{enumerate}[\roman{enumi}.)]
+    \item Measurements are irregularly spaced, i.e., the time between two
+    consecutive measurements varies.
+    \item Measurements are not uniformly sampled across time, but the density of
+    the observations should follow the circadian cycle (seasonal sampling).
+    \item The sampling frequency varies from 0.5 to 4 measurements per hour.
+    \item The difference between the average day and average night BP measurements
+    is between 0 and 20 mmHg and is on average 10 mmHg.
+    \item The mean BP overall users is 120 mmHg.
+    \item The within-subject one-week sample variance is between 16 and 144
+    mmHg\textsuperscript{2} and is on average 49 mmHg\textsuperscript{2}.
+\end{enumerate}
 
 \subsection{Measurement Noise}
 
-The AAAA measurements have been validated against some
-reference method.
-The measured variance of the differences between Atkiia measurements
-and this reference is $62 mmHg^2$.
-We can thus write:
+The AAAA measurements have been validated against some reference method. The
+measured variance of the differences between Atkiia measurements and this reference
+is $62 mmHg^2$. We can thus write:
+
 \begin{align*}
-    \Var(BP_{Ref} - BP_{AAAA})
-    & = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{AAAA}) \\
-    & = \Var(\epsilon_{Ref}) + \Var(\epsilon_{AAAA}) - 2\Cov(\epsilon_{Ref},
+    \Var(BP_{Ref} - BP_{AAAA}) = 62 mmHg^2 = \Var(\epsilon_{Ref} - \epsilon_{AAAA})
+    = \Var(\epsilon_{Ref}) + \Var(\epsilon_{AAAA}) - 2\Cov(\epsilon_{Ref},
     \epsilon_{AAAA})
 \end{align*}
 
 If one further assumes that the noise variance of the reference method,
-$\Var(\epsilon_{Ref})$, equals that of the AAAA measurements, $\Var(\epsilon_{AAAA})$,
-and that $\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0$, we obtain a noise variance
-for the AAAA measurements,
-$\Var(\epsilon_{AAAA})$, of 31 mmHg\textsuperscript{2}.
-
-
+$\Var(\epsilon_{Ref})$, equals that of the AAAA measurements,
+$\Var(\epsilon_{AAAA})$, and that $\Cov(\epsilon_{Ref}, \epsilon_{AAAA})=0$, we
+obtain a noise variance for the AAAA measurements, $\Var(\epsilon_{AAAA})$, of 31
+mmHg\textsuperscript{2}.
 
