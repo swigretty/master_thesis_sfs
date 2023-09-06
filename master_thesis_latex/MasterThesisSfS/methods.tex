@@ -1,4 +1,4 @@
-\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
+\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -109,18 +109,35 @@ described in section \ref{sec:problem-statement}:
 The goal is to generate the true BP time series process, $f(x)$, from which
 $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
-The time series process $f(x)$ was decided to be modeled by a Gaussian process,
+\subsection{Simulation of the True BP Process}
+
+The true BP process $f(x)$ was decided to be modeled by a Gaussian process,
 since GPs are flexible enough to represent the properties
-specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}
+specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
-The following Gaussian process was chosen to match the properties from
-section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
-
+Based on section \ref{sec:characteristics-of-the-blood-pressure-time-series}
+one would probably choose the mean fuction to be constant and be equal to the
+global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
 \end{gather*}
-with an additive kernel of the form:
-\begin{align*}
+From section \ref{subsec:mean-function} we know that this is the same as writing:
+\begin{gather*}
+    f(x) - 120 \sim GP(0, k(x,x'))
+\end{gather*}
+
+For simplicity we are going to completely ignore this constant
+mean function and write $f(x)$, although we actually mean $f(x) - 120$.
+
+The true GP, from which we are going to draw true BP samples from has the following
+form:
+\begin{gather*}
+    f(x) \sim GP(0, k(x,x'))
+\end{gather*}
+with a kernel function chosen to match the properties from
+section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
+
+\begin{align*}\label{def:true_gp}
     k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(l=3, $\nu$=0.5)} \\
              &+  14^{2} * \text{Periodic(l=3, p=24)} \\
              &+  2.24^{2} * \text{RBF(l=50)}
@@ -138,7 +155,41 @@ Each of these kernels models one of the components described in
     \item The RBF kernel model a long term trend
 \end{itemize}
 
-A GP sample with
+The kernel function is illustrated in figure \ref{fig:true_kernel} and
+some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_kernel_true}
+    \caption{The true kernel function $k(x,x')$}
+    \label{fig:true_kernel}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_mean_decomposed}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_09/plot_true_mean_decomposed}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_mean_decomposed}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_mean_decomposed}
+  \caption{The sample shown to the right, decomposed in to the contribution of the Periodic kernel (orange),
+      Matérn kernel (blue), RBF kernel (green).}
+  \label{fig:true_mean_decomposed}
+\end{subfigure}\hfill
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_with_samples}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_09/plot_true_with_samples}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_with_samples}
+    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_with_samples}
+  \caption{Each figure shows one sample drawn from the true GP (red dashed line) with noisy observations
+      (red dots) sampled at a frequency of 0.5/hour}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{Samples (right side) drawn from the true GP and the decomposition of the samples (left side)}
+\label{fig:true_gp_samples}
+\end{figure}
 
 
 \subsection{Sampling Patterns}\label{subsec:sampling-patterns}
