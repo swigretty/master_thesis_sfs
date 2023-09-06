@@ -1,4 +1,6 @@
-\usepackage{texab}\chapter{Methods}\label{ch:methods}
+\usepackage{texab}
+\usepackage{amsmath}
+\usepackage{latexsymb}\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -138,37 +140,51 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 
 \section{Simulation and Evaluation Flow Gaussian Process Regression}
 
-Let us define:
+Let us start with the following definitions:
+
     \begin{itemize}
-        \item $X=\{x_1, \dots x_n\}$: The time points of interest, which is one week of data with 10 BP values per hour.
-        \item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k(x,x'))$ evaluated at inputs $X$.
-        \item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
+        \item $X := \left[ x_0, \dots x_n \right]$: The time points of interest, which is one week of data with 10 BP values per hour.
+        \item $\epsilon := \left[ \epsilon_0, \dots \epsilon_n \right] \iidsim \N(0, \sigma_n^2)$: iid measurement noise vector
+        \item $k(x,x')$: The kernel function of the true GP
+        \item $K_{XX} := \begin{bmatrix}
+        k(x_1, x_1) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots \\
+        k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix} $: The true kernel function evaluated at $X$
     \end{itemize}
+
+\begin{gather*}
+        K_{XX} = \begin{bmatrix}
+        k(x_1, x_1) & \dots & k(x_1, x_n)\\
+        \vdots  &  & \vdots \\
+        k(x_n, x_1) & \dots  & k(x_n, x_n)
+    \end{bmatrix}
+\end{gather*}: The true kernel function evaluated at the inputs $X$
 
 
 \begin{algorithm} \caption{Simulation and Evaluation Flow}
- \hspace*{\algorithmicindent} \textbf{Input:} $t$, SamplingScheme, $GP_{true}$,
-RegressionMethod, TargetMeasure\\
+ \hspace*{\algorithmicindent} \textbf{Input:} $X$, $K_{XX}$, TargetFunction, $S$, $K$\\
  \hspace*{\algorithmicindent} \textbf{Output:} CiCoverage, CiWidth
 \begin{algorithmic}[1]
-    \For {$i \gets 1$ to $N$}
-
-        \State $f_X, y_X \sim GP(0, k(x,x'))$
-        \State choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$
-        \State $y_{train} \gets \{y(x_i) | x_i \in X_{train}\}$
-        \State $f_{train} \gets \{f(x_i) | x_i \in X_{train}\}$
-        \State $\hat{f_X}, \COV(\hat{f_X}) \gets$ GP.fit($y_{train}$).predict($X$)
-        \State $\hat{M} \gets []$
-        \For {$k \gets 1$ to $K$}
-            \State $\hat{f_X, k}  \sim \N(\hat{f_X}, \COV(\hat{f_X})) $
-            \State $\hat{M}$ append  TargetMeasure($\hat{f_X, k}$)
-        \State $m \gets$ TargetMeasure($f_X$)
-        \State $\hat{m} \gets$ mean($\hat{M}$)
-        \State $ci \gets $
+    \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$
+    \For {$s = 0$ \dots $S$}
+        \State $F_X$ sample from $\N(0, K_{XX})$
+        \State $i_{train}$ sample from $1 \dots \text{length}(X)$
+        \State $Y_{train} = F_X\left[i_{train}\right] + \epsilon \left[i_{train}\right]$
+        \State $\hat{F}_X, \hat{\Sigma}_{F_X} =$ GP.fit($Y_{train}$).predict($X$)
+        \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
+        \For {$k = 0$ \dots $K$}
+            \State $\hat{F}_{X,k}$ sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} ) $
+            \State $\hat{M}$.append(TargetFunction($\hat{F}_{X, k}$))
         \EndFor
-
+    \State $m =$ TargetFunction($F_X$)
+    \State $\hat{m} = $mean($\hat{M}$)
+    \State $ci = (\text{quantile}_{\alpha}(\hat{M}), \text{quantile}_{1-\alpha}(\hat{M}))$
+    \State CiCoverageList.append($ ci\left[0\right] < m < ci\left[1\right]$)
+    \State CiWidthList.append($ci\left[1\right] - ci\left[0\right]$)
     \EndFor
-    \Ensure $V \approx V^\pi$
+    \State CiCoverage = mean(CiCoverageList)
+    \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
 \end{algorithm}
 
