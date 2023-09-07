@@ -1,4 +1,4 @@
-\usepackage{mathtools}\chapter{Methods}\label{ch:methods}
+\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -7,6 +7,8 @@ Since Gaussian Processes are capable of modeling time series in continuous
 time and hence deal with irregularly spaced data,
 they seem to be a good candidate for modeling a time series from which
 we only have irregularly sampled noisy measurement.
+
+
 To identify how suited GPs are for the problem at hand, the plan is to:
 \begin{itemize}
     \item Simulate a BP time series and some noisy measurements of the time series
@@ -23,6 +25,29 @@ should be investigated.
 This will be described in section \ref{sec:adversarial-analysis}.
 
 
+\section{Problem Statement}
+
+Recall the problem statement from section \ref{sec:problem-statement}.
+Firs, we assumed the following model for the BP measurements
+$Y(x)$ at a time point $x$:
+
+\begin{align*}
+    Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
+\end{align*}
+
+where $f(x)$ denotes the true BP process and $\epsilon$ is iid measurement noise.
+
+The goal is to estimate the true BP values $F_X=\left[f(x_1) \dots f(x_n)\right]$
+based on (training) data $Y_{train}$.
+Subsequently, the target measures can be extracted from $F_X$.
+For the sections of this chapter we define:
+\begin{itemize}
+    \item $X := \left[ x_1 \dots x_n \right]$: A vector storing the time
+    of interest in hour. A length of one-week with 10 BP values per hour has been chosen.
+    \item $F_X=\left[f(x_1) \dots f(x_n)\right]$, the true BP values at inputs $X$.
+    \item $Y_X=\left[Y(x_1) \dots Y(x_n)\right]$, the noisy BP measurements at inputs $X$.
+    \item $Y_{train} \subset Y_X$: The data used for estimating $F_X$
+\end{itemize}
 %The next section will provide you with an overview of the steps involved
 %in quantifying the performance of a given method.
 
@@ -44,13 +69,6 @@ This will be described in section \ref{sec:adversarial-analysis}.
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 For the simulation of the blood pressure time series, the goal is to match the properties
 desribed in section \ref{sec:problem-statement}.
-Recall that we assumed there the following model for the BP measurements
-$Y(x)$ at a time point $x$:
-
-\begin{align*}
-    Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
-\end{align*}
-
 Simulation starts by generating the true BP time series process, $f(x)$,
 from which $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
@@ -79,11 +97,10 @@ We write $f(x)$, although we actually mean $f(x) - 120$.
 The \textbf{kernel function} chosen to match the properties from
 section \ref{sec:characteristics-of-the-blood-pressure-time-series} is:
 
-\begin{align*}\label{def:true_gp}
-    k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(l=3, $\nu$=0.5)} \\
-             &+  14^{2} * \text{Periodic(l=3, p=24)} \\
-             &+  2.24^{2} * \text{RBF(l=50)}
-\end{align*}
+\begin{gather*}\label{def:true_gp}
+k(x, x') = 2.24^{2} * \text{Matérn}(l=3, \nu=0.5) +
+14^{2} * \text{Periodic}(l=3, p=24) +  2.24^{2} * \text{RBF}(l=50)
+\end{gather*}
 where l denotes the length scale and p denotes the periodicity
 of the corresponding kernel function in hours.
 The formal definition of the Matérn, Periodic and RBF kernel
@@ -100,14 +117,14 @@ Each of these kernels models one of the components described in
 The kernel function is illustrated in figure \ref{fig:true_kernel} and
 some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 
-\begin{figure}
+\begin{figure}[!h]
     \centering
     \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_kernel_true}
     \caption{The true kernel function $k(x,x')$}
     \label{fig:true_kernel}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[!h]
 \centering
 \begin{subfigure}{.45\textwidth}
     \centering
@@ -133,6 +150,8 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \label{fig:true_gp_samples}
 \end{figure}
 
+
+
 \subsection{Simulation of the BP Measurments}
 
 The BP measurements time series process $Y(x)$ is obtained by adding iid measurement noise
@@ -146,117 +165,129 @@ The distribution of some properties from simulated BP samples can be found in th
 Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
 
 
-\section{Gaussian Process Regression}\label{sec:gaussian-process-regression}
+\section{Evaluation of Gaussian Process Regression}\label{sec:gaussian-process-regression}
 
 A Gaussian process regression was fitted to $Y_{train}$ to estimate $f(x)$.
 The kernel function used is of the same form as the one used for simulation
 but with variable hyperparameters:
 
-\begin{align*}\label{def:gp_fit}
-    k(x, x') \text{ } = &\text{ } \sigma_M^2 * \text{Matérn(l, $\nu$=0.5)} \\
-             &+ \sigma_P^2 * \text{Periodic(l, p=24)} \\
-             &+  \sigma_R^2 * \text{RBF(l)}
-\end{align*}
+
+\begin{gather*}\label{def:gp_fit}
+    k(x, x')= \sigma_M^2 * \text{Matérn}(l, \nu=0.5) +
+\sigma_P^2 * \text{Periodic}(l, p=24) +  \sigma_R^2 * \text{RBF}(l)
+\end{gather*}
 
 The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
 maximizing the marginal likelihood, as described in subsection
-\ref{subsec:marginal-likelihood}, yielding the optimal kernel $kfit(x,x')$.
-
-The posterior (or predictive) distribution over $f^{\ast} := f(x^\ast)$ is then
-derived as described in \ref{eq:posterior-gp} using $kfit(x,x')$.
-%\begin{gather}
-%    p(f^{\ast}| Y_{train}, X_{train}) = \N(
-%K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
-%K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
-%\end{gather}
-%
-%Where $Kfit_{x,}$
+\ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x,x')$.
 
 
-\section{Performance Metrics}\label{sec:performance-metric}
 
+The predictive distribution over
+$f_X = [f(x_1), \dots f(x_n)]$ for the time points of interest
+$X := \left[ x_0, \dots x_n \right]$
+is explained in \ref{eq:posterior-gp}.
 
-\section{Simulation and Evaluation Flow Gaussian Process Regression}
+$f^{\ast} := f(x^{\ast})$
+for some arbitrary input point $x^\ast$ is then
+derived as described in \ref{eq:posterior-gp} using $\hat{k}(x,x')$.
 
-Let us start with the following definitions:
-
+In a next step the target measures are estimated and then compared to
+the true target measure values.
+The Pseudocode \ref{pc:simulation-evaluation-flow} describes the whole simulation
+and evaluation flow.
+The inputs are:
     \begin{itemize}
-        \item $X := \left[ x_0, \dots x_n \right]$: The time points of interest, which is one week of data with 10 BP values per hour.
-        \item $\epsilon := \left[ \epsilon_0, \dots \epsilon_n \right] \iidsim \N(0, \sigma_n^2)$: iid measurement noise vector
-        \item $k(x,x')$: The kernel function of the true GP
-        \item $K_{XX} := \begin{bmatrix}
-        k(x_1, x_1) & \dots & k(x_1, x_n)\\
-        \vdots  &  & \vdots \\
-        k(x_n, x_1) & \dots  & k(x_n, x_n)
-    \end{bmatrix} $: The true kernel function evaluated at $X$
+        \item $X := \left[ x_0, \dots x_n \right]$: The time vector in hours which covers 1 week and has 10 BP values per hour.
+        \item TargetFunction: The function extracting the target measures from the predicted values
+        of $f(x)$.
+        \item $K_{XX}$: The true kernel function evaluated at the input $X$
     \end{itemize}
 
-\begin{algorithm} \caption{Simulation and Evaluation Flow}
+Note for some kernel function $k(x, x')$ we generally write:
+\begin{gather*}
+    K_{XX'} := \begin{bmatrix}
+            k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
+            \vdots  &  & \vdots \\
+            k(x_n, x'_1) & \dots  & k(x_n, x'_n)
+         \end{bmatrix}
+\end{gather*}
+
+The Outputs are:
+
+\begin{itemize}
+    \item CiCoverage: The number of time the true value of $f(x)$ was
+    covered by the credible interval.
+    \item CiWidth: The mean width of the credible interval over $S$ simulations
+\end{itemize}
+
+
+\begin{algorithm}[H] \caption{Simulation and Evaluation Flow}
  \hspace*{\algorithmicindent} \textbf{Input:} $X$, $K_{XX}$, TargetFunction\\
  \hspace*{\algorithmicindent} \textbf{Output:} CiCoverage, CiWidth
 \begin{algorithmic}[1]
     \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$,
     \For {$s = 0$ \dots $S$}
-        \State $F_X =$ draw sample from $\N(0, K_{XX})$
-        \State $\epsilon = \left[ \epsilon_0, \dots \epsilon_n \right]$,  iid samples from $\N(0, \sigma_n^2)$
-
-        \State $i_{train} =$ sample from $1 \dots \text{length}(X)$
-        \State $Y_{train} = F_X\left[i_{train}\right] + \epsilon \left[i_{train}\right]$
-        \State $\hat{F}_X, \hat{\Sigma}_{F_X} =$ GP.fit($Y_{train}$).predict($X$)
+        \State $F_X =$ sample from $\N(0, K_{XX})$ \algorithmiccomment{Sample from the true GP}
+        \State $i_{train} \subset \{1 \dots \text{length}(X)\}$ \algorithmiccomment{Choose training indexes}
+        \State $Y_{train} = F_X\left[i_{train}\right] + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
+        \State $\hat{k}=$ GP.fit($Y_{train}$) \algorithmiccomment{Fit the Gaussain process}
+        \State $\hat{F}_X = \hat{K}_{XX_{train}} (\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1} Y_{train}$ \algorithmiccomment{predictive mean}
+        \State $\hat{\Sigma}_{F_X} = \hat{K}_{XX} -\hat{K}_{XX_{train}}(\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1}\hat{K}_{X_{train}X}$ \algorithmiccomment{predictive covariance}
         \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
         \For {$k = 0$ \dots $K$}
-            \State $\hat{F}_{X,k} = $ draw sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} ) $
+            \State $\hat{F}_{X,k} = $ sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} )$ \algorithmiccomment{Sample from predictive distribution}
             \State $\hat{M}$.append(TargetFunction($\hat{F}_{X, k}$))
         \EndFor
     \State $m =$ TargetFunction($F_X$)
     \State $\hat{m} = $mean($\hat{M}$)
-    \State $ci = (\text{quantile}_{\alpha}(\hat{M}), \text{quantile}_{1-\alpha}(\hat{M}))$
+    \State $ci = (\text{quantile}_{\alpha}(\hat{M}), \text{quantile}_{1-\alpha}(\hat{M}))$ \algorithmiccomment{Credible intervals}
     \State CiCoverageList.append($ ci\left[0\right] < m < ci\left[1\right]$)
     \State CiWidthList.append($ci\left[1\right] - ci\left[0\right]$)
     \EndFor
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
-\end{algorithm}
-
-
-Simulation of true BP signal and measurements:
-    \begin{itemize}
-        \item $X=\{x_1, \dots x_n\}$: The time points of interest, which is one week of data with 10 BP values per hour.
-        \item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
-        \item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
-    \end{itemize}
-
-Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
-\begin{itemize}
-    \item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
-    \item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
-\end{itemize}
-
-
-	Fit GP regression model to training data $y_{train}$, $X_{train}$:
-    \begin{itemize}
-        \item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
-        $p(y_{train}| \theta)$
-        \item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
-        The posterior (predictive) probability density of $f_X$. The posterior mean vector
-        $\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
-        \begin{itemize}
-            \item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
-            \item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
-
-        \end{itemize}
-    \end{itemize}
-
-	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
-		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
-			\begin{itemize}
-				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
-				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
-				\bar{\Sigma}_{X_{train}})$
-				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
-			\end{itemize}
-
+\end{algorithm}\label{pc:simulation-evaluation-flow}
+%
+%
+%Simulation of true BP signal and measurements:
+%    \begin{itemize}
+%        \item $X=\{x_1, \dots x_n\}$: The time points of interest, which is one week of data with 10 BP values per hour.
+%        \item $f_X := \{f(x_1) \dots f(x_n)\}$: The true BP signal $f(x)$ drawn from $GP(0, k_{true}(x,x'))$ evaluated at inputs $X$.
+%        \item $y_X := \{y(x_1) \dots y(x_n)\}$: The noisy BP measurements. $y(x)= f(x) + \epsilon$ with $\epsilon \sim N(0, \sigma_n^2)$
+%    \end{itemize}
+%
+%Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ and $X_{test} = X \setminus X_{train}$.
+%\begin{itemize}
+%    \item $y_{train} := \{y(x_i) | x_i \in X_{train}\}$
+%    \item  $f_{train} := \{f(x_i) | x_i \in X_{train}\}$
+%\end{itemize}
+%
+%
+%	Fit GP regression model to training data $y_{train}$, $X_{train}$:
+%    \begin{itemize}
+%        \item $k_{fit}$: The fitted kernel function with hyperparameters $\theta$ that maximizes the marginal likelihood
+%        $p(y_{train}| \theta)$
+%        \item $p(f_X| y_{train}, k_{fit}) = N(\bar{\mu}, \bar{\Sigma})$:
+%        The posterior (predictive) probability density of $f_X$. The posterior mean vector
+%        $\bar{\mu} \in \mathbb{R}^n$ contains the point estimates for $f_X$.
+%        \begin{itemize}
+%            \item $\bar{\mu}_{train} := \{\bar{\mu}_i | x_i \in X_{train}\}$
+%            \item $\bar{\Sigma}_{train} := \bar{\Sigma}_{i,j}$ where $\{i | x_i \in X_{train}\}$ and $\{j | x_j \in X_{train}\}$
+%
+%        \end{itemize}
+%    \end{itemize}
+%
+%	Output of GP Regression are predictive probabilities $p(f_{train}| y_{train})$,
+%		$p(f_{test}| y_{train})$ and $p(f_{X}| y_{train})$:
+%			\begin{itemize}
+%				\item Note $\bar{\mu}_{train} \neq f_{train}$ due to the measurement error. \\ If
+%				$f_{train}$ was known: $p(f_{train}| f_{train}, GP_{fit}) = N(\bar{\mu}_{X_{train}},
+%				\bar{\Sigma}_{X_{train}})$
+%				with $\bar{\mu}_{train} = f_{train}$ and $\bar{\Sigma}_{train} = {\displaystyle O}$
+%			\end{itemize}
+%
 
 
 \section{Baseline Methods}\label{sec:baseline-methods}
