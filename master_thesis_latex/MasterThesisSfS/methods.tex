@@ -1,4 +1,4 @@
-\chapter{Methods}\label{ch:methods}
+\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -43,28 +43,19 @@ Subsequently, the target measures can be extracted from $F_X$.
 For the sections of this chapter we define:
 \begin{itemize}
     \item $X := \left[ x_1 \dots x_n \right]$: A vector storing the time
-    of interest in hour. A length of one-week with 10 BP values per hour has been chosen.
-    \item $F_X=\left[f(x_1) \dots f(x_n)\right]$, the true BP values at inputs $X$.
-    \item $Y_X=\left[Y(x_1) \dots Y(x_n)\right]$, the noisy BP measurements at inputs $X$.
+    of interest in hour. A length of one week with 10 BP values per hour has been chosen.
+    \item $F_X=\left[f(x_1) \dots f(x_n)\right]$: The true BP values at inputs $X$.
+    \item $Y_X=\left[Y(x_1) \dots Y(x_n)\right]$: The noisy BP measurements at inputs $X$.
     \item $Y_{train} \subset Y_X$: The data used for estimating $F_X$
+    \item $K_{XX'} := \begin{bmatrix}
+            k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
+            \vdots  &  & \vdots \\
+            k(x_n, x'_1) & \dots  & k(x_n, x'_n)
+         \end{bmatrix}$, for some kernel function $k(x, x')$
 \end{itemize}
-%The next section will provide you with an overview of the steps involved
-%in quantifying the performance of a given method.
 
-
-%\section{Overview}
-%
-%This is a list of the steps involved in assessing the performance of a given
-%method. More information can be found in the referenced sections:
-%
-%\begin{enumerate}
-%    \item Simulate true BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
-%    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{subsec:sampling-patterns})
-%    \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
-%    for baseline methods see \ref{sec:baseline-methods})
-%    \item Extract target measure including CI (section \ref{sec:target-measures})
-%    \item Calculate performance metric between true and predicted values (section \ref{sec:performance-metric})
-%\end{enumerate}
+Additionally, when referring to the estimated values $\hat{F_X}$ is used instead of $F_X$
+and similarly for other estimated quantities.
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 For the simulation of the blood pressure time series, the goal is to match the properties
@@ -72,13 +63,12 @@ desribed in section \ref{sec:problem-statement}.
 Simulation starts by generating the true BP time series process, $f(x)$,
 from which $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
-\subsection{Simulation of the True BP Process}
-
 The true BP process $f(x)$ was decided to be modeled by a Gaussian process,
 since GPs are flexible enough to represent the properties
 specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
-A reasonable assumption for the \textbf{mean function}, would be keep it constant and
+\subsection{Mean function}
+A reasonable assumption for the mean function, would be keep it constant and
 equal to the global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
@@ -94,9 +84,9 @@ mean function and write:
 \end{gather*}
 We write $f(x)$, although we actually mean $f(x) - 120$.
 
-The \textbf{kernel function} chosen to match the properties from
+\subsection{Kernel function}
+The kernel function chosen to match the properties from
 section \ref{sec:characteristics-of-the-blood-pressure-time-series} is:
-
 \begin{gather*}\label{def:true_gp}
 k(x, x') = 2.24^{2} * \text{Matérn}(l=3, \nu=0.5) +
 14^{2} * \text{Periodic}(l=3, p=24) +  2.24^{2} * \text{RBF}(l=50)
@@ -159,7 +149,7 @@ $\epsilon \sim \N(0, \sigma_n^2)$ to $f(x)$.
 Where the measurement noise variance $\sigma_n^2$ is set to 31 mmHg².
 The rationale for this is given in subsection
 \ref{sec:characteristics-of-the-blood-pressure-time-series}.
-The measurements, $Y_{train}$, are then drawn from $Y(x)$ uniformly at random.
+The measurements, $Y_{train}$, are then drawn from $Y_X$ uniformly at random.
 
 The distribution of some properties from simulated BP samples can be found in the
 Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
@@ -181,50 +171,33 @@ The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
 maximizing the marginal likelihood, as described in subsection
 \ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x,x')$.
 
+From $\hat{k}(x,x')$ the predictive distribution over $F_X$ is calculated
+and the target measures including credible intervals are estimated.
 
-
-The predictive distribution over
-$f_X = [f(x_1), \dots f(x_n)]$ for the time points of interest
-$X := \left[ x_0, \dots x_n \right]$
-is explained in \ref{eq:posterior-gp}.
-
-$f^{\ast} := f(x^{\ast})$
-for some arbitrary input point $x^\ast$ is then
-derived as described in \ref{eq:posterior-gp} using $\hat{k}(x,x')$.
-
-In a next step the target measures are estimated and then compared to
-the true target measure values.
 The Pseudocode \ref{pc:simulation-evaluation-flow} describes the whole simulation
 and evaluation flow.
 The inputs are:
     \begin{itemize}
-        \item $X := \left[ x_0, \dots x_n \right]$: The time vector in hours which covers 1 week and has 10 BP values per hour.
+        \item $X$: The time of interest
         \item TargetFunction: The function extracting the target measures from the predicted values
         of $f(x)$.
         \item $K_{XX}$: The true kernel function evaluated at the input $X$
     \end{itemize}
-
-Note for some kernel function $k(x, x')$ we generally write:
-\begin{gather*}
-    K_{XX'} := \begin{bmatrix}
-            k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
-            \vdots  &  & \vdots \\
-            k(x_n, x'_1) & \dots  & k(x_n, x'_n)
-         \end{bmatrix}
-\end{gather*}
-
 The Outputs are:
-
 \begin{itemize}
     \item CiCoverage: The number of time the true value of $f(x)$ was
     covered by the credible interval.
     \item CiWidth: The mean width of the credible interval over $S$ simulations
 \end{itemize}
 
-
-\begin{algorithm}[H] \caption{Simulation and Evaluation Flow}
- \hspace*{\algorithmicindent} \textbf{Input:} $X$, $K_{XX}$, TargetFunction\\
- \hspace*{\algorithmicindent} \textbf{Output:} CiCoverage, CiWidth
+\begin{algorithm}[h!] \caption{Simulation and Evaluation Flow}
+ \hspace*{\algorithmicindent} \textbf{Inputs:} \\
+ \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
+ \hspace*{\algorithmicindent} $K_{XX}$ \algorithmiccomment{ The true kernel function evaluated at the input $X$}\\
+ \hspace*{\algorithmicindent} TargetFunction \algorithmiccomment{Functino to extracts target measures from $F_X$ and $\hat{F}_X$} \\
+ \hspace*{\algorithmicindent} \textbf{Output:} \\
+ \hspace*{\algorithmicindent} CiCoverage \algorithmiccomment{Credible interval coverage}\\
+ \hspace*{\algorithmicindent} CiWidth \algorithmiccomment{Credible interval width}\\
 \begin{algorithmic}[1]
     \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$,
     \For {$s = 0$ \dots $S$}
