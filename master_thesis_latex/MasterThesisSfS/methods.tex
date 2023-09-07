@@ -1,6 +1,4 @@
-\usepackage{texab}
-\usepackage{amsmath}
-\usepackage{latexsymb}\chapter{Methods}\label{ch:methods}
+\usepackage{mathtools}\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -12,45 +10,49 @@ we only have irregularly sampled noisy measurement.
 To identify how suited GPs are for the problem at hand, the plan is to:
 \begin{itemize}
     \item Simulate a BP time series and some noisy measurements of the time series
+    (section \ref{sec:blood-pressure-time-series-simulation})
     \item Estimate some target measures from these measurements.
-    \item Compare the aptness of GP regression to estimate the target measures to that of some baseline methods.
-    \item Investigate the impact of the sampling pattern on the target measure estimates, e.g
-    How densely does the data need to be sampled to get good estimates?
-    What happens if the data is not uniformly sampled across time ?
+    (subsection \ref{subsec:target-measures})
+    \item Compare the aptness of GP regression to estimate the target measures
+    to that of some baseline methods.
+
 \end{itemize}
 
-The next section will provide you with an overview of the steps involved
-in quantifying the performance of a given method.
+Additionally, the impact of different adversarial factor on the target measure estimate
+should be investigated.
+This will be described in section \ref{sec:adversarial-analysis}.
 
 
-\section{Overview}
+%The next section will provide you with an overview of the steps involved
+%in quantifying the performance of a given method.
 
-This is a list of the steps involved in assessing the performance of a given
-method. More information can be found in the referenced sections:
 
-\begin{enumerate}
-    \item Simulate true BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
-    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{subsec:sampling-patterns})
-    \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
-    for baseline methods see \ref{sec:baseline-methods})
-    \item Extract target measure including CI (section \ref{sec:target-measures})
-    \item Calculate performance metric between true and predicted values (section \ref{sec:performance-metric})
-\end{enumerate}
+%\section{Overview}
+%
+%This is a list of the steps involved in assessing the performance of a given
+%method. More information can be found in the referenced sections:
+%
+%\begin{enumerate}
+%    \item Simulate true BP time series at high resolution (section \ref{sec:blood-pressure-time-series-simulation})
+%    \item Simulate BP measurement by subsampling the true time series and adding noise (section \ref{subsec:sampling-patterns})
+%    \item Fit Regression (For GP Regression see section \ref{sec:gaussian-process-regression}
+%    for baseline methods see \ref{sec:baseline-methods})
+%    \item Extract target measure including CI (section \ref{sec:target-measures})
+%    \item Calculate performance metric between true and predicted values (section \ref{sec:performance-metric})
+%\end{enumerate}
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
-
-In section \ref{sec:characteristics-of-the-blood-pressure-time-series} listed
-the properties the simulated BP time series process and the measurements should have.
-
-Recall that we assume the following model for the BP measurements $Y(x)$ at a time point $x$, as
-described in section \ref{sec:problem-statement}:
+For the simulation of the blood pressure time series, the goal is to match the properties
+desribed in section \ref{sec:problem-statement}.
+Recall that we assumed there the following model for the BP measurements
+$Y(x)$ at a time point $x$:
 
 \begin{align*}
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
-The goal is to generate the true BP time series process, $f(x)$, from which
-$Y(x)$ can be obtained by adding iid Gaussian measurement noise.
+Simulation starts by generating the true BP time series process, $f(x)$,
+from which $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
 \subsection{Simulation of the True BP Process}
 
@@ -58,9 +60,8 @@ The true BP process $f(x)$ was decided to be modeled by a Gaussian process,
 since GPs are flexible enough to represent the properties
 specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
-Based on section \ref{sec:characteristics-of-the-blood-pressure-time-series}
-one would probably choose the mean fuction to be constant and be equal to the
-global mean BP value of 120 mmHg. We have:
+A reasonable assumption for the \textbf{mean function}, would be keep it constant and
+equal to the global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
 \end{gather*}
@@ -68,17 +69,15 @@ From section \ref{subsec:mean-function} we know that this is the same as writing
 \begin{gather*}
     f(x) - 120 \sim GP(0, k(x,x'))
 \end{gather*}
-
 For simplicity we are going to completely ignore this constant
-mean function and write $f(x)$, although we actually mean $f(x) - 120$.
-
-The true GP, from which we are going to draw true BP samples from has the following
-form:
+mean function and write:
 \begin{gather*}
     f(x) \sim GP(0, k(x,x'))
 \end{gather*}
-with a kernel function chosen to match the properties from
-section \ref{sec:characteristics-of-the-blood-pressure-time-series}:
+We write $f(x)$, although we actually mean $f(x) - 120$.
+
+The \textbf{kernel function} chosen to match the properties from
+section \ref{sec:characteristics-of-the-blood-pressure-time-series} is:
 
 \begin{align*}\label{def:true_gp}
     k(x, x') \text{ } = &\text{ } 2.24^{2} * \text{Matérn(l=3, $\nu$=0.5)} \\
@@ -134,8 +133,47 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \label{fig:true_gp_samples}
 \end{figure}
 
+\subsection{Simulation of the BP Measurments}
 
-\subsection{Sampling Patterns}\label{subsec:sampling-patterns}
+The BP measurements time series process $Y(x)$ is obtained by adding iid measurement noise
+$\epsilon \sim \N(0, \sigma_n^2)$ to $f(x)$.
+Where the measurement noise variance $\sigma_n^2$ is set to 31 mmHg².
+The rationale for this is given in subsection
+\ref{sec:characteristics-of-the-blood-pressure-time-series}.
+The measurements, $Y_{train}$, are then drawn from $Y(x)$ uniformly at random.
+
+The distribution of some properties from simulated BP samples can be found in the
+Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
+
+
+\section{Gaussian Process Regression}\label{sec:gaussian-process-regression}
+
+A Gaussian process regression was fitted to $Y_{train}$ to estimate $f(x)$.
+The kernel function used is of the same form as the one used for simulation
+but with variable hyperparameters:
+
+\begin{align*}\label{def:gp_fit}
+    k(x, x') \text{ } = &\text{ } \sigma_M^2 * \text{Matérn(l, $\nu$=0.5)} \\
+             &+ \sigma_P^2 * \text{Periodic(l, p=24)} \\
+             &+  \sigma_R^2 * \text{RBF(l)}
+\end{align*}
+
+The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
+maximizing the marginal likelihood, as described in subsection
+\ref{subsec:marginal-likelihood}, yielding the optimal kernel $kfit(x,x')$.
+
+The posterior (or predictive) distribution over $f^{\ast} := f(x^\ast)$ is then
+derived as described in \ref{eq:posterior-gp} using $kfit(x,x')$.
+%\begin{gather}
+%    p(f^{\ast}| Y_{train}, X_{train}) = \N(
+%K_{x^{\ast}X} (K_{XX} + \sigma_n^2 I)^{-1} \mathbf{Y},
+%K_{x^{\ast}x^{\ast}} - K_{x^{\ast}X}(K_{XX} + \sigma_n^2 I)^{-1}K_{Xx^{\ast}})
+%\end{gather}
+%
+%Where $Kfit_{x,}$
+
+
+\section{Performance Metrics}\label{sec:performance-metric}
 
 
 \section{Simulation and Evaluation Flow Gaussian Process Regression}
@@ -153,28 +191,21 @@ Let us start with the following definitions:
     \end{bmatrix} $: The true kernel function evaluated at $X$
     \end{itemize}
 
-\begin{gather*}
-        K_{XX} = \begin{bmatrix}
-        k(x_1, x_1) & \dots & k(x_1, x_n)\\
-        \vdots  &  & \vdots \\
-        k(x_n, x_1) & \dots  & k(x_n, x_n)
-    \end{bmatrix}
-\end{gather*}: The true kernel function evaluated at the inputs $X$
-
-
 \begin{algorithm} \caption{Simulation and Evaluation Flow}
- \hspace*{\algorithmicindent} \textbf{Input:} $X$, $K_{XX}$, TargetFunction, $S$, $K$\\
+ \hspace*{\algorithmicindent} \textbf{Input:} $X$, $K_{XX}$, TargetFunction\\
  \hspace*{\algorithmicindent} \textbf{Output:} CiCoverage, CiWidth
 \begin{algorithmic}[1]
-    \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$
+    \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$,
     \For {$s = 0$ \dots $S$}
-        \State $F_X$ sample from $\N(0, K_{XX})$
-        \State $i_{train}$ sample from $1 \dots \text{length}(X)$
+        \State $F_X =$ draw sample from $\N(0, K_{XX})$
+        \State $\epsilon = \left[ \epsilon_0, \dots \epsilon_n \right]$,  iid samples from $\N(0, \sigma_n^2)$
+
+        \State $i_{train} =$ sample from $1 \dots \text{length}(X)$
         \State $Y_{train} = F_X\left[i_{train}\right] + \epsilon \left[i_{train}\right]$
         \State $\hat{F}_X, \hat{\Sigma}_{F_X} =$ GP.fit($Y_{train}$).predict($X$)
         \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
         \For {$k = 0$ \dots $K$}
-            \State $\hat{F}_{X,k}$ sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} ) $
+            \State $\hat{F}_{X,k} = $ draw sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} ) $
             \State $\hat{M}$.append(TargetFunction($\hat{F}_{X, k}$))
         \EndFor
     \State $m =$ TargetFunction($F_X$)
@@ -230,19 +261,35 @@ Based on subsampling scheme choose $X_{train} \subset X$ with $|X_{train}| = m$ 
 
 \section{Baseline Methods}\label{sec:baseline-methods}
 
-
-\section{Target Measures}\label{sec:target-measures}
-
 \subsection{Time in Target Range}
 
 
 
 
-\section{Performance Metrics}\label{sec:performance-metric}
+
+
+\section{Adversarial Analysis}\label{sec:adversarial-analysis}
+
+Finally we want to study the impact on of the sampling pattern on the target measure estimates.
+As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series}
+the data density is expected to vary within the Aktiia population and
+measurements might
+also not be sampled uniformly but data density might follow the circadian cycle.
+We will refer to the latter phenomenon as seasonal sampling.
+Different degree of data density and seasonal sampling should thus be used to
+answer the following questions:
+\begin{itemize}
+    \item How densely does the data need to be sampled to get good estimates?
+    \item What to the target measure estimates in the face of seasonal sampling?
+\end{itemize}
 
 
 
+\section{Computational Frameworks}
 
+All code has been written in Python.
+For Gaussian process simulation and Regression the Pyton package scikit-learn
+has been used.
 
 
 

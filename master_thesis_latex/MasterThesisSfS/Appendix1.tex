@@ -51,56 +51,107 @@ $b= \sigma_w \sqrt{\Delta t}$
 
 
 
+\section{Properties of the Simulated Time Series Samples}\label{sec:properties-of-the-simulated-time-series-samples}
 
-\section{Including \Rp code with verbatim}
-A simple (rather too simple, see~\ref{App:listings}) way to include code or
-{\it R} output is to use 
-\texttt{verbatim}. It just prints the text however it is (including all
-spaces, ``strange'' symbols,...) in a slightly different font.
-\begin{verbatim}
-## loading packages
-library(RBGL)
-library(Rgraphviz)
-library(boot)
+The properties of the simulated BP time seiries should roughly match the
+properties described in \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
-## global variables
-X_MAX <- 150
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{
+        Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_y_true_train_summary.pdf}
+    \caption{The one-week sample variance should span from from 16 to 144 mmHg², with an average of 49 mmHg²}
+    \label{fig:variance}
+\end{figure}
 
-   This allows me to put as many s  p a   c es   as I want.
-I can also use \ and ` and & and all the rest that is usually only 
-accepted in the math mode.
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{
+       Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_dip_ampl_summary}
+    \caption{Half of the difference between average daytime and nighttime BP measurements. Should fall
+    within the range of 0 to 10 mmHg}
+    \label{fig:dip_ampl}
+\end{figure}
 
-I can also make as 
-                  many 
-             line 
-    breaks as 
-I want... and
-             where I want. 
-\end{verbatim}
 
-But really recommended,  much better is the following:
 
-\section{Including \Rp code with the \emph{listings} package}\label{App:listings}
-However, it is much nicer to use the \emph{listings} package to include \Rp
-code in your report. It allows you to number the lines, color the comments
-differently than the code, and so on.
-All the following is produced by simply writing
-\verb! \lstinputlisting{Pictures/picture.R} !  in your \LaTeX\ ``code'':
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{
+       Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_2.24**2 * Matern(length_scale=3, nu=0.5) * 1**2_summary.pdf}
+    \caption{The variance of the AR(1) component. There exists no target values for this.}
+    \label{fig:var_matern}
+\end{figure}
 
-\lstinputlisting{Pictures/picture.R}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{
+       Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_2.24**2 * RBF(length_scale=50) * 1**2_summary.pdf}
+    \caption{The variance of the RBF component. There exists no target values for this.}
+    \label{fig:var_rbf}
+\end{figure}
 
-or \verb!\lstinputlisting{/u/maechler/R/Pkgs/sfsmisc/R/ellipse.R}! :
 
-\lstinputlisting{ellipse.R}% was /u/maechler/R/Pkgs/sfsmisc/R/ellipse.R
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.6\linewidth]{
+       Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_14**2 * ExpSineSquared(length_scale=3, periodicity=24) * 1**2_summary.pdf}
+    \caption{The variance of the periodic component.}
+    \label{fig:var_periodc}
+\end{figure}
 
-\section{Using \texttt{Sweave} (or \texttt{knitr}) to include \Rp code (and more) in your report}
-The easiest (and most elegant) way to include \Rp code and its output (and
-have all your figures up to date with your report) is to use Sweave---or the
-\href{https://cran.R-project.org/package=knitr}{\texttt{knitr}} R package with even more possibilities.
-% You can find an introduction Sweave in \texttt{/u/sfs/StatSoftDoc/Sweave/Sweave-tutorial.pdf}.
 
-Search the web to find lots of intro material on how to use Sweave or
-\href{https://en.wikipedia.org/wiki/Knitr}{knitr (on Wikipedia)}.
+
+%
+%\section{Including \Rp code with verbatim}
+%A simple (rather too simple, see~\ref{App:listings}) way to include code or
+%{\it R} output is to use
+%\texttt{verbatim}. It just prints the text however it is (including all
+%spaces, ``strange'' symbols,...) in a slightly different font.
+%\begin{verbatim}
+%## loading packages
+%library(RBGL)
+%library(Rgraphviz)
+%library(boot)
+%
+%## global variables
+%X_MAX <- 150
+%
+%   This allows me to put as many s  p a   c es   as I want.
+%I can also use \ and ` and & and all the rest that is usually only
+%accepted in the math mode.
+%
+%I can also make as
+%                  many
+%             line
+%    breaks as
+%I want... and
+%             where I want.
+%\end{verbatim}
+%
+%But really recommended,  much better is the following:
+%
+%\section{Including \Rp code with the \emph{listings} package}\label{App:listings}
+%However, it is much nicer to use the \emph{listings} package to include \Rp
+%code in your report. It allows you to number the lines, color the comments
+%differently than the code, and so on.
+%All the following is produced by simply writing
+%\verb! \lstinputlisting{Pictures/picture.R} !  in your \LaTeX\ ``code'':
+%
+%\lstinputlisting{Pictures/picture.R}
+%
+%or \verb!\lstinputlisting{/u/maechler/R/Pkgs/sfsmisc/R/ellipse.R}! :
+%
+%\lstinputlisting{ellipse.R}% was /u/maechler/R/Pkgs/sfsmisc/R/ellipse.R
+%
+%\section{Using \texttt{Sweave} (or \texttt{knitr}) to include \Rp code (and more) in your report}
+%The easiest (and most elegant) way to include \Rp code and its output (and
+%have all your figures up to date with your report) is to use Sweave---or the
+%\href{https://cran.R-project.org/package=knitr}{\texttt{knitr}} R package with even more possibilities.
+%% You can find an introduction Sweave in \texttt{/u/sfs/StatSoftDoc/Sweave/Sweave-tutorial.pdf}.
+%
+%Search the web to find lots of intro material on how to use Sweave or
+%\href{https://en.wikipedia.org/wiki/Knitr}{knitr (on Wikipedia)}.
 
 %%% Local Variables: 
 %%% mode: latex
