@@ -621,8 +621,10 @@ class GPSimulationEvaluator(GPSimulator):
         for fun_name, target_measure in theta_fun.items():
             target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples).T
             theta_hat = np.apply_along_axis(np.mean, 0, target_measure_samples)
-            ci_lb = np.apply_along_axis(partial(np.quantile, q=alpha), 0, target_measure_samples)
-            ci_ub = np.apply_along_axis(partial(np.quantile, q=1-alpha), 0, target_measure_samples)
+            ci_lb = np.apply_along_axis(partial(np.quantile, q=alpha), 0,
+                                        target_measure_samples)
+            ci_ub = np.apply_along_axis(partial(np.quantile, q=1-alpha), 0,
+                                        target_measure_samples)
             out_dict[fun_name] = {"mean": theta_hat, "ci_lb": ci_lb, "ci_ub": ci_ub}
 
         return out_dict
@@ -676,7 +678,13 @@ class GPSimulationEvaluator(GPSimulator):
     def plot_variances(self, variance_df):
         for col in variance_df.columns:
             fig, ax = plt.subplots(nrows=1, ncols=1)
-            ax.hist(variance_df[col], bins=max(int(len(variance_df)/4), 1))
+            ax.hist(variance_df[col], bins=max(int(len(variance_df)/4), 1),
+                    density=True)
+            if "std" in col or "ampl" in col:
+                ax.set_xlabel("mmHg")
+            else:
+                ax.set_xlabel("mmHg^2")
+            ax.set_ylabel("density")
             ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed',
                        linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")

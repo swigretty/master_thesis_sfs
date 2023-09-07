@@ -55,17 +55,20 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
     output_path_gp_sim = partial(get_output_path, session_name=session_name,
                                  experiment_name=experiment_name)
 
-    orig_scale = get_sample_path_variance_kernel(mode_config.kernel_sim, mode_config.x)
+    orig_scale = get_sample_path_variance_kernel(mode_config.kernel_sim,
+                                                 mode_config.x)
     orig_scale += mode_config.meas_noise_var
     logger.info(f"{orig_scale=}")
 
     if normalize_kernel:
         (mode_config_norm["kernel_sim"], mode_config_norm["meas_noise_var"],
          scale) = GPSimulator.get_normalized_kernel(
-            kernel=mode_config.kernel_sim, meas_noise_var=mode_config.meas_noise_var)
+            kernel=mode_config.kernel_sim,
+            meas_noise_var=mode_config.meas_noise_var)
 
     for frac in data_fraction:
-        logger.info(f"Simulation started for {experiment_name=}, {session_name=} and {frac=}")
+        logger.info(f"Simulation started for {experiment_name=}, "
+                    f"{session_name=} and {frac=}")
         rng = np.random.default_rng(15)
         simulator = GPSimulationEvaluator(
             output_path=output_path_gp_sim, rng=rng, data_fraction=frac,
@@ -74,7 +77,8 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
         simulator.plot_gp_regression_sample(nplots=1)
         simulator.evaluate()
         simulator.evaluate_target_measures()
-        eval_dict, measure_sum_df = simulator.evaluate_multisample(n_samples, only_var=only_var)
+        eval_dict, measure_sum_df = simulator.evaluate_multisample(
+            n_samples, only_var=only_var)
 
         if only_var:
             return
@@ -94,7 +98,8 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
             if not (experiment_output_path / f"{k}.csv").exists():
                 df.to_csv(experiment_output_path / f"{k}.csv", index=None)
             else:
-                df.to_csv(experiment_output_path / f"{k}.csv", mode='a', header=False, index=None)
+                df.to_csv(experiment_output_path / f"{k}.csv", mode='a',
+                          header=False, index=None)
 
     return df
 
@@ -155,18 +160,22 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "plots_final"
-    for datafrac in [0.05, 0.1, 0.2, 0.4]:
-        plot_sample(normalize_kernel=False, rng=rng,
-                    experiment_name=experiment_name, nplots=10,
-                    config=GPSimulatorConfig(kernel_sim_name="sin_rbf",
-                                             session_name="sin_rbf_default"),
-                    data_fraction=datafrac,
-                    normalize_y=True)
+    experiment_name = "variance_distribtution"
+    # for datafrac in [0.05, 0.1, 0.2, 0.4]:
+    #     plot_sample(normalize_kernel=False, rng=rng,
+    #                 experiment_name=experiment_name, nplots=10,
+    #                 config=GPSimulatorConfig(kernel_sim_name="sin_rbf",
+    #                                          session_name=f"sin_rbf_default_{datafrac}"),
+    #                 data_fraction=datafrac,
+    #                 normalize_y=True)
 
-    # evaluate_data_fraction(GPSimulatorConfig(kernel_sim_name="sin_rbf", session_name="sin_rbf"),
-    #                        experiment_name=experiment_name, n_samples=2, data_fraction=(0.1, ),
-    #                        normalize_kernel=False, normalize_y=True)
+    evaluate_data_fraction(GPSimulatorConfig(
+        kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
+        session_name="sin_rbf_seasonal_default"),
+        experiment_name=experiment_name, n_samples=100, data_fraction=(0.05, ),
+        normalize_kernel=False, normalize_y=True, only_var=True)
+
+
     # evaluate_data_fraction_modes(modes, n_samples=100,
     #                              experiment_name=experiment_name,
     #                              normalize_y=True,
