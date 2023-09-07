@@ -14,9 +14,9 @@ To identify how suited GPs are for the problem at hand, the plan is to:
     \item Simulate a BP time series and some noisy measurements of the time series
     (section \ref{sec:blood-pressure-time-series-simulation})
     \item Estimate some target measures from these measurements.
-    (subsection \ref{subsec:target-measures})
+    (section \ref{sec:evaluation-gaussian-process-regression})
     \item Compare the aptness of GP regression to estimate the target measures
-    to that of some baseline methods.
+    to that of some baseline methods (section \ref{sec:baseline-methods}).
 
 \end{itemize}
 
@@ -54,8 +54,8 @@ For the sections of this chapter we define:
          \end{bmatrix}$, for some kernel function $k(x, x')$
 \end{itemize}
 
-Additionally, when referring to the estimated values $\hat{F_X}$ is used instead of $F_X$
-and similarly for other estimated quantities.
+Additionally, when referring to the estimated values, $\hat{F_X}$ is used instead of $F_X$,
+and similarly for other quantities.
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 For the simulation of the blood pressure time series, the goal is to match the properties
@@ -119,7 +119,6 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \begin{subfigure}{.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_mean_decomposed}
-    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_09/plot_true_mean_decomposed}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_mean_decomposed}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_mean_decomposed}
   \caption{The sample shown to the right, decomposed in to the contribution of the Periodic kernel (orange),
@@ -129,7 +128,6 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \begin{subfigure}{.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_with_samples}
-    \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_09/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_with_samples}
   \caption{Each figure shows one sample drawn from the true GP (red dashed line) with noisy observations
@@ -155,7 +153,7 @@ The distribution of some properties from simulated BP samples can be found in th
 Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
 
 
-\section{Evaluation of Gaussian Process Regression}\label{sec:gaussian-process-regression}
+\section{Evaluation of Gaussian Process Regression}\label{sec:evaluation-gaussian-process-regression}
 
 A Gaussian process regression was fitted to $Y_{train}$ to estimate $f(x)$.
 The kernel function used is of the same form as the one used for simulation
@@ -171,7 +169,7 @@ The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
 maximizing the marginal likelihood, as described in subsection
 \ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x,x')$.
 
-From $\hat{k}(x,x')$ the predictive distribution over $F_X$ is calculated
+From $\hat{k}(x,x')$ the predictive distribution over $F_X$ was calculated
 and the target measures including credible intervals are estimated.
 
 The Pseudocode \ref{pc:simulation-evaluation-flow} describes the whole simulation
@@ -179,7 +177,7 @@ and evaluation flow.
 The inputs are:
     \begin{itemize}
         \item $X$: The time of interest
-        \item TargetFunction: The function extracting the target measures from the predicted values
+        \item TargetMeasure: The function extracting the target measures from the predicted values
         of $f(x)$.
         \item $K_{XX}$: The true kernel function evaluated at the input $X$
     \end{itemize}
@@ -194,7 +192,7 @@ The Outputs are:
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
  \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
  \hspace*{\algorithmicindent} $K_{XX}$ \algorithmiccomment{ The true kernel function evaluated at the input $X$}\\
- \hspace*{\algorithmicindent} TargetFunction \algorithmiccomment{Functino to extracts target measures from $F_X$ and $\hat{F}_X$} \\
+ \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
  \hspace*{\algorithmicindent} \textbf{Output:} \\
  \hspace*{\algorithmicindent} CiCoverage \algorithmiccomment{Credible interval coverage}\\
  \hspace*{\algorithmicindent} CiWidth \algorithmiccomment{Credible interval width}\\
@@ -210,7 +208,7 @@ The Outputs are:
         \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
         \For {$k = 0$ \dots $K$}
             \State $\hat{F}_{X,k} = $ sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} )$ \algorithmiccomment{Sample from predictive distribution}
-            \State $\hat{M}$.append(TargetFunction($\hat{F}_{X, k}$))
+            \State $\hat{M}$.append(TargetMeasure($\hat{F}_{X, k}$))
         \EndFor
     \State $m =$ TargetFunction($F_X$)
     \State $\hat{m} = $mean($\hat{M}$)
@@ -222,7 +220,23 @@ The Outputs are:
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
 \end{algorithm}\label{pc:simulation-evaluation-flow}
-%
+
+\subsection{Target Measures and Evaluation}
+In subsection \ref{subsec:target-measures} the mean BP over different time
+windows and TTR has been defined as the measures of interest.
+
+The one-week mean BP, $\bar{F}_X$ ,was calculated as the mean of all values in
+$F_X$.
+Then one-hour and one-day BP means, $\bar{F}_{X_1} \dot \bar{F}_{X_W}$,
+were calculated by taking the mean value of $f(x)$ evaluated at the different
+time windows $X_1 \dots X_W \subset X$.
+
+TTR was calculated by counting the number of BP values in $F_X$,
+which are within the target range, by the length of $F_X$.
+
+$F_X$ is replaced by $\hat{F}_X$ for extracting the measures from the
+estimated BP values.
+
 %
 %Simulation of true BP signal and measurements:
 %    \begin{itemize}
