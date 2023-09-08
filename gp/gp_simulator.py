@@ -617,15 +617,21 @@ class GPSimulationEvaluator(GPSimulator):
             theta_fun = {theta_fun.__name__: theta_fun}
         # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
         out_dict = {}
-        posterior_samples = self.rng.multivariate_normal(self.f_post.y_mean, self.f_post.y_cov, n_samples).T
+        posterior_samples = self.rng.multivariate_normal(
+            self.f_post.y_mean, self.f_post.y_cov, n_samples).T
         for fun_name, target_measure in theta_fun.items():
-            target_measure_samples = np.apply_along_axis(target_measure, 0, posterior_samples).T
+            target_measure_samples = np.apply_along_axis(
+                target_measure, 0, posterior_samples).T
+
             theta_hat = np.apply_along_axis(np.mean, 0, target_measure_samples)
-            ci_lb = np.apply_along_axis(partial(np.quantile, q=alpha), 0,
-                                        target_measure_samples)
-            ci_ub = np.apply_along_axis(partial(np.quantile, q=1-alpha), 0,
-                                        target_measure_samples)
-            out_dict[fun_name] = {"mean": theta_hat, "ci_lb": ci_lb, "ci_ub": ci_ub}
+            ci_quant_ub = np.apply_along_axis(
+                partial(np.quantile, q=alpha/2), 0, target_measure_samples)
+            ci_quant_lb = np.apply_along_axis(
+                partial(np.quantile, q=1-(alpha/2)), 0, target_measure_samples)
+            # Use the CI definition from bootstrap
+            out_dict[fun_name] = {"mean": theta_hat,
+                                  "ci_lb": (2 * theta_hat - ci_quant_lb),
+                                  "ci_ub": (2 * theta_hat - ci_quant_ub)}
 
         return out_dict
 
@@ -723,6 +729,7 @@ class GPSimulationEvaluator(GPSimulator):
             ci_covered_prop_v2 = np.mean(df["ci_covered_prop"])
             if hasattr(df["ci_covered"].values[0], "__len__"):
                 n_val = len(df["ci_covered"].values[0])
+                # TODO is this correct ?
                 n_success = np.sum([v[np.random.randint(
                     0, n_val)] for v in df["ci_covered"].values])
                 ci_covered_prop_v2 = n_success/n
