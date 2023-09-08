@@ -35,27 +35,56 @@ $Y(x)$ at a time point $x$:
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
 \end{align*}
 
-where $f(x)$ denotes the true BP process and $\epsilon$ is iid measurement noise.
+where $f(x)$ denotes the true BP process and $\epsilon$ is iid measurement noise,
+independent from $f(x)$.
 
-The goal is to estimate the true BP values $F_X=\left[f(x_1) \dots f(x_n)\right]$
-based on (training) data $Y_{train}$.
-Subsequently, the target measures can be extracted from $F_X$.
+The goal is to estimate the true BP values $f(x)$ at some input time $X$,
+based on noisy observations of $f(x)$ at some training time points $X_{train}$.
 For the sections of this chapter we define:
-\begin{itemize}
-    \item $X := \left[ x_1 \dots x_n \right]$: A vector storing the time
-    of interest in hour. A length of one week with 10 BP values per hour has been chosen.
-    \item $F_X=\left[f(x_1) \dots f(x_n)\right]$: The true BP values at inputs $X$.
-    \item $Y_X=\left[Y(x_1) \dots Y(x_n)\right]$: The noisy BP measurements at inputs $X$.
-    \item $Y_{train} \subset Y_X$: The data used for estimating $F_X$
+\begin{description}
+    \item $X := \{ x_1 \dots x_n \}$: An index set, that spans
+    the one-week time range of interest, with 10 BP values per hour.\\
+
+    \item $X_{train} \subset X$: The training indexes. \\
+
+    \item $G_X := (g(x) : x \in X )$ for some function $g(x)$.
+    Specifically:
+    \begin{itemize}
+        \item $F_X := (f(x) : x \in X )$: The true BP values at inputs $X$.
+        \item $Y_X= (Y(x) : x \in X )$: The noisy BP measurements at inputs $X$.
+        \item $Y_{X_{train}} := (Y(x) : x \in X_{train})$: The data used for estimating $F_X$
+    \end{itemize}
+    
+    \item $\text{ }$\\
+
     \item $K_{XX'} := \begin{bmatrix}
             k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
             \vdots  &  & \vdots \\
             k(x_n, x'_1) & \dots  & k(x_n, x'_n)
-         \end{bmatrix}$, for some kernel function $k(x, x')$
+         \end{bmatrix}$ ,for some kernel function, $k(x, x')$ \\
+
+        and some inputs $X=(x_1, \dots x_n)$ and $X'=(x'_1, \dots x'_n)$.
+    \item $\text{ }$\\
+\end{description}
+
+Additionally, when referring to the estimated values,
+$\hat{F}_X$ is used instead of $F_X$.
+
+
+\subsection{Performance Assessment}
+From the estimated BP values, $\hat{F}_X$, some target measures
+should be estimated, including 95\%-credible intervals.
+
+By repeated simulations of true BP values, $F_X$, with estimation of the
+target measures and their credible intervals, the performance is
+assessed using:
+\begin{itemize}
+    \item CiCoverage: The number of times the true target
+    measure value was covered by the credible interval, divided by
+    $S$, the number of simulations.
+    \item CiWidth: The mean width of the credible interval over $S$ simulations
 \end{itemize}
 
-Additionally, when referring to the estimated values, $\hat{F_X}$ is used instead of $F_X$,
-and similarly for other quantities.
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
 For the simulation of the blood pressure time series, the goal is to match the properties
@@ -63,12 +92,13 @@ desribed in section \ref{sec:problem-statement}.
 Simulation starts by generating the true BP time series process, $f(x)$,
 from which $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
-The true BP process $f(x)$ was decided to be modeled by a Gaussian process,
+The true BP process $f(x)$ was decided to be modeled by a Gaussian process
+(true GP),
 since GPs are flexible enough to represent the properties
 specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
 \subsection{Mean function}
-A reasonable assumption for the mean function, would be keep it constant and
+A reasonable assumption for the mean function, would be to keep it constant and
 equal to the global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
@@ -78,11 +108,14 @@ From section \ref{subsec:mean-function} we know that this is the same as writing
     f(x) - 120 \sim GP(0, k(x,x'))
 \end{gather*}
 For simplicity we are going to completely ignore this constant
-mean function and write:
+mean function throughout the rest of the thesis and
+model the true BP process $f(x)$ with the following
+GP:
 \begin{gather*}
     f(x) \sim GP(0, k(x,x'))
 \end{gather*}
-We write $f(x)$, although we actually mean $f(x) - 120$.
+where we write $f(x)$, although we actually mean $f(x) - 120$.
+
 
 \subsection{Kernel function}
 The kernel function chosen to match the properties from
@@ -121,7 +154,7 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_mean_decomposed}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_mean_decomposed}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_mean_decomposed}
-  \caption{The sample shown to the right, decomposed in to the contribution of the Periodic kernel (orange),
+  \caption{The sample $F_X$ shown to the right, decomposed in to the contribution of the Periodic kernel (orange),
       Matérn kernel (blue), RBF kernel (green).}
   \label{fig:true_mean_decomposed}
 \end{subfigure}\hfill
@@ -130,11 +163,11 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_with_samples}
-  \caption{Each figure shows one sample drawn from the true GP (red dashed line) with noisy observations
+  \caption{Each figure shows one sample $F_X$ drawn from the true GP (red dashed line) with noisy observations
       (red dots) sampled at a frequency of 0.5/hour}
   \label{fig:sub2}
 \end{subfigure}
-\caption{Samples (right side) drawn from the true GP and the decomposition of the samples (left side)}
+\caption{Three samples (right side) drawn from the true GP and the decomposition of theses samples (left side)}
 \label{fig:true_gp_samples}
 \end{figure}
 
@@ -147,7 +180,8 @@ $\epsilon \sim \N(0, \sigma_n^2)$ to $f(x)$.
 Where the measurement noise variance $\sigma_n^2$ is set to 31 mmHg².
 The rationale for this is given in subsection
 \ref{sec:characteristics-of-the-blood-pressure-time-series}.
-The measurements, $Y_{train}$, are then drawn from $Y_X$ uniformly at random.
+The measurement indexes $X_{train}$ are then drawn uniformly at random.
+from $X$, yielding the training data, $Y_{X_{train}}$.
 
 The distribution of some properties from simulated BP samples can be found in the
 Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
@@ -155,8 +189,8 @@ Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
 
 \section{Evaluation of Gaussian Process Regression}\label{sec:evaluation-gaussian-process-regression}
 
-A Gaussian process regression was fitted to $Y_{train}$ to estimate $f(x)$.
-The kernel function used is of the same form as the one used for simulation
+A Gaussian process regression was fitted to $Y_{X_{train}}$ to estimate $F_X$.
+The kernel function used, has the same form as the one used for simulation
 but with variable hyperparameters:
 
 
@@ -169,24 +203,12 @@ The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
 maximizing the marginal likelihood, as described in subsection
 \ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x,x')$.
 
-From $\hat{k}(x,x')$ the predictive distribution over $F_X$ was calculated
-and the target measures including credible intervals are estimated.
-
+From $\hat{k}(x,x')$ the predictive distribution over $F_X$ was calculated.
+Further the target measures including credible intervals were estimated by
+sampling form the predictive distribution.
 The Pseudocode \ref{pc:simulation-evaluation-flow} describes the whole simulation
-and evaluation flow.
-The inputs are:
-    \begin{itemize}
-        \item $X$: The time of interest
-        \item TargetMeasure: The function extracting the target measures from the predicted values
-        of $f(x)$.
-        \item $K_{XX}$: The true kernel function evaluated at the input $X$
-    \end{itemize}
-The Outputs are:
-\begin{itemize}
-    \item CiCoverage: The number of time the true value of $f(x)$ was
-    covered by the credible interval.
-    \item CiWidth: The mean width of the credible interval over $S$ simulations
-\end{itemize}
+flow for evaluating the performance of GP regression for a
+specific target measure.
 
 \begin{algorithm}[h!] \caption{Simulation and Evaluation Flow}
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
@@ -200,42 +222,75 @@ The Outputs are:
     \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$,
     \For {$s = 0$ \dots $S$}
         \State $F_X =$ sample from $\N(0, K_{XX})$ \algorithmiccomment{Sample from the true GP}
-        \State $i_{train} \subset \{1 \dots \text{length}(X)\}$ \algorithmiccomment{Choose training indexes}
-        \State $Y_{train} = F_X\left[i_{train}\right] + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
-        \State $\hat{k}=$ GP.fit($Y_{train}$) \algorithmiccomment{Fit the Gaussain process}
+        \State $X_{train} \subset X$ \algorithmiccomment{Choose training indexes}
+        \State $Y_{X_{train}} = F_{X_{train}} + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
+        \State $\hat{k}=$ GP.fit($X_{train}, Y_{X_{train}}$) \algorithmiccomment{Fit the Gaussain process}
         \State $\hat{F}_X = \hat{K}_{XX_{train}} (\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1} Y_{train}$ \algorithmiccomment{predictive mean}
         \State $\hat{\Sigma}_{F_X} = \hat{K}_{XX} -\hat{K}_{XX_{train}}(\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1}\hat{K}_{X_{train}X}$ \algorithmiccomment{predictive covariance}
         \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
         \For {$k = 0$ \dots $K$}
             \State $\hat{F}_{X,k} = $ sample from $\N(\hat{F}_X, \hat{\Sigma}_{F_X} )$ \algorithmiccomment{Sample from predictive distribution}
-            \State $\hat{M}$.append(TargetMeasure($\hat{F}_{X, k}$))
+            \State $\hat{M}$.append(TargetMeasure($\hat{F}_{X, k}$)) \algorithmiccomment{Extract target measure}
         \EndFor
-    \State $m =$ TargetFunction($F_X$)
+    \State $m =$ TargetMeasure($F_X$) \algorithmiccomment{Extract true target measure}
     \State $\hat{m} = $mean($\hat{M}$)
-    \State $ci = (\text{quantile}_{\alpha}(\hat{M}), \text{quantile}_{1-\alpha}(\hat{M}))$ \algorithmiccomment{Credible intervals}
-    \State CiCoverageList.append($ ci\left[0\right] < m < ci\left[1\right]$)
-    \State CiWidthList.append($ci\left[1\right] - ci\left[0\right]$)
+    \State $ci\_lb = (2\hat{m} - \text{quantile}_{1-\alpha/2}(\hat{M})$ \algorithmiccomment{Credible interval lower bound}
+    \State $ci\_ub = (2\hat{m} - \text{quantile}_{\alpha/2}(\hat{M}))$ \algorithmiccomment{Credible interval upper bound}
+    \State CiCoverageList.append($ ci\_lb \leq m \leq ci\_ub$)
+    \State CiWidthList.append($ci\_ub - ci\_lb $)
     \EndFor
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
 \end{algorithm}\label{pc:simulation-evaluation-flow}
 
-\subsection{Target Measures and Evaluation}
+\subsection{Target Measures}
 In subsection \ref{subsec:target-measures} the mean BP over different time
-windows and TTR has been defined as the measures of interest.
+windows and TTR has been defined as the measures of interest. These measures
+are extracted from $F_X$ to obtain the true target measure values and
+from $\hat{F}_X$ to obtain the estimated target measures.
 
-The one-week mean BP, $\bar{F}_X$ ,was calculated as the mean of all values in
-$F_X$.
-Then one-hour and one-day BP means, $\bar{F}_{X_1} \dot \bar{F}_{X_W}$,
+The \textbf{one-week mean BP}, $\bar{F}_X$, was calculated as the mean of all values in
+$F_X$:
+\begin{gather*}
+    \bar{F}_{X} = \frac{1}{n} \sum_{x \in X} f(x)
+\end{gather*}
+
+The \textbf{one-hour and one-day BP means}, $\bar{F}_{X_1} \dots \bar{F}_{X_W}$,
 were calculated by taking the mean value of $f(x)$ evaluated at the different
 time windows $X_1 \dots X_W \subset X$.
+For the first one-hour or one-day widow $X_1$ this is:
+\begin{gather*}
+    \bar{F}_{X_1} = \frac{1}{n_1} \sum_{x \in X_1} f(x), \\
+    \text{with $n_1$ being the number of elements in $X_1$}
+\end{gather*}
+In the evaluation flow from \ref{pc:simulation-evaluation-flow}, in
+each simulation iteration s, a different time window from
+$X_1 \dots X_W$ is chosen uniformly at random. Hence, in each simulation
+only the mean over one time window is considered and evaluated
+but at the end the mean performance over all $S$ simulation is reported in
+the form of CiCoverage and CiWidth.
 
-TTR was calculated by counting the number of BP values in $F_X$,
-which are within the target range, by the length of $F_X$.
 
-$F_X$ is replaced by $\hat{F}_X$ for extracting the measures from the
-estimated BP values.
+\textbf{TTR} was calculated by deviding the number of BP values in $F_X$,
+which are within the target range total number of values in $F_X$.
+\begin{gather*}
+    \frac{1}{n} \sum_{x \in X} \mathbbm{1}\{\ 90 < f(x) < 125 \}
+\end{gather*}
+
+%	Calculate TTR:
+%	\begin{itemize}
+%			\item General: Number of predicted data points within the range over the total number of data points
+%			\item Naive TTR: Number of available data points within the range over the total number of available data points
+%			\item True: $\sum_{i=1}^{n} \mathbbm{1}\{\ f(x_i) < \gamma \}$.
+%			\item GP/Spline/: $\sum_{i=1}^{n} \mathbbm{1}\{\ \bar{\mu}_i < \gamma \}$. Sample from Posterior to get CI
+%			\item Naive: $\sum_{i=1, y_i \in y_{train}}^{m} \mathbbm{1}\{\ y_i < \gamma \}$
+%	\end{itemize}
+
+
+
+%$F_X$ is replaced by $\hat{F}_X$ for extracting the measures from the
+%estimated BP values.
 
 %
 %Simulation of true BP signal and measurements:
@@ -279,7 +334,60 @@ estimated BP values.
 
 \section{Baseline Methods}\label{sec:baseline-methods}
 
-\subsection{Time in Target Range}
+Some other methods were fitted to $Y_{X_{train}}$ as a reference, to which
+the GP performance was compared to.
+
+The following baseline methods selected, a linear regression, smoothing spline,
+overall mean and naive TTR.
+
+All methods, but naive TTR, estimate the target measure through estimation of $F_X$
+The calculation of the target measure and confidence interval is described in
+Pseudocode \ref{pc:target-measure-baseline}.
+The procedure is equivalent to GP regression, except that one does not sample from
+the posterior distribution but uses bootstrap samples instead.
+
+
+\begin{algorithm}[h!] \caption{Target Measrue Estimation with CI}
+ \hspace*{\algorithmicindent} \textbf{Inputs:} \\
+ \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
+ \hspace*{\algorithmicindent} $F_X$  \algorithmiccomment{True BP values at inputs $X$} \\
+ \hspace*{\algorithmicindent} $X_{train}$ \algorithmiccomment{The training indexes} \\
+ \hspace*{\algorithmicindent} RegressionMethod \algorithmiccomment{The baseline method} \\
+ \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
+ \hspace*{\algorithmicindent} \textbf{Output:} \\
+ \hspace*{\algorithmicindent} CiCoverage \algorithmiccomment{Credible interval coverage}\\
+ \hspace*{\algorithmicindent} CiWidth \algorithmiccomment{Credible interval width}\\
+\begin{algorithmic}[1]
+    \State $Y_{X_{train}} = F_{X_{train}} + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
+    \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
+    \For {$k = 0$ \dots $K$}
+        \State $X^{\ast} = $ sample with replacement from $X_{train}$
+        \State $\hat{F}_{X,k} = $ RegressionMethod.fit($X^{\ast}, Y_{X^{\ast}}$).predict($X$)
+        \State $\hat{M}$.append(TargetMeasure($\hat{F}_{X, k}$)) \algorithmiccomment{Extract target measure}
+    \EndFor
+    \State $m =$ TargetMeasure($F_X$) \algorithmiccomment{Extract true target measure}
+    \State $\hat{m} = $mean($\hat{M}$)
+    \State $ci\_lb = (2\hat{m} - \text{quantile}_{1-\alpha/2}(\hat{M})$ \algorithmiccomment{Credible interval lower bound}
+    \State $ci\_ub = (2\hat{m} - \text{quantile}_{\alpha/2}(\hat{M}))$ \algorithmiccomment{Credible interval upper bound}
+    \State CiCoverage = $ ci\_lb \leq m \leq ci\_ub$)
+    \State CiWidth = $ci\_ub - ci\_lb $)
+\end{algorithmic}
+\end{algorithm}\label{pc:target-measure-baseline}
+
+
+
+
+\subsection{Linear Regression}
+
+The model used has already been presented in section \ref{sec:linear-regression} and
+it features as linear trend and seasonal component:
+\begin{gather*}
+Y(x) = \beta_0 + \beta_1 x + \beta_2 \cos(2 \pi f x) + \beta_3 \sin(2 \pi f x) + R(t), \\
+\end{gather*}
+, where $f$, the frequency, is known and equals $1/\text{period} = 1/24$.
+
+
+
 
 
 
