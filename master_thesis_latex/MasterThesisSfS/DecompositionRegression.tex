@@ -2,7 +2,7 @@
 %! Date = 06.04.23
 
 
-\chapter{Time Series Decomposition and Regression}\label{ch:time-series-decomposition-and-regression}
+\chapter{Time Series Decomposition and Linear Regression}\label{ch:time-series-decomposition-and-regression}
 
 %Many authors use the word trend only for a slowly changing mean func-
 %tion, such as a linear time trend, and use the term seasonal component for a mean func-
@@ -21,7 +21,7 @@ with an estimate of $\mu(t)$ to obtain a probability distribution of $Y^{\ast}$ 
 Hence time series decomposition comes for free in regression analysis and we start with estimation of
 the deterministic component $\mu(t)$ which might be an arbitrary function of $t$.
 
-\section{Linear Regression}\label{sec:linear-regression}
+\section{Linear Regression with Uncorrelated Errors}\label{sec:linear-regression}
 Based on the knowledge we have about the system we might restrict ourselves to a family of functions for $\mu(t)$.
 An obvious choice for the BP time series is the family of functions featuring a linear trend
 with an additive seasonal component.
@@ -57,7 +57,7 @@ $Var(\mathbf{R}) = \sigma^2 I_n$ and an unbiased and consistent estimator for $\
 Since $\mathbf{R}$ is a time series, the assumption of uncorrelated errors is usually violated and the
 covariance matrix $\hat{\Psi}$ is thus no longer unbiased (\citeauthor{brockwell_introduction_2016}).
 
-\section{Regression with Correlated Errors}
+\section{Linear Regression with Correlated Errors}
 
 The argument presented in this section is based on the textbook of \citeauthor{brockwell_introduction_2016}.
 
