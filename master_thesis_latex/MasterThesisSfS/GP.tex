@@ -518,10 +518,13 @@ Section \ref{sec:kernel} will illustrate how choosing a specific kernel function
 \section{Mean Function}\label{subsec:mean-function}
 
 A Gaussian process is defined by its mean function, $\mu(x)$, and covariance function, $k(x, x')$.
-The mean function can be subtracted from the data without affecting covariance.
+The mean function can be subtracted from the data without affecting the covariance.
 In Gaussian process regression, this means the predictive variance remains independent of the mean function.
-Consider $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + R(x)$, where $m(x)$ is the
-mean function, $R(x)$ is a time series process, and $\epsilon$ is Gaussian noise with variance $\sigma_n^{2}$.
+Consider $Y(x) = f(x) + \epsilon$, with $f(x) = m(x) + R(x)$.
+Where, $m(x)$ is a deterministic mean function, $R(X)$ is a time series process
+and $\epsilon$ is Gaussian iid noise with variance $\sigma_n^{2}$.
+The noise term is
+independent of the time series process $R(x)$.
 
 This setup allows us to model $f(x)$ using a Gaussian Process:
 
@@ -588,8 +591,9 @@ predictive distribution of $f^{\ast}$ or $y^{\ast}$.
 
 Kernel choice depends on assumptions about correlation in your output
 for input pairs $x$ and $x'$. For modeling the BP time series,
-three relevant stationary covariance functions are considered,
-presented in this section. Following form stationarity, these functions depend on
+three relevant stationary covariance functions are considered and
+presented in this section.
+Following from stationarity, these functions depend on
 $\tau = x - x'$ only.
 We discussed covariance functions and stationarity for time series in
 Sections \ref{sec:time_series_moments} and \ref{sec:stationarity}, respectively.
