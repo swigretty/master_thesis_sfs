@@ -224,7 +224,7 @@ specific target measure.
         \State $F_X =$ sample from $\N(0, K_{XX})$ \algorithmiccomment{Sample from the true GP}
         \State $X_{train} \subset X$ \algorithmiccomment{Choose training indexes}
         \State $Y_{X_{train}} = F_{X_{train}} + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
-        \State $\hat{k}=$ GP.fit($X_{train}, Y_{X_{train}}$) \algorithmiccomment{Fit the Gaussain process}
+        \State $\hat{k}(x,x')=$ GP.fit($X_{train}, Y_{X_{train}}$) \algorithmiccomment{Find the optimal kernel}
         \State $\hat{F}_X = \hat{K}_{XX_{train}} (\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1} Y_{train}$ \algorithmiccomment{predictive mean}
         \State $\hat{\Sigma}_{F_X} = \hat{K}_{XX} -\hat{K}_{XX_{train}}(\hat{K}_{X_{train}X_{train}} + \sigma_n^2 I)^{-1}\hat{K}_{X_{train}X}$ \algorithmiccomment{predictive covariance}
         \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
@@ -337,8 +337,8 @@ which are within the target range total number of values in $F_X$.
 Some other methods were fitted to $Y_{X_{train}}$ as a reference, to which
 the GP performance was compared to.
 
-The following baseline methods selected, a linear regression, smoothing spline,
-overall mean and naive TTR.
+The chosen baseline methods presented in this section are: linear regression,
+smoothing spline, overall mean and naive TTR.
 
 All methods, but naive TTR, estimate the target measure through estimation of $F_X$
 The calculation of the target measure and confidence interval is described in
@@ -351,16 +351,15 @@ the posterior distribution but uses bootstrap samples instead.
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
  \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
  \hspace*{\algorithmicindent} $F_X$  \algorithmiccomment{True BP values at inputs $X$} \\
- \hspace*{\algorithmicindent} $X_{train}$ \algorithmiccomment{The training indexes} \\
+ \hspace*{\algorithmicindent} $X_{train}, Y_{X_{train}}$ \algorithmiccomment{The training data} \\
  \hspace*{\algorithmicindent} RegressionMethod \algorithmiccomment{The baseline method} \\
  \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
  \hspace*{\algorithmicindent} \textbf{Output:} \\
  \hspace*{\algorithmicindent} CiCoverage \algorithmiccomment{Credible interval coverage}\\
  \hspace*{\algorithmicindent} CiWidth \algorithmiccomment{Credible interval width}\\
 \begin{algorithmic}[1]
-    \State $Y_{X_{train}} = F_{X_{train}} + \epsilon$, $\epsilon \sim  \N(0, \sigma_n^2)$
     \State \textbf{Initialize:} $\hat{M} = \left[ \text{ } \right]$
-    \For {$k = 0$ \dots $K$}
+    \For {$k = 0$ \dots $K$} \algorithmiccomment{K bootstrap iterations}
         \State $X^{\ast} = $ sample with replacement from $X_{train}$
         \State $\hat{F}_{X,k} = $ RegressionMethod.fit($X^{\ast}, Y_{X^{\ast}}$).predict($X$)
         \State $\hat{M}$.append(TargetMeasure($\hat{F}_{X, k}$)) \algorithmiccomment{Extract target measure}
@@ -388,6 +387,15 @@ Y(x) = \beta_0 + \beta_1 x + \beta_2 \cos(2 \pi f x) + \beta_3 \sin(2 \pi f x) +
 
 
 
+\subsection{Smoothing Spline}
+
+
+
+\subsection{Overall Mean}
+
+
+
+\subsection{Naive TTR}
 
 
 
