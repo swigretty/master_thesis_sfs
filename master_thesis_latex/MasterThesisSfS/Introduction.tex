@@ -2,7 +2,7 @@
 
 \section{Motivation and Thesis Objective}\label{sec:thesis-objective}
 
-This thesis aims to present Gaussian process regression as a powerful tool for
+This thesis aims at presenting Gaussian process regression as a powerful tool for
 modeling time series based on irregularly spaced observations.
 
 The motivation for this research stems from a pressing real-world problem in the
@@ -12,7 +12,8 @@ from a dataset consisting of irregularly spaced blood pressure (BP) measurements
 High BP is a well-established risk factor for cardiovascular disease, and
 summarizing an individual's BP levels typically involves calculating the average
 BP value over available measurements within a specified time range. A novel
-monitoring device has been developed to collect continuous BP estimates by
+monitoring device has been developed by the company Aktiia.
+The device collects continuous BP estimates by
 converting photoplethysmography (PPG) signals into BP measurements. 
 The sampling frequency of this system can vary widely, typically yielding around
 1.5 BP measurements per hour. 
@@ -136,7 +137,8 @@ corresponding time range.
 \textbf{Time in Target Range (TTR)} evaluates the duration during which BP values
 fall within a specified target range relative to the total time. It is currently
 determined by dividing the number of BP measurements within the range of 90 to
-125 mmHg by the total number of BP measurements available within one week.
+125 mmHg ("target range") by the total number of BP measurements available
+within one week.
 
 It is noteworthy that the estimation of these target measures does not depend on
 forecasting future BP values but solely relies on predicting BP values within the
