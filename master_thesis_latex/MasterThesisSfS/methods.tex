@@ -41,9 +41,11 @@ independent from $f(x)$.
 The goal is to estimate the true BP values $f(x)$ at some input time $X$,
 based on noisy observations of $f(x)$ at some training time points $X_{train}$.
 For the sections of this chapter we define:
-\begin{description}
+\begin{enumerate}
     \item $X := \{ x_1 \dots x_n \}$: An index set, that spans
-    the one-week time range of interest, with 10 BP values per hour.\\
+    the one-week time range of interest, with 10 BP values per hour.
+    It defines the time points at which we want to predict BP values and
+    hence represents the regression input.
 
     \item $X_{train} \subset X$: The training indexes. \\
 
@@ -51,11 +53,17 @@ For the sections of this chapter we define:
     Specifically:
     \begin{itemize}
         \item $F_X := (f(x) : x \in X )$: The true BP values at inputs $X$.
-        \item $Y_X= (Y(x) : x \in X )$: The noisy BP measurements at inputs $X$.
-        \item $Y_{X_{train}} := (Y(x) : x \in X_{train})$: The data used for estimating $F_X$
+        \item $Y_X= (Y(x) : x \in X )$: The noisy BP measurements at inputs $X$, which
+        is constituting the response variable in the context of regression.
+        \item $Y_{X_{train}} := (Y(x) : x \in X_{train})$: The noisy measurements at trainig indexes
     \end{itemize}
-    
-    \item $\text{ }$\\
+
+%    \item $\text{ }$\\
+
+    \item $(X_{train}, Y_{X_{train}})$: The training data used for estimating $F_X$
+
+
+%    \item $\text{ }$\\
 
     \item $K_{XX'} := \begin{bmatrix}
             k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
@@ -64,8 +72,8 @@ For the sections of this chapter we define:
          \end{bmatrix}$ ,for some kernel function, $k(x, x')$ \\
 
         and some inputs $X=(x_1, \dots x_n)$ and $X'=(x'_1, \dots x'_n)$.
-    \item $\text{ }$\\
-\end{description}
+%    \item $\text{ }$\\
+\end{enumerate}
 
 Additionally, when referring to the estimated values,
 $\hat{F}_X$ is used instead of $F_X$.
@@ -212,7 +220,7 @@ specific target measure.
 
 \begin{algorithm}[h!] \caption{Simulation and Evaluation Flow}
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
- \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
+ \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The regression input} \\
  \hspace*{\algorithmicindent} $K_{XX}$ \algorithmiccomment{ The true kernel function evaluated at the input $X$}\\
  \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
  \hspace*{\algorithmicindent} \textbf{Output:} \\
@@ -349,7 +357,7 @@ the posterior distribution but uses bootstrap samples instead.
 
 \begin{algorithm}[h!] \caption{Target Measrue Estimation with CI}
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
- \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The evaluation time points} \\
+ \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The regression input} \\
  \hspace*{\algorithmicindent} $F_X$  \algorithmiccomment{True BP values at inputs $X$} \\
  \hspace*{\algorithmicindent} $X_{train}, Y_{X_{train}}$ \algorithmiccomment{The training data} \\
  \hspace*{\algorithmicindent} RegressionMethod \algorithmiccomment{The baseline method} \\
@@ -385,9 +393,97 @@ Y(x) = \beta_0 + \beta_1 x + \beta_2 \cos(2 \pi f x) + \beta_3 \sin(2 \pi f x) +
 \end{gather*}
 , where $f$, the frequency, is known and equals $1/\text{period} = 1/24$.
 
+The seasonal component has variable phase shift and amplitude.
+Ordinary least square regression has been fit to the training data
+$(X_{train}, Y_{X_{train}})$ to obtain the regression coefficients.
+
+Figure \ref{fig:post-linear} shows how an example of $\hat{F}_X$ estimated
+using training data.
+
 
 
 \subsection{Smoothing Spline}
+The scikitlearn python package has been used to
+generate smoothing splines for predicting $F_X$.
+First $X_{train}$ and $X$ were transformed to cubic B-splines using
+the sklearn.preprocessing.SplineTransformer class.
+Knots have been placed uniformly along the quantiles of $X_{train}$.
+Ordinary least square regression is then fit to the transformed training
+input $Xtrans_{train}$ and the response $Y_{train}$.
+The number of knots determine the smoothness of the resulting function
+and the optimal number has been identified through 10-fild
+cross validation.
+
+More implementation details are provided in \ref{code:smoothing-spline}
+and figure \ref{fig:post-spline} shows an example of $\hat{F}_X$ estimated
+using training data.
+
+
+\lstset{language=Python}
+\lstset{frame=lines}
+\lstset{caption={Fit smooting spline and predict $F_X$}}
+%\lstset{label={lst:code_direct}}
+\lstset{basicstyle=\small}
+\begin{lstlisting}
+    import numpy as np
+    from sklearn.preprocessing import SplineTransformer
+    from sklearn.linear_model import LinearRegression
+
+    def fit_and_predict_smoothing_spline(
+                    X_train: np.ndarray,Y_X_train: np.ndarray, X: np.ndarray,
+                    n_knots: int) -> np.ndarray:
+        """
+        Parameters
+        ----------
+        X_train, Y_X_train: The training data
+        X: The time indexes at which to generate predictions
+        n_knots : Number of knots of the splines
+
+        Returns
+        ---------
+        F_X_hat: The BP value predictions at inputs X
+        """
+
+        spline = SplineTransformer(degree=3, n_knots=n_knots,
+                                   extrapolation="constant",
+                                   knots="quantile")
+        # Compute knot positions of splines.
+        spline.fit(X_train)
+        # Transform to B-splines
+        Xtrans_train = spline.transform(X_train)
+        Xtrans = spline.transform(X)
+
+        # Fit a linear regression
+        lm = LinearRegression(fit_intercept=False).fit(Xtrans_train, Y_X_train)
+
+        # Predict BP values at inputs X
+        F_X_hat = lm.predict(Xtrans)
+        return F_X_hat
+
+
+\end{lstlisting}\label{code:smoothing-spline}
+
+
+\begin{figure}[!h]
+\centering
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_linear}
+    \caption{Linear Regression}
+    \label{fig:post-linear}
+\end{subfigure}\hfill
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_spline}
+    \caption{Smoothing Spline}
+    \label{fig:post-spline}
+\end{subfigure}
+\caption{The estimated BP values $\hat{F}_X$ (black line) and the
+        true BP values (red dashed line) and the training data (red dots).
+\label{fig:regression-example}
+\end{figure}
+
+
 
 
 
