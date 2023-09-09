@@ -1,4 +1,4 @@
-\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
+\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression
 to establish a mapping between a time point x and its
@@ -111,6 +111,7 @@ equal to the global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
 \end{gather*}
+
 From section \ref{subsec:mean-function} we know that this is the same as writing:
 \begin{gather*}
     f(x) - 120 \sim GP(0, k(x,x'))
