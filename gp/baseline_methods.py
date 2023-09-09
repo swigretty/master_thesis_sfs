@@ -143,7 +143,8 @@ def get_spline_basis(x_pred, x_train, df):
     # x_train_trans = patsy.cr(x_train, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
     # x_pred_trans = patsy.cr(x_pred, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
 
-    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant", knots="quantile")
+    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant",
+                               knots="quantile")
 
     spline.fit(x_train)
 
@@ -191,6 +192,36 @@ def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False,
 
     return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
             "ci_fun": ci_fun}
+
+
+def smoothing_spline_prediction(X_train: np.ndarray, Y_X_train: np.ndarray,
+                                X: np.ndarray,
+                                n_knots: int) -> np.ndarray:
+    """
+    Parameters
+    ----------
+    X_train: The training time indexes
+    Y_X_train: The training BP values
+    X: The time indexes at which to generate predictions
+    n_knots : Number of knots of the splines
+
+    Returns
+    ---------
+    F_X_hat: The BP value predictions at inputs X
+    """
+
+    spline = SplineTransformer(degree=3, n_knots=n_knots,
+                               extrapolation="constant",
+                               knots="quantile")
+
+    spline.fit(X_train)
+
+    X_train_trans = spline.transform(X_train)
+    X_trans = spline.transform(X)
+
+    lm = LinearRegression(fit_intercept=False).fit(X_train_trans, Y_X_train)
+    F_X_hat = lm.predict(X_trans)
+    return F_X_hat
 
 
 def gam_spline(x_pred, x_train, y_train, normalize_y=True, **kwargs):
