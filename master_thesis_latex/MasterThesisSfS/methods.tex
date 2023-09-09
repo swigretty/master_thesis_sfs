@@ -148,14 +148,14 @@ Each of these kernels models one of the components described in
 The kernel function is illustrated in figure \ref{fig:true_kernel} and
 some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_kernel_true}
     \caption{The true kernel function $k(x,x')$}
     \label{fig:true_kernel}
 \end{figure}
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
 \begin{subfigure}{.45\textwidth}
     \centering
@@ -178,7 +178,6 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \caption{Three samples (right side) drawn from the true GP and the decomposition of theses samples (left side)}
 \label{fig:true_gp_samples}
 \end{figure}
-
 
 
 \subsection{Simulation of the BP Measurments}
@@ -355,7 +354,7 @@ The procedure is equivalent to GP regression, except that one does not sample fr
 the posterior distribution but uses bootstrap samples instead.
 
 
-\begin{algorithm}[h!] \caption{Target Measrue Estimation with CI}
+\begin{algorithm}[!ht] \caption{Target Measrue Estimation with CI}
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
  \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The regression input} \\
  \hspace*{\algorithmicindent} $F_X$  \algorithmiccomment{True BP values at inputs $X$} \\
@@ -383,7 +382,6 @@ the posterior distribution but uses bootstrap samples instead.
 
 
 
-
 \subsection{Linear Regression}
 
 The model used has already been presented in section \ref{sec:linear-regression} and
@@ -397,34 +395,30 @@ The seasonal component has variable phase shift and amplitude.
 Ordinary least square regression has been fit to the training data
 $(X_{train}, Y_{X_{train}})$ to obtain the regression coefficients.
 
-Figure \ref{fig:post-linear} shows how an example of $\hat{F}_X$ estimated
-using training data.
-
-
+%Figure \ref{fig:post-linear} shows how an example of $\hat{F}_X$ estimated
+%using training data.
+%
 
 \subsection{Smoothing Spline}
 The scikitlearn python package has been used to
 generate smoothing splines for predicting $F_X$.
-First $X_{train}$ and $X$ were transformed to cubic B-splines using
-the sklearn.preprocessing.SplineTransformer class.
+First $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
+"sklearn.preprocessing.SplineTransformer" class.
 Knots have been placed uniformly along the quantiles of $X_{train}$.
 Ordinary least square regression is then fit to the transformed training
 input $Xtrans_{train}$ and the response $Y_{train}$.
 The number of knots determine the smoothness of the resulting function
-and the optimal number has been identified through 10-fild
+and the optimal number has been identified through 10-fold
 cross validation.
-
+%
 More implementation details are provided in \ref{code:smoothing-spline}
 and figure \ref{fig:post-spline} shows an example of $\hat{F}_X$ estimated
 using training data.
 
-
-\lstset{language=Python}
-\lstset{frame=lines}
-\lstset{caption={Fit smooting spline and predict $F_X$}}
-%\lstset{label={lst:code_direct}}
-\lstset{basicstyle=\small}
-\begin{lstlisting}
+%
+\begin{code}
+\label{code:code:smoothing-spline}
+\begin{minted}[frame=single]{python}
     import numpy as np
     from sklearn.preprocessing import SplineTransformer
     from sklearn.linear_model import LinearRegression
@@ -460,30 +454,35 @@ using training data.
         F_X_hat = lm.predict(Xtrans)
         return F_X_hat
 
+\end{minted}
+\captionof{listing}{Smooting Spline Estimation of $F_X$}
 
-\end{lstlisting}\label{code:smoothing-spline}
+\end{code}
 
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
 \centering
-\begin{subfigure}{.45\textwidth}
+\begin{subfigure}{.5\textwidth}
     \centering
-    \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_linear}
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_linear}
     \caption{Linear Regression}
     \label{fig:post-linear}
 \end{subfigure}\hfill
-\begin{subfigure}{.45\textwidth}
+\begin{subfigure}{.5\textwidth}
     \centering
-    \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_spline}
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_spline}
     \caption{Smoothing Spline}
     \label{fig:post-spline}
 \end{subfigure}
-\caption{The estimated BP values $\hat{F}_X$ (black line) and the
-        true BP values (red dashed line) and the training data (red dots).
+\caption{Linear Regression and Smoothing spline used
+to estimate some example of true BP values $F_X$. The estimated BP values $\hat{F}_X$ (black line), the
+        true BP values (red dashed line) and the training data (red dots).}
 \label{fig:regression-example}
 \end{figure}
 
-
+%
 
 
 
