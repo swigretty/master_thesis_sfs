@@ -1,35 +1,27 @@
 \chapter{Methods}\label{ch:methods}
 
-The last chapter introduced Gaussian process regression
-to establish a mapping between a time point x and its
-corresponding BP value.
-Since Gaussian Processes are capable of modeling time series in continuous
-time and hence deal with irregularly spaced data,
-they seem to be a good candidate for modeling a time series from which
-we only have irregularly sampled noisy measurement.
+The last chapter introduced Gaussian process regression to establish a mapping
+between a time point $x$ and its corresponding BP value. Since Gaussian Processes
+are capable of modeling time series in continuous time and hence deal with
+irregularly spaced data, they seem to be a good candidate for modeling a time
+series from which we only have irregularly sampled noisy measurements.
+
+This chapter outlines the methodology for evaluating the performance of Gaussian
+process regression and baseline methods for estimating blood pressure values from
+noisy measurements. It also discusses the analysis of adversarial factors that may
+affect estimation accuracy.
 
 
-To identify how suited GPs are for the problem at hand, the plan is to:
-\begin{itemize}
-    \item Simulate a BP time series and some noisy measurements of the time series
-    (section \ref{sec:blood-pressure-time-series-simulation})
-    \item Estimate some target measures from these measurements.
-    (section \ref{sec:evaluation-gaussian-process-regression})
-    \item Compare the aptness of GP regression to estimate the target measures
-    to that of some baseline methods (section \ref{sec:baseline-methods}).
+%Additionally, the impact of different adversarial factors on the target measure
+%estimate should be investigated. This will be described in section
+%\ref{sec:adversarial-analysis}.
 
-\end{itemize}
-
-Additionally, the impact of different adversarial factor on the target measure estimate
-should be investigated.
-This will be described in section \ref{sec:adversarial-analysis}.
 
 
 \section{Problem Statement}
 
-Recall the problem statement from section \ref{sec:problem-statement}.
-Firs, we assumed the following model for the BP measurements
-$Y(x)$ at a time point $x$:
+Recall the problem statement from section \ref{sec:problem-statement}. First, we
+assumed the following model for the BP measurements $Y(x)$ at a time point $x$:
 
 \begin{align*}
     Y(x) = f(x) + \epsilon && \epsilon \sim \N(0, \sigma_n^{2})
@@ -40,23 +32,24 @@ independent from $f(x)$.
 
 The goal is to estimate the true BP values $f(x)$ at some input time $X$,
 based on noisy observations of $f(x)$ at some training time points $X_{train}$.
-For the sections of this chapter we define:
-\begin{enumerate}
-    \item $X := \{ x_1 \dots x_n \}$: An index set, that spans
-    the one-week time range of interest, with 10 BP values per hour.
-    It defines the time points at which we want to predict BP values and
-    hence represents the regression input.
+For the sections of this chapter, we define:
+
+\begin{itemize}
+    \item $X := \{ x_1, \dots, x_n \}$: An index set spanning the one-week time
+    range of interest, with 10 BP values per hour. It defines the time points at
+    which we want to predict BP values and hence represents the regression input.
 
     \item $X_{train} \subset X$: The training indexes. \\
 
     \item $G_X := (g(x) : x \in X )$ for some function $g(x)$.
     Specifically:
-    \begin{itemize}
-        \item $F_X := (f(x) : x \in X )$: The true BP values at inputs $X$.
-        \item $Y_X= (Y(x) : x \in X )$: The noisy BP measurements at inputs $X$, which
-        is constituting the response variable in the context of regression.
-        \item $Y_{X_{train}} := (Y(x) : x \in X_{train})$: The noisy measurements at trainig indexes
-    \end{itemize}
+    \begin{description}
+        \item $F_X := (f(x) : x \in X)$: The true BP values at inputs $X$.
+        \item $Y_X = (Y(x) : x \in X)$: The noisy BP measurements at inputs $X$,
+        which constitute the response variable in the context of regression.
+        \item $Y_{X_{\text{train}}} := (Y(x) : x \in X_{\text{train}})$: The noisy
+        measurements at training indexes.
+    \end{description}
 
 %    \item $\text{ }$\\
 
@@ -73,53 +66,96 @@ For the sections of this chapter we define:
 
         and some inputs $X=(x_1, \dots x_n)$ and $X'=(x'_1, \dots x'_n)$.
 %    \item $\text{ }$\\
-\end{enumerate}
+\end{itemize}
 
 Additionally, when referring to the estimated values,
 $\hat{F}_X$ is used instead of $F_X$.
 
 
-\subsection{Performance Assessment}
-From the estimated BP values, $\hat{F}_X$, some target measures
-should be estimated, including 95\%-credible intervals.
+\section{Overview}
 
-By repeated simulations of true BP values, $F_X$, with estimation of the
-target measures and their credible intervals, the performance is
-assessed using:
+To assess the suitability of GPs for this problem, the following tasks have been defined:
 \begin{itemize}
-    \item CiCoverage: The number of times the true target
-    measure value was covered by the credible interval, divided by
-    $S$, the number of simulations.
-    \item CiWidth: The mean width of the credible interval over $S$ simulations
+    \item Simulate $F_X$ and the training data ($X_{train}$, $Y_{X_{train}}$)
+    (section \ref{sec:blood-pressure-time-series-simulation})
+    \item Employ Gaussian process regression to obtain $\hat{F}_X$ from the training data
+     (section \ref{sec:evaluation-gaussian-process-regression})
+    \item Derive target measures from $\hat{F}_X$, including 95\% credible intervals (section \ref{sec:target-measures})
+    \item Evaluate performance using:
+    \begin{itemize}
+        \item CiCoverage: Equals one if the true target measure value extracted from $F_X$ was
+        covered by the credible interval, zero otherwise.
+        \item CiWidth: The width of the credible interval
+    \end{itemize}
 \end{itemize}
+These steps are repeated $S=100$ times, and the final performance is assessed by averaging CiCoverage and CiWidth.
+Pseudocode \ref{pc:simulation-evaluation-flow} provides a more detailed illustration of this process.
+
+To contextualize the performance of GP regression, it is compared to the performance of
+baseline methods (section \ref{sec:baseline-methods}).
+Additionally, the impact of adversarial factors on estimation accuracy is discussed in section \ref{sec:adversarial-analysis}.
+
+\section{Target Measures}\label{sec:target-measures}
+
+In subsection \ref{subsec:target-measures}, the mean BP over different time
+windows and TTR has been defined as the measures of interest. These measures
+are extracted from $F_X$ to obtain the true target measure values and
+from $\hat{F}_X$ to obtain the estimated target measures.
+
+The \textbf{one-week mean BP}, $\bar{F}_X$, was calculated as the mean of all values in
+$F_X$:
+\begin{gather*}
+    \bar{F}_{X} = \frac{1}{n} \sum_{x \in X} f(x)
+\end{gather*}
+
+The \textbf{one-hour and one-day BP means}, $\bar{F}_{X_1} \dots \bar{F}_{X_W}$,
+were calculated by taking the mean value of $f(x)$ evaluated at the different
+time windows $X_1 \dots X_W \subset X$.
+For the first one-hour or one-day window $X_1$, this is:
+\begin{gather*}
+    \bar{F}_{X_1} = \frac{1}{n_1} \sum_{x \in X_1} f(x), \\
+    \text{with $n_1$ being the number of elements in $X_1$}
+\end{gather*}
+
+To obtain a single measure,
+in each simulation iteration $s$, a time window
+was chosen uniformly at random from $X_1 \dots X_W$.
+The estimation performance was assessed for this time window only, and
+the mean performance over all $S$ simulations was reported.
+
+\textbf{TTR} was calculated by dividing the number of BP values in $F_X$
+within the target range by the total number of values in $F_X$:
+\begin{gather*}
+    \frac{1}{n} \sum_{x \in X} \mathbbm{1}\{\ 90 < f(x) < 125 \}
+\end{gather*}
 
 
 \section{Blood Pressure Time Series Simulation}\label{sec:blood-pressure-time-series-simulation}
-For the simulation of the blood pressure time series, the goal is to match the properties
-desribed in section \ref{sec:problem-statement}.
-Simulation starts by generating the true BP time series process, $f(x)$,
-from which $Y(x)$ can be obtained by adding iid Gaussian measurement noise.
 
-The true BP process $f(x)$ was decided to be modeled by a Gaussian process
-(true GP),
+For simulating the blood pressure time series, the goal is to match the
+properties described in section \ref{sec:problem-statement}. Simulation starts by
+generating the true BP time series process, $f(x)$. This process is then sampled
+at the desired time points $X$ to obtain $F_X$. Finally, noise is added to obtain
+$Y_X$.
+
+The true BP process $f(x)$ is modeled by a Gaussian process (true GP)
 since GPs are flexible enough to represent the properties
 specified for $f(x)$ in section \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 
 \subsection{Mean function}
-A reasonable assumption for the mean function, would be to keep it constant and
+A reasonable assumption for the mean function is to keep it constant and
 equal to the global mean BP value of 120 mmHg. We have:
 \begin{gather*}
     f(x) \sim GP(120, k(x,x'))
 \end{gather*}
 
-From section \ref{subsec:mean-function} we know that this is the same as writing:
+From section \ref{subsec:mean-function}, we know that this is the same as writing:
 \begin{gather*}
     f(x) - 120 \sim GP(0, k(x,x'))
 \end{gather*}
-For simplicity we are going to completely ignore this constant
+For simplicity, we are going to completely ignore this constant
 mean function throughout the rest of the thesis and
-model the true BP process $f(x)$ with the following
-GP:
+model the true BP process $f(x)$ with the following GP:
 \begin{gather*}
     f(x) \sim GP(0, k(x,x'))
 \end{gather*}
@@ -127,27 +163,27 @@ where we write $f(x)$, although we actually mean $f(x) - 120$.
 
 
 \subsection{Kernel function}
-The kernel function chosen to match the properties from
+The chosen kernel function to match the properties from
 section \ref{sec:characteristics-of-the-blood-pressure-time-series} is:
 \begin{gather*}\label{def:true_gp}
 k(x, x') = 2.24^{2} * \text{Matérn}(l=3, \nu=0.5) +
 14^{2} * \text{Periodic}(l=3, p=24) +  2.24^{2} * \text{RBF}(l=50)
 \end{gather*}
-where l denotes the length scale and p denotes the periodicity
+where $l$ denotes the length scale, and $p$ denotes the periodicity
 of the corresponding kernel function in hours.
-The formal definition of the Matérn, Periodic and RBF kernel
+The formal definition of the Matérn, Periodic, and RBF kernel
 functions and their parameters is provided in section \ref{sec:kernel}.
 
 Each of these kernels models one of the components described in
 \ref{sec:characteristics-of-the-blood-pressure-time-series}:
 \begin{itemize}
-    \item The Matérn kernel with $\nu$=0.5 models the AR(1) component
+    \item The Matérn kernel with $\nu=0.5$ models the AR(1) component
     \item The Periodic kernel models the circadian cycle
-    \item The RBF kernel model a long term trend
+    \item The RBF kernel models a long-term trend
 \end{itemize}
 
-The kernel function is illustrated in figure \ref{fig:true_kernel} and
-some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
+The kernel function is illustrated in figure \ref{fig:true_kernel}, and
+some samples drawn from this GP are shown in Figure \ref{fig:true_gp_samples}.
 
 \begin{figure}[!ht]
     \centering
@@ -181,45 +217,44 @@ some samples drawn form this GP are shown in Figure \ref{fig:true_gp_samples}.
 \end{figure}
 
 
-\subsection{Simulation of the BP Measurments}
+\subsection{Simulation of the BP Measurements}\label{subsec:simulation-of-the-bp-measurements}
 
 The BP measurements time series process $Y(x)$ is obtained by adding iid measurement noise
 $\epsilon \sim \N(0, \sigma_n^2)$ to $f(x)$.
-Where the measurement noise variance $\sigma_n^2$ is set to 31 mmHg².
-The rationale for this is given in subsection
+The measurement noise variance
+$\sigma_n^2$ is set to 31 mmHg², as explained in subsection
 \ref{sec:characteristics-of-the-blood-pressure-time-series}.
 The measurement indexes $X_{train}$ are then chosen
 from $X$, yielding the training data, $Y_{X_{train}}$.
 The different downsampling patterns used to produce the training data
-are described in section \ref{Adversarial Analysis}.
+are described in section \ref{sec:adversarial-analysis}.
 
-Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
-additionally presents
+Appendix \ref{sec:properties-of-the-simulated-time-series-samples} additionally presents
 the distributions of some simulated BP measurement properties.
 
 
-\section{Evaluation of Gaussian Process Regression}\label{sec:evaluation-gaussian-process-regression}
+\section{Gaussian Process Regression}\label{sec:evaluation-gaussian-process-regression}
 
-A Gaussian process regression was fitted to $Y_{X_{train}}$ to estimate $F_X$.
-The kernel function used, has the same form as the one used for simulation
+A Gaussian process regression was fitted to $Y_{X_{\text{train}}}$ to estimate $F_X$.
+The kernel function used has the same form as the one used for simulation
 but with variable hyperparameters:
 
-
 \begin{gather*}\label{def:gp_fit}
-    k(x, x')= \sigma_M^2 * \text{Matérn}(l, \nu=0.5) +
-\sigma_P^2 * \text{Periodic}(l, p=24) +  \sigma_R^2 * \text{RBF}(l)
+    k(x, x') = \sigma_M^2 \cdot \text{Matérn}(l, \nu=0.5) +
+               \sigma_P^2 \cdot \text{Periodic}(l, p=24) +
+               \sigma_R^2 \cdot \text{RBF}(l)
 \end{gather*}
 
-The hyperparameters, $\sigma_M^2, \sigma_P^2, \sigma_R^2, l$  were found by
+The hyperparameters, $\sigma_M^2$, $\sigma_P^2$, $\sigma_R^2$, and $l$, were found by
 maximizing the marginal likelihood, as described in subsection
-\ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x,x')$.
+\ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x, x')$.
 
-From $\hat{k}(x,x')$ the predictive distribution over $F_X$ was calculated.
-Further the target measures including credible intervals were estimated by
-sampling form the predictive distribution.
-The Pseudocode \ref{pc:simulation-evaluation-flow} describes the whole simulation
-flow for evaluating the performance of GP regression for a
-specific target measure.
+From $\hat{k}(x, x')$, the predictive distribution over $F_X$ was calculated.
+Furthermore, the target measures, including credible intervals, were estimated by
+sampling from the predictive distribution.
+Pseudocode \ref{pc:simulation-evaluation-flow} describes the entire simulation flow
+for evaluating the performance of GP regression for a specific target measure.
+
 
 \begin{algorithm}[h!] \caption{Simulation and Evaluation Flow}
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
@@ -255,40 +290,7 @@ specific target measure.
 \end{algorithmic}
 \end{algorithm}\label{pc:simulation-evaluation-flow}
 
-\subsection{Target Measures}
-In subsection \ref{subsec:target-measures} the mean BP over different time
-windows and TTR has been defined as the measures of interest. These measures
-are extracted from $F_X$ to obtain the true target measure values and
-from $\hat{F}_X$ to obtain the estimated target measures.
 
-The \textbf{one-week mean BP}, $\bar{F}_X$, was calculated as the mean of all values in
-$F_X$:
-\begin{gather*}
-    \bar{F}_{X} = \frac{1}{n} \sum_{x \in X} f(x)
-\end{gather*}
-
-The \textbf{one-hour and one-day BP means}, $\bar{F}_{X_1} \dots \bar{F}_{X_W}$,
-were calculated by taking the mean value of $f(x)$ evaluated at the different
-time windows $X_1 \dots X_W \subset X$.
-For the first one-hour or one-day widow $X_1$ this is:
-\begin{gather*}
-    \bar{F}_{X_1} = \frac{1}{n_1} \sum_{x \in X_1} f(x), \\
-    \text{with $n_1$ being the number of elements in $X_1$}
-\end{gather*}
-In the evaluation flow from \ref{pc:simulation-evaluation-flow}, in
-each simulation iteration s, a different time window from
-$X_1 \dots X_W$ is chosen uniformly at random.
-Hence, in each simulation
-only the mean over one time window is considered and evaluated
-but at the end the mean performance over all $S$ simulation is reported in
-the form of CiCoverage and CiWidth.
-
-
-\textbf{TTR} was calculated by dividing the number of BP values in $F_X$,
-which are within the target range total number of values in $F_X$.
-\begin{gather*}
-    \frac{1}{n} \sum_{x \in X} \mathbbm{1}\{\ 90 < f(x) < 125 \}
-\end{gather*}
 
 %	Calculate TTR:
 %	\begin{itemize}
@@ -348,11 +350,9 @@ which are within the target range total number of values in $F_X$.
 
 Some other methods were fitted to $Y_{X_{train}}$ as a reference, to which
 the GP performance was compared to.
-
 The chosen baseline methods presented in this section are: linear regression,
-smoothing spline, overall mean and naive TTR.
-
-All methods, but naive TTR, estimate the target measure through estimation of $F_X$
+smoothing spline, overall mean, and naive TTR.
+All methods, but naive TTR, estimate the target measure through the estimation of $F_X$.
 The calculation of the target measure and confidence interval is described in
 Pseudocode \ref{pc:target-measure-baseline}.
 The procedure is equivalent to GP regression, except that one does not sample from
@@ -387,42 +387,44 @@ the posterior distribution but uses bootstrap samples instead.
 
 
 
+
 \subsection{Linear Regression}
 
 The model used has already been presented in section \ref{sec:linear-regression} and
-it features as linear trend and seasonal component:
+it features a linear trend and seasonal component:
 \begin{gather*}
 Y(x) = \beta_0 + \beta_1 x + \beta_2 \cos(2 \pi f x) + \beta_3 \sin(2 \pi f x) + R(t), \\
 \end{gather*}
-, where $f$, the frequency, is known and equals $1/\text{period} = 1/24$.
+where $f$, the frequency, is known and equals $1/\text{period} = 1/24$.
 
 The seasonal component has variable phase shift and amplitude.
 Ordinary least square regression has been fit to the training data
-$(X_{train}, Y_{X_{train}})$ to obtain the regression coefficients.
-
+$(X_{train}, Y_{X_{train}})$ to obtain the regression coefficients and thus
+$\hat{F}_X$.
 %Figure \ref{fig:post-linear} shows how an example of $\hat{F}_X$ estimated
 %using training data.
 %
 
 \subsection{Smoothing Spline}
-The scikitlearn python package has been used to
+The scikit-learn Python package has been used to
 generate smoothing splines for predicting $F_X$.
-First $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
+First, $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
 "sklearn.preprocessing.SplineTransformer" class.
 Knots have been placed uniformly along the quantiles of $X_{train}$.
 Ordinary least square regression is then fit to the transformed training
 input $Xtrans_{train}$ and the response $Y_{train}$.
-The number of knots determine the smoothness of the resulting function
+The number of knots determines the smoothness of the resulting function,
 and the optimal number has been identified through 10-fold
-cross validation.
+cross-validation.
 %
-More implementation details are provided in \ref{code:smoothing-spline}
+The code section \ref{code:smoothing-spline} provides more implementation details,
 and figure \ref{fig:post-spline} shows an example of $\hat{F}_X$ estimated
-using training data.
+from training data using smoothing splines.
 
 %
-\begin{code}
-\label{code:code:smoothing-spline}
+\begin{figure}[!ht]
+\centering
+
 \begin{minted}[frame=single]{python}
     import numpy as np
     from sklearn.preprocessing import SplineTransformer
@@ -461,8 +463,8 @@ using training data.
 
 \end{minted}
 \captionof{listing}{Smooting Spline Estimation of $F_X$}
+\end{figure} \label{code:smoothing-spline}
 
-\end{code}
 
 
 \begin{figure}[!ht]
@@ -489,7 +491,7 @@ to estimate some example of true BP values $F_X$. The estimated BP values $\hat{
 
 
 \subsection{Overall Mean}
-This methods sets $\hat{F}_X$ to the mean of all measurements
+This method sets $\hat{F}_X$ to the mean of all measurements
 $Y_{X_{train}}$ everywhere.
 
 
@@ -497,35 +499,33 @@ $Y_{X_{train}}$ everywhere.
 This method directly estimates the target measures
 from the noisy measurements $Y_{X_{train}}$, without estimating $F_X$
 first.
-The one-hour, one-day and one-week means were calculated by
+The one-hour, one-day, and one-week means were calculated by
 taking the mean of the available measurements within the time period.
 If no measurements are available within that period, the mean
-overall measurements was used.
+overall measurements were used.
 
 For calculating TTR, the number of measurements within the range over
 the total number of available data points.
 
 
-
 \section{Adversarial Analysis}\label{sec:adversarial-analysis}
 
-Finally we want to study the impact on of the sampling pattern on the
+Finally, we want to study the impact of the sampling pattern on the
 target measure estimates.
-As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series}
-the data density is expected to vary within the Aktiia population and
+As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series},
+the data density is expected to vary within the Aktiia population, and
 measurements might
-also not be sampled uniformly but data density might follow the circadian cycle.
+also not be sampled uniformly, but data density might follow the circadian cycle.
 We will refer to the latter phenomenon as seasonal sampling.
 
-The degrees of data density investigated were: 0.5, 1, 2 and 4
+The degrees of data density investigated were: 0.5, 1, 2, and 4
 measurements per hour.
 
-Seasonal sampling was archived by extracting the true seasonal component from
+Seasonal sampling was achieved by extracting the true seasonal component from
 the true BP sample. The values of the seasonal components were used
-as probabiltiy weights when choosing $X_{train}$ from $X$. The decomposed
+as probability weights when choosing $X_{train}$ from $X$. The decomposed
 seasonal component and the resulting seasonal sampling are illustrated
 in figure \ref{fig:seasonal-sampling}.
-
 
 
 \begin{figure}[!ht]
@@ -543,11 +543,12 @@ in figure \ref{fig:seasonal-sampling}.
     \includegraphics[width=\linewidth]{
         Pictures/plots_final/sin_rbf_seasonal_default_0.05/09_09_11_15_30/plot_true_with_samples}
     \caption{The true BP values $f(x)$ (red dashed line) and the noisy measurments (red dots) generated
-    from seasonal sampling.}
+    from seasonal sampling. \\
+    }
 %    \label{fig:post-spline}
 \end{subfigure}
-\caption{Sample $f(x)$  (right side) drawn from the true GP with measurment from seasonal sampling.
-The decomposition of the sample (left side)}
+\caption{Panel b shows the sample $f(x)$ drawn from the true GP with measurments generated
+by seasonal sampling. Panel a shows $f(x)$ decomposed into its components.}
 \label{fig:seasonal-sampling}
 \end{figure}
 
@@ -556,14 +557,11 @@ The decomposition of the sample (left side)}
 \section{Computational Frameworks}
 
 All code has been written in Python.
-%Unless otherwise stated the Pyton package scikit-learn has been used.
-
-For Gaussian process simulation and Regression, for fitting the Smoothing Spline
+For Gaussian process simulation and regression, for fitting the Smoothing Spline
 and Linear Regression, the Pyton package scikit-learn
 has been used.
 
-
-
+%Unless otherwise stated the Pyton package scikit-learn has been used.
 
 
 
