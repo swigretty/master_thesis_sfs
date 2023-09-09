@@ -187,11 +187,14 @@ $\epsilon \sim \N(0, \sigma_n^2)$ to $f(x)$.
 Where the measurement noise variance $\sigma_n^2$ is set to 31 mmHg².
 The rationale for this is given in subsection
 \ref{sec:characteristics-of-the-blood-pressure-time-series}.
-The measurement indexes $X_{train}$ are then drawn uniformly at random.
+The measurement indexes $X_{train}$ are then chosen
 from $X$, yielding the training data, $Y_{X_{train}}$.
+The different downsampling patterns used to produce the training data
+are described in section \ref{Adversarial Analysis}.
 
-The distribution of some properties from simulated BP samples can be found in the
 Appendix \ref{sec:properties-of-the-simulated-time-series-samples}.
+additionally presents
+the distributions of some simulated BP measurement properties.
 
 
 \section{Evaluation of Gaussian Process Regression}\label{sec:evaluation-gaussian-process-regression}
@@ -273,13 +276,14 @@ For the first one-hour or one-day widow $X_1$ this is:
 \end{gather*}
 In the evaluation flow from \ref{pc:simulation-evaluation-flow}, in
 each simulation iteration s, a different time window from
-$X_1 \dots X_W$ is chosen uniformly at random. Hence, in each simulation
+$X_1 \dots X_W$ is chosen uniformly at random.
+Hence, in each simulation
 only the mean over one time window is considered and evaluated
 but at the end the mean performance over all $S$ simulation is reported in
 the form of CiCoverage and CiWidth.
 
 
-\textbf{TTR} was calculated by deviding the number of BP values in $F_X$,
+\textbf{TTR} was calculated by dividing the number of BP values in $F_X$,
 which are within the target range total number of values in $F_X$.
 \begin{gather*}
     \frac{1}{n} \sum_{x \in X} \mathbbm{1}\{\ 90 < f(x) < 125 \}
@@ -482,42 +486,79 @@ to estimate some example of true BP values $F_X$. The estimated BP values $\hat{
 \label{fig:regression-example}
 \end{figure}
 
-%
-
-
 
 \subsection{Overall Mean}
-
+This methods sets $\hat{F}_X$ to the mean of all measurements
+$Y_{X_{train}}$ everywhere.
 
 
 \subsection{Naive TTR}
+This method directly estimates the target measures
+from the noisy measurements $Y_{X_{train}}$, without estimating $F_X$
+first.
+The one-hour, one-day and one-week means were calculated by
+taking the mean of the available measurements within the time period.
+If no measurements are available within that period, the mean
+overall measurements was used.
 
-
-
+For calculating TTR, the number of measurements within the range over
+the total number of available data points.
 
 
 
 \section{Adversarial Analysis}\label{sec:adversarial-analysis}
 
-Finally we want to study the impact on of the sampling pattern on the target measure estimates.
+Finally we want to study the impact on of the sampling pattern on the
+target measure estimates.
 As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series}
 the data density is expected to vary within the Aktiia population and
 measurements might
 also not be sampled uniformly but data density might follow the circadian cycle.
 We will refer to the latter phenomenon as seasonal sampling.
-Different degree of data density and seasonal sampling should thus be used to
-answer the following questions:
-\begin{itemize}
-    \item How densely does the data need to be sampled to get good estimates?
-    \item What to the target measure estimates in the face of seasonal sampling?
-\end{itemize}
+
+The degrees of data density investigated were: 0.5, 1, 2 and 4
+measurements per hour.
+
+Seasonal sampling was archived by extracting the true seasonal component from
+the true BP sample. The values of the seasonal components were used
+as probabiltiy weights when choosing $X_{train}$ from $X$. The decomposed
+seasonal component and the resulting seasonal sampling are illustrated
+in figure \ref{fig:seasonal-sampling}.
+
+
+
+\begin{figure}[!ht]
+\centering
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final/sin_rbf_seasonal_default_0.05/09_09_11_15_30/plot_true_mean_decomposed}
+    \caption{The decomposition of the true BP values $f(x)$. The periodic component used
+    as probability weights in seasonal smapling is shown in orange}
+%    \label{fig:post-linear}
+\end{subfigure}\hfill
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final/sin_rbf_seasonal_default_0.05/09_09_11_15_30/plot_true_with_samples}
+    \caption{The true BP values $f(x)$ (red dashed line) and the noisy measurments (red dots) generated
+    from seasonal sampling.}
+%    \label{fig:post-spline}
+\end{subfigure}
+\caption{Sample $f(x)$  (right side) drawn from the true GP with measurment from seasonal sampling.
+The decomposition of the sample (left side)}
+\label{fig:seasonal-sampling}
+\end{figure}
 
 
 
 \section{Computational Frameworks}
 
 All code has been written in Python.
-For Gaussian process simulation and Regression the Pyton package scikit-learn
+%Unless otherwise stated the Pyton package scikit-learn has been used.
+
+For Gaussian process simulation and Regression, for fitting the Smoothing Spline
+and Linear Regression, the Pyton package scikit-learn
 has been used.
 
 
