@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 
 
-def hpd_grid(sample, alpha=0.05, roundto=2):
+def hpd_grid(sample, alpha=0.05, roundto=6):
     """Calculate highest posterior density (HPD) of array for given alpha.
     The HPD is the minimum width Bayesian credible interval (BCI).
     The function works for multimodal distributions, returning more than one mode
