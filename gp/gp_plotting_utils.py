@@ -96,9 +96,10 @@ def plot_posterior(x, y_post_mean, y_post_std=None, x_red=None, y_red=None,
                    y_true=None, ax=None):
     plot_gpr_samples(x, y_post_mean, y_post_std, y=None, ax=ax)
     if y_true is not None:
-        ax.plot(x, y_true, "r:")
+        ax.plot(x, y_true, linestyle="dotted", color="red")
     if (x_red is not None) and (y_red is not None):
-        ax.scatter(x_red, y_red, color="red", zorder=5, label="Observations")
+        ax.scatter(x_red, y_red, color="red", zorder=2, s=5, alpha=0.5,
+                   label="Observations")
     # ax.set_title("Samples from posterior distribution")
 
 

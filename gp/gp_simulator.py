@@ -366,10 +366,10 @@ class GPSimulator():
         f_true = self.f_true
         y_true = self.y_true
         data = self.y_true_train
-        ax.plot(f_true.x, f_true.y, "r:",
+        ax.plot(f_true.x, f_true.y, linestyle="dotted", color="red",
                 label=f"var(f_true): {np.var(f_true.y)}, "
                       f"var(y_true): {np.var(y_true.y)}")
-        ax.scatter(data.x, data.y, color="red", zorder=5,
+        ax.scatter(data.x, data.y, color="red", zorder=2, s=5, alpha=0.5,
                    label=f"var(data): {np.var(data.y)}")
         if legend:
             ax.legend()
