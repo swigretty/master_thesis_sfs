@@ -431,16 +431,19 @@ class GPSimulator():
         self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
-        fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(10, 2*6),
-                               sharey=True, sharex=True)
-        self.plot_true_mean_decomposed(ax=ax[0])
-        self.plot_predicted_mean_decomposed(ax=ax[1])
-        fig.tight_layout()
+        for mode_name, mode in {"": dict(nrows=2, ncols=1),
+                                "_vertical": dict(nrows=1, ncols=2)}.items():
+            fig, ax = plt.subplots(figsize=(10, 2*6),
+                                   sharey=True, sharex=True, **mode)
+            self.plot_true_mean_decomposed(ax=ax[0])
+            self.plot_predicted_mean_decomposed(ax=ax[1])
+            fig.tight_layout()
 
-        if self.output_path:
-            fig.savefig(
-                self.output_path / f"plot_mean_decomposed{figname_suffix}.pdf")
-            plt.close(fig)
+            if self.output_path:
+                fig.savefig(
+                    self.output_path /
+                    f"plot_mean_decomposed{mode_name}{figname_suffix}.pdf")
+                plt.close(fig)
 
         # Plot Kernel functions
         self.plot_kernel_true()
