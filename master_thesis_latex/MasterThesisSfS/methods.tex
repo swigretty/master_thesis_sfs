@@ -36,7 +36,8 @@ For the sections of this chapter, we define:
 
 \begin{itemize}
     \item $X := \{ x_1, \dots, x_n \}$: An index set spanning the one-week time
-    range of interest, with 10 BP values per hour. It defines the time points at
+    range of interest, with 10 BP values per hour.
+    It defines the time points at
     which we want to predict BP values and hence represents the regression input.
 
     \item $X_{train} \subset X$: The training indexes. \\
@@ -59,12 +60,12 @@ For the sections of this chapter, we define:
 %    \item $\text{ }$\\
 
     \item $K_{XX'} := \begin{bmatrix}
-            k(x_1, x'_1) & \dots & k(x_1, x'_n)\\
+            k(x_1, x'_1) & \dots & k(x_1, x'_m)\\
             \vdots  &  & \vdots \\
-            k(x_n, x'_1) & \dots  & k(x_n, x'_n)
+            k(x_n, x'_1) & \dots  & k(x_n, x'_m)
          \end{bmatrix}$ ,for some kernel function, $k(x, x')$ \\
 
-        and some inputs $X=(x_1, \dots x_n)$ and $X'=(x'_1, \dots x'_n)$.
+        and some inputs $X=(x_1, \dots x_n)$ and $X'=(x'_1, \dots x'_m)$.
 %    \item $\text{ }$\\
 \end{itemize}
 
@@ -377,10 +378,9 @@ the posterior distribution but uses bootstrap samples instead.
     \EndFor
     \State $m =$ TargetMeasure($F_X$) \algorithmiccomment{Extract true target measure}
     \State $\hat{m} = $mean($\hat{M}$)
-    \State $ci\_lb = (2\hat{m} - \text{quantile}_{1-\alpha/2}(\hat{M})$ \algorithmiccomment{Credible interval lower bound}
-    \State $ci\_ub = (2\hat{m} - \text{quantile}_{\alpha/2}(\hat{M}))$ \algorithmiccomment{Credible interval upper bound}
-    \State CiCoverage = $ ci\_lb \leq m \leq ci\_ub$)
-    \State CiWidth = $ci\_ub - ci\_lb $)
+    \State $ci = ((2\hat{m} - \text{quantile}_{1-\alpha/2}(\hat{M}), (2\hat{m} - \text{quantile}_{\alpha/2}(\hat{M})))$ \algorithmiccomment{Confidence interval}
+    \State CiCoverage = ($ ci\left[ 0 \right] \leq m \leq ci\left[ 1 \right]$)
+    \State CiWidth = ($ci\left[ 1 \right] - ci\left[ 0 \right] $)
 \end{algorithmic}
 \end{algorithm}\label{pc:target-measure-baseline}
 
