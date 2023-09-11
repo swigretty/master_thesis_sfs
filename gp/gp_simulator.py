@@ -23,6 +23,7 @@ from constants.constants import get_output_path
 from exploration.explore import get_red_idx
 from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
 from gp.evaluate import GPEvaluator, SimpleEvaluator
+from hpd import hpd_grid
 from log_setup import setup_logging
 import re
 
@@ -380,8 +381,12 @@ class GPSimulator():
     @Plotter
     def plot_true_mean_decomposed(self, ax=None, **kwargs):
         # Plot mean decomposed
-        for k, v in self.gpm_sim.predict_mean_decomposed(self.x).items():
-            ax.plot(self.x, v, label=k)
+        mean_decomposed = self.gpm_sim.predict_mean_decomposed(self.x)
+        # This is valid since all arrays have same length
+        global_mean = np.mean([np.mean(comp) for comp in mean_decomposed.values()])
+        for k, v in mean_decomposed.items():
+            offset = np.mean(v) - global_mean
+            ax.plot(self.x, v-offset, label=k)
         ax.set_xlabel("time [h]")
         ax.set_ylabel("BP [mmHg]")
 
@@ -431,10 +436,12 @@ class GPSimulator():
         self.plot_posterior(figname_suffix=figname_suffix)
 
         # Plot mean decomposed
-        for mode_name, mode in {"": dict(nrows=2, ncols=1),
-                                "_vertical": dict(nrows=1, ncols=2)}.items():
-            fig, ax = plt.subplots(figsize=(10, 2*6),
-                                   sharey=True, sharex=True, **mode)
+        # figsize = (6.6, 4)
+        for mode_name, mode in {"": dict(
+                nrows=2, ncols=1, figsize=(6.6, 2*4)), "_vertical": dict(
+                nrows=1, ncols=2, figsize=(2*6.6, 4))}.items():
+
+            fig, ax = plt.subplots(sharey=True, sharex=True, **mode)
             self.plot_true_mean_decomposed(ax=ax[0])
             self.plot_predicted_mean_decomposed(ax=ax[1])
             fig.tight_layout()
@@ -613,7 +620,7 @@ class GPSimulationEvaluator(GPSimulator):
             self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
-    def target_measures_from_posterior(self, theta_fun=None, n_samples=300,
+    def target_measures_from_posterior(self, theta_fun=None, n_samples=500,
                                        alpha=0.05, **kwargs):
         if theta_fun is None:
             theta_fun = self.target_measures
@@ -627,25 +634,30 @@ class GPSimulationEvaluator(GPSimulator):
             target_measure_samples = np.apply_along_axis(
                 target_measure, 0, posterior_samples).T
 
-            theta_hat = np.apply_along_axis(np.mean, 0,
-                                            target_measure_samples)
-            ci_quant_ub = np.apply_along_axis(
-                partial(np.quantile, q=alpha/2), 0,
-                target_measure_samples)
-            ci_quant_lb = np.apply_along_axis(
-                partial(np.quantile, q=1-(alpha/2)), 0,
-                target_measure_samples)
+            theta_hat = np.apply_along_axis(np.mean, 0, target_measure_samples)
+            ci_quant_lb = np.apply_along_axis(partial(np.quantile, q=alpha/2),
+                                              0, target_measure_samples)
+            ci_quant_ub = np.apply_along_axis(partial(np.quantile,
+                                                      q=1-(alpha/2)),
+                                              0, target_measure_samples)
+
+            ci_hdi = np.apply_along_axis(hpd_grid, 0,
+                                         target_measure_samples)[0]
             # Use the CI definition from bootstrap
             out_dict[fun_name] = {"mean": theta_hat,
-                                  "ci_lb": (2 * theta_hat - ci_quant_lb),
-                                  "ci_ub": (2 * theta_hat - ci_quant_ub)}
+                                  "ci_lb": ci_quant_lb,
+                                  "ci_ub": ci_quant_ub,
+                                  "ci_lb_hdi": ci_hdi[0],
+                                  "ci_ub_hdi": ci_hdi[1],
+                                  }
 
         return out_dict
 
     @property
     def true_measures(self):
         if not hasattr(self, "_true_measures"):
-            self._true_measures = {name: m(self.f_true.y) for name, m in self.target_measures.items()}
+            self._true_measures = {name: m(self.f_true.y) for name, m
+                                   in self.target_measures.items()}
         return self._true_measures
 
     def evaluate_target_measures(self, ci_fun_kwargs=None):
@@ -662,19 +674,35 @@ class GPSimulationEvaluator(GPSimulator):
                 pred_m = pred_measures[mn]
                 mse_base = SimpleEvaluator(f_true=self.true_measures[mn],
                                            f_pred=measure(pred_mean)).mse
+
                 eval = SimpleEvaluator(f_true=self.true_measures[mn],
-                                       f_pred=pred_m["mean"], ci_lb=pred_m["ci_lb"], ci_ub=pred_m["ci_ub"])
+                                       f_pred=pred_m["mean"],
+                                       ci_lb=pred_m["ci_lb"],
+                                       ci_ub=pred_m["ci_ub"])
+                eval_output.append({"method": method_name,
+                                    "target_measure": mn,
+                                    "mse_base": mse_base,
+                                    **eval.to_dict()})
+                if "ci_lb_hdi" in pred_m.keys() and "ci_ub_hdi" in pred_m.keys():
+                    eval = SimpleEvaluator(f_true=self.true_measures[mn],
+                                           f_pred=pred_m["mean"],
+                                           ci_lb=pred_m["ci_lb_hdi"],
+                                           ci_ub=pred_m["ci_ub_hdi"])
+
+                    eval_output.append({"method": f"{method_name}_hdi",
+                                        "target_measure": mn,
+                                        "mse_base": mse_base,
+                                        **eval.to_dict()})
+
                 if eval.mse > 100:
                     logger.info(f"Fit is very bad for {method_name=}")
                     self.plot_posterior(
                         pred_data=pred["data"],
                         figname_suffix=f"{method_name}_bad_fit")
-                eval_output.append({"method": method_name,
-                                    "target_measure": mn, "mse_base": mse_base,
-                                    **eval.to_dict()})
 
         if self.output_path:
-            pd.DataFrame(eval_output).to_csv(self.output_path / f"evaluate_target_measures.csv")
+            pd.DataFrame(eval_output).to_csv(self.output_path /
+                                             f"evaluate_target_measures.csv")
         return eval_output
 
     def plot_posterior_baseline(self, figname_suffix=""):
@@ -698,8 +726,8 @@ class GPSimulationEvaluator(GPSimulator):
             else:
                 ax.set_xlabel("mmHg^2")
             ax.set_ylabel("density")
-            ax.axvline(np.mean(variance_df[col]), color='k', linestyle='dashed',
-                       linewidth=1)
+            ax.axvline(np.mean(variance_df[col]), color='k',
+                       linestyle='dashed', linewidth=1)
             fig.savefig(self.output_path / f"variance_{col}_summary.pdf")
             plt.close(fig)
 

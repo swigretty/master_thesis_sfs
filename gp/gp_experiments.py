@@ -160,12 +160,13 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "final_experiments"
+    experiment_name = "final_experiment_hpdi"
 
-    # for datafrac in [0.05, 0.1, 0.2, 0.4]:
+    # for datafrac in [0.2, 0.05, 0.1, 0.4]:
     #     for mode in modes:
     #         mode_config = mode()
     #         mode_config.session_name = f"{mode_config.session_name}_{datafrac}"
+    #         rng = np.random.default_rng(18)
     #         plot_sample(normalize_kernel=False, rng=rng,
     #                     experiment_name=experiment_name, nplots=10,
     #                     config=mode_config,
