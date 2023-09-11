@@ -312,9 +312,25 @@ def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=ms
         scores.append(cost_function(train_y[test_idx], pred["data"].y_mean))
     return np.mean(scores)
 
+def plot_bootstrap(pred_fun, x_pred, pred, x_sub, y_sub, output_path):
+    fun = pred_fun
+    if isinstance(pred_fun, partial):
+        fun = pred_fun.func
+    fig, ax = plt.subplots()
+    try:
+        plot_posterior(x=x_pred, y_post_mean=pred["data"].y_mean, x_red=x_sub,
+                       y_red=y_sub, ax=ax)
+        ax.set_title(f"Prediction {fun.__name__}")
+        fig.savefig(
+            output_path / f"plot_pred_bootstrap_{fun.__name__}_{i}.pdf")
+    except Exception as e:
+        logger.info(f"could not plot bootstrap sample {e}")
+    plt.close(fig=fig)
 
-def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_samples=100, alpha=0.05,
-              rng=None, logger=logger, output_path=Path(".")):
+
+def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES,
+              n_samples=100, alpha=0.05,
+              rng=None, logger=logger, output_path=Path("."), plot=False):
 
     if rng is None:
         rng = np.random.default_rng()
@@ -325,22 +341,14 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES, n_s
     thetas = {fn: [] for fn, fun in theta_fun.items()}
 
     for i in range(n_samples):
-        idx = sorted(rng.choice(np.arange(len(y_train)), size=len(y_train), replace=True))
+        idx = sorted(rng.choice(np.arange(len(y_train)), size=len(y_train),
+                                replace=True))
         y_sub = y_train[idx]
         x_sub = x_train[idx, ]
         pred = pred_fun(x_pred, x_sub, y_sub, train_idx=idx)
-        if i % int(n_samples/5) == 0:
-            fun = pred_fun
-            if isinstance(pred_fun, partial):
-                fun = pred_fun.func
-            fig, ax = plt.subplots()
-            try:
-                plot_posterior(x=x_pred, y_post_mean=pred["data"].y_mean, x_red=x_sub, y_red=y_sub, ax=ax)
-                ax.set_title(f"Prediction {fun.__name__}")
-                fig.savefig(output_path / f"plot_pred_bootstrap_{fun.__name__}_{i}.pdf")
-            except Exception as e:
-                logger.info(f"could not plot bootstrap sample {e}")
-            plt.close(fig=fig)
+        if plot and i % int(n_samples/5) == 0:
+            plot_bootstrap(pred_fun, x_pred, pred, x_sub, y_sub,
+                           output_path)
         for fn, theta_f in theta_fun.items():
             thetas[fn].append(theta_f(pred["data"].y_mean))
 
