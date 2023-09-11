@@ -280,10 +280,9 @@ for evaluating the performance of GP regression for a specific target measure.
         \EndFor
     \State $m =$ TargetMeasure($F_X$) \algorithmiccomment{Extract true target measure}
     \State $\hat{m} = $mean($\hat{M}$)
-    \State $ci\_lb = (2\hat{m} - \text{quantile}_{1-\alpha/2}(\hat{M})$ \algorithmiccomment{Credible interval lower bound}
-    \State $ci\_ub = (2\hat{m} - \text{quantile}_{\alpha/2}(\hat{M}))$ \algorithmiccomment{Credible interval upper bound}
-    \State CiCoverageList.append($ ci\_lb \leq m \leq ci\_ub$)
-    \State CiWidthList.append($ci\_ub - ci\_lb $)
+    \State $ci = (\text{quantile}_{\alpha/2}, \text{quantile}_{1-\alpha/2}$) \algorithmiccomment{Equal-tailed credible interval}
+    \State CiCoverageList.append($ ci\left[ 0 \right] \leq m \leq ci\left[ 1 \right]$)
+    \State CiWidthList.append($ci\left[ 1 \right] - ci\left[ 0 \right] $)
     \EndFor
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
