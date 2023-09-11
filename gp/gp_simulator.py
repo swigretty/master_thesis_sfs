@@ -641,8 +641,7 @@ class GPSimulationEvaluator(GPSimulator):
                                                       q=1-(alpha/2)),
                                               0, target_measure_samples)
 
-            ci_hdi = np.apply_along_axis(hpd_grid, 0,
-                                         target_measure_samples)[0]
+            ci_hdi = np.apply_along_axis(hpd_grid, 0, target_measure_samples)
             # Use the CI definition from bootstrap
             out_dict[fun_name] = {"mean": theta_hat,
                                   "ci_lb": ci_quant_lb,

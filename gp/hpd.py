@@ -23,7 +23,7 @@ def hpd_grid(sample, alpha=0.05, roundto=8):
     hpd: array with the lower
 
     """
-    hpd = np.array([np.nan, np.nan])
+    hpd = np.array([(np.nan, np.nan)])
     try:
         sample = np.asarray(sample)
         sample = sample[~np.isnan(sample)]
@@ -62,5 +62,5 @@ def hpd_grid(sample, alpha=0.05, roundto=8):
     except Exception as e:
         print(f"could not get hdi due to {e.__class__}: {e}")
 
-    return hpd  # x, y, modes
+    return hpd[0]  # x, y, modes
 
