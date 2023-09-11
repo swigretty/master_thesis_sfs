@@ -610,7 +610,8 @@ class GPSimulationEvaluator(GPSimulator):
             self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
-    def target_measures_from_posterior(self, theta_fun=None, n_samples=200, alpha=0.05, **kwargs):
+    def target_measures_from_posterior(self, theta_fun=None, n_samples=300,
+                                       alpha=0.05, **kwargs):
         if theta_fun is None:
             theta_fun = self.target_measures
         if not isinstance(theta_fun, dict):
@@ -623,11 +624,14 @@ class GPSimulationEvaluator(GPSimulator):
             target_measure_samples = np.apply_along_axis(
                 target_measure, 0, posterior_samples).T
 
-            theta_hat = np.apply_along_axis(np.mean, 0, target_measure_samples)
+            theta_hat = np.apply_along_axis(np.mean, 0,
+                                            target_measure_samples)
             ci_quant_ub = np.apply_along_axis(
-                partial(np.quantile, q=alpha/2), 0, target_measure_samples)
+                partial(np.quantile, q=alpha/2), 0,
+                target_measure_samples)
             ci_quant_lb = np.apply_along_axis(
-                partial(np.quantile, q=1-(alpha/2)), 0, target_measure_samples)
+                partial(np.quantile, q=1-(alpha/2)), 0,
+                target_measure_samples)
             # Use the CI definition from bootstrap
             out_dict[fun_name] = {"mean": theta_hat,
                                   "ci_lb": (2 * theta_hat - ci_quant_lb),
