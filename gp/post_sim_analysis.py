@@ -61,7 +61,8 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
         cur_ax = ax
         if len(target_measures_df["data_fraction"].unique()) > 1:
             cur_ax = ax[i]
-        cur_ax.set_title(f"{data_fraction=}")
+        cur_ax.set_title(f"downsampling factor: "
+                         f"{1/data_fraction}")
 
         if reextract:
             dff = GPSimulationEvaluator.summarize_eval_target_measures(
@@ -103,8 +104,9 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
     cur_ax.legend()
 
     if len(target_measures_df["data_fraction"].unique()) > 1:
-        ax[1].set_xlabel("ci width")
-        ax[0].set_ylabel("ci coverage")
+        # ax[1].set_xlabel("CI Width [mmHg]")
+        ax[0].set_ylabel("CI Coverage []")
+
     return fig
 
 
@@ -187,6 +189,11 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
             fig = target_measure_perf_plot(df.copy(), annotate=annotate,
                                            reextract=reextract,
                                            ci_coverage_col=ci_coverage_col)
+            xlabel = 'CI Width [mmHg]'
+            if target_measure == "ttr":
+                xlabel = 'CI Width []'
+            fig.text(0.5, 0.02, xlabel, ha='center', va='center')
+
             fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
             plt.close(fig)
 
