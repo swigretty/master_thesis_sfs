@@ -41,10 +41,16 @@ col_of_int = ["method", "data_fraction", "ci_width", "ci_covered_prop",
               "ci_covered_lb", "ci_covered_ub"]
 
 
+rename_method_map = {"naive_overall_mean": "overall_mean"}
+
+
 def target_measure_perf_plot(target_measures_df, annotate="mse",
                              ci_width_max=30, reextract=False,
                              ci_coverage_col="ci_covered_prop_v2"):
     # target_measures_df = target_measures_df[col_of_int].drop_duplicates()
+
+    target_measures_df.method = target_measures_df.method.apply(
+        lambda x: rename_method_map[x] if x in rename_method_map.keys() else x)
 
     colors = CB_color_cycle
     cdict = {i: color for i, color in enumerate(colors)}
@@ -55,19 +61,25 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
         target_measures_df["method"].unique())}
 
     fig, ax = plt.subplots(nrows=1, ncols=len(
-        target_measures_df["data_fraction"].unique()), figsize=(14, 4))
+        target_measures_df["data_fraction"].unique()), figsize=(12, 3.3))
     for i, (data_fraction, dff) in enumerate(target_measures_df.groupby(
             "data_fraction")):
         cur_ax = ax
         if len(target_measures_df["data_fraction"].unique()) > 1:
             cur_ax = ax[i]
+        dwnsplf = 1/data_fraction
+        if not dwnsplf % 1:
+            dwnsplf = int(dwnsplf)
         cur_ax.set_title(f"downsampling factor: "
-                         f"{1/data_fraction}")
+                         f"{dwnsplf}")
 
         if reextract:
             dff = GPSimulationEvaluator.summarize_eval_target_measures(
                 Path(dff["output_path"].values[0]) / "eval_measure_all.csv")
             dff = dff[dff.target_measure == reextract]
+            dff.method = dff.method.apply(
+                lambda x: rename_method_map[
+                    x] if x in rename_method_map.keys() else x)
 
         dff["color"] = dff["method"].apply(lambda x: cdict[method_col_map[x]])
 
@@ -106,7 +118,6 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
     if len(target_measures_df["data_fraction"].unique()) > 1:
         # ax[1].set_xlabel("CI Width [mmHg]")
         ax[0].set_ylabel("CI Coverage []")
-
     return fig
 
 
@@ -193,6 +204,7 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
             if target_measure == "ttr":
                 xlabel = 'CI Width []'
             fig.text(0.5, 0.02, xlabel, ha='center', va='center')
+            fig.tight_layout()
 
             fig.savefig(output_path / f"{target_measure}_eval_{mode}.pdf")
             plt.close(fig)
