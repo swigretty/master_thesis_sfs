@@ -56,8 +56,8 @@ def ts_plotter(figname_suffix="", output_path=OUTPUT_PATH):
             if ax and figname_suffix:
                 logger.warning(f"{figname_suffix=} will be ignored since figure not store in function: {func.__name__}")
             if ax is None:
-                fig, ax = plt.subplots(nrows=1, ncols=1, figisize=(10, 6))
-
+                fig, ax = plt.subplots(nrows=1, ncols=1,
+                                       figsize=(6.6, 4))
             value = func(*args, ax=ax, **kwargs)
 
             if figname_suffix and not figname_suffix.startswith("_"):
