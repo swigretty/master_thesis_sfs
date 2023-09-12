@@ -55,6 +55,10 @@ def mean_1h(y_pred, x_pred,  x_unit="hour"):
     return mean_cycle(y_pred, x_pred, 1)
 
 
+def raw(y_pred, x_pred=None):
+    return y_pred
+
+
 def ttr(y_pred, x_pred=None, thr_lower=90-120, thr_upper=125-120):
     """
     24h: 90 to 125 (for systolic BP)
@@ -65,7 +69,7 @@ def ttr(y_pred, x_pred=None, thr_lower=90-120, thr_upper=125-120):
     return n_in_range/n_total
 
 
-TARGET_MEASURES_LIST = [overall_mean, ttr, mean_1h, mean_24h]
+TARGET_MEASURES_LIST = [overall_mean, ttr, mean_1h, mean_24h, raw]
 
 TARGET_MEASURES = {f.__name__: f for f in TARGET_MEASURES_LIST}
 
