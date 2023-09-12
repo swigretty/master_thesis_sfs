@@ -1,53 +1,86 @@
 \chapter{Results}\label{ch:results}
 
-The following section will
-present the aptness of GP Regression (gp) to estimate certain target measures.
-The target measures are: one-week mean, one-day mean, one-hour mean and time in target
-range have been presented.
-The estimation performance of GP Regression will be compared to that of some
-baseline methods, which are: linear regression (linear),
-smoothing splines (spline), overall mean (overall\_mean) and naive ttr (naive\_ttr).
-
-The performance will be reported based on different downsampling factors.
+The following chapter
+presents how well GP Regression estimated
+some target measures based on the simulation study performed.
+Subsequently, the estimation performance of GP Regression is compared to that of some
+baseline methods.
+The performance is reported based on different downsampling factors.
 A downsampling factor of 2 implies that the data used for estimation
 (training data) contains half of the samples from the original signal $F_X$,
 which has 10 samples per hour.
 Additionally, results will be presented for uniform as well as seasonal sampling.
 %In the latter the training data set would contain samples that where drawn
 %with probability weights following the cyclic component of $f(x)$.
+After that some of the observations are explained and looked at in more details
+based on examples.
 
+\section{Target Measures}
 
+The following section
+presents the aptness of GP Regression ("gp") to estimate certain target measures.
+The target measures are: one-week mean, one-day mean, one-hour mean and time in target
+range.
+The estimation performance of GP Regression is compared to that of some
+baseline methods, which are: linear regression ("linear"),
+smoothing splines ("spline"), overall mean ("overall\_mean") and naive ttr ("naive\_ttr").
 
-
-\section{One-Week Mean}
+\subsection{One-Week Mean}
 
 Figure \ref{fig:weekly-mean-performance} shows the performance
 of different methods to
-estimate the one-week mean based on different downsampling patterns.
-The performance is presented in the form of CI Width and CI Coverage.
-CI Width is the width of the estimated 95\%-CI, for the
+estimate the one-week mean based on different
+sampling patterns. 
+Subfigure \ref{fig:weekly-mean-uniform-sampling-performance} 
+and \ref{fig:weekly-mean-seasonal-sampling-performance} show
+the results for uniform and seasonal sampling, respectively.
+Each of the subfigures shows the result of decreasing downsampling
+factors from left to right panels.
+The performance is presented in the form of CI width and CI coverage.
+CI width is the width of the estimated 95\%-CI, for the
 one-week mean BP value, and it is provided in mmHg.
 The CI coverage is the number of times the true one-week BP values
 was covered by the estimated CI over 100 simulations.
 
-
-The perfect method would reach 95\% CI Coverage with very
-low CI Width and would thus be in the left upper corner.
+The perfect method would reach 95\% CI coverage with very
+low CI width and would thus be in the left upper corner.
 Also reaching the 95\% coverage is deemed more important
 than having low width.
-CI are additionally provided for the CI Coverage and whenever these
+CI are additionally provided for the CI coverage and whenever these
 span a region that goes above the 95\% Coverage, the method is deemed adequate.
 
 
-Note, that all the plots show the same range of CI Coverage values on
-the y-Axis, but the x-axis range of CI Width values varies.
-As expected the CI Width values increase with larger downsampling factor
-and with seasonal sampling. Very large downsampling factors, would
-result in very large confidence interval for smoothing spline of over
-100 mmHg. The CI Width is hence capped at a value of 30 mmHg also since
-that larger CI would hardly be of any value.
+Note, that all the plots show the same range of CI coverage values on
+the y-Axis, but the x-axis range of CI width values varies.
+As expected the CI width values increase with larger downsampling factor
+and with seasonal sampling. The CI width is hence capped at a value of 30 mmHg also since 
+larger CI would hardly be of any value.
+For the largest downsampling factors, smoothing spline interpolation would produce confidence
+intervals that exceeded this limit and is hence not represented in the corresponding
+panel of subfigure \ref{fig:weekly-mean-uniform-sampling-performance}.
 The approach used for spline interpolation seems to produce very
 unstable estimates during bootstrapping, which leads to very large confidence intervals.
+
+The one-week mean estimated by the overall mean and naive ttr do not differ,
+naive ttr is hence omitted for this analysis.
+All methods produce adequate results in the face of uniform sampling.
+While linear regression seams to produce the smallest confidence intervals 
+for the largest downsampling factor. 
+But estimates do not improve as much as for 
+spline interpolation and GP regression when there is more data available.
+For downsampling factors below 5, GP regression, linear regression
+and spline interpolation produce very similar results.
+
+In the face of seasonal sampling
+the overall mean obviously does not provide any good estimates anymore.
+Overall downsampling factors GP does come closest
+to the target coverage but for high downsampling factors linear regression
+does keep up and provides even smaller CI width.
+
+Overall linear and GP regression produce the best one-week mean estimates, where
+linear regression is to be favoured for very high downsampling factors and
+GP regression for downsampling factors below 5, i.e. when ther are on average
+2 or more measurements available per hour.
 
 \begin{figure}[!ht]
 \centering
@@ -67,18 +100,29 @@ unstable estimates during bootstrapping, which leads to very large confidence in
     \label{fig:weekly-mean-seasonal-sampling-performance}
 \end{subfigure}
 \caption[One-Week Mean Performance]{The Performance of different methods to
-estimate the one-week mean based on different downsampling patterns.
+estimate the one-week mean based on different downsampling patterns. The dashed horizontal line
+indicates the target coverage of 95\% 
 }
 \label{fig:weekly-mean-performance}
 \end{figure}
 
 
 
-\section{One-Day and One-Hour Mean}
+\subsection{One-Day and One-Hour Mean}
 
 Figure \ref{fig:daily-mean-performance} and figure \ref{fig:daily-mean-performance}
 show the Performance of different methods to
 estimate the one-day and one-hour mean based on different downsampling patterns.
+
+Best estimates are produced by GP regression for both the one-hour and one-day mean,
+while the effect is more pronounced by the latter.
+When not suffering too much from the estimation
+instabiltiy described in the previous subsection,
+spline interpolation does produce decent results.
+In the face of uniform samplinng the one-day mean is aproxximated adequately also
+by the naive ttr.
+However, linear regression does not seem to be able to produce good estiamates
+at this resolution.
 
 
 
@@ -132,7 +176,7 @@ estimate the one-hour mean based on different downsampling patterns.
 \end{figure}
 
 
-\section{Time in Target Range}
+\subsection{Time in Target Range}
 
 Figure \ref{fig:ttr-performance} shows the performance of different methods to
 estimate time in target range (TTR) based on different downsampling patterns.
@@ -145,7 +189,7 @@ but does only check whether they are within the target range.
 Since TTR is not affected by the extreme estimate values
 occasionally produced by smoothing spline interpolation,
 spline interpolation produces reasonable TTR estimates.
-The current approach used to estimate TTR (naive_ttr) performs very baldy.
+The current approach used to estimate TTR (naive\_ttr) performs very baldy.
 This is since it does not estimate TTR through estimation of $f(x)$ but directly
 works on the noisy measurements $Y(x)$. It will thus generally underestimate
 TTR.
@@ -266,7 +310,6 @@ Decomposition of $\hat{f})x$ estimated using GP regression.}
 
 \begin{figure}[!ht]
 \centering
-
 \begin{subfigure}{.45\textwidth}
     \centering
     \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior_spline}
@@ -292,17 +335,37 @@ by the red dotted line. }
 
 
 
-
-\chapter{Discussion}
-\section{Smoothing Spline Failure}
+\subsection{Smoothing Spline Failure}
+Figure \ref{fig:ex-spline-failure} illustrates how spline regression
+produces  very
+large confidence interval for high downsampling factors.
+Boostrapping in these conditions leads to very instable BP estimates,
+which is shown in figure \ref{subfig: ex-spline-failure-bootstrap}.
+The estimated BP values $F_X$, from one boostrap sample, comprises very extreme BP values, which will
+lead to underestimation of the one-week mean.
 
 \begin{figure}[!ht]
 \centering
-\includegraphics[width=\linewidth]{Pictures/spline_extreme/plot_pred_bootstrap_spline_reg_v2_30}
-\caption[Smoothing Spline Failure]{Smoothing Spline estimates of $F_X$ (black line)
-    from bootsrap samples (red dots). The huge drop produced at the end of the one week window
-    leads to very distorted overall mean estimates.}
-\label{fig:ex2-gp-prediction}
+\begin{subfigure}{.5\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/spline_extreme/plot_posterior_confint_spline}
+    \caption{Smoothing Spline PB estimates (black line), which is the mean over 100 botstrap samples.
+    The true BP values red dotted line) are shown with training samples (red dots)}
+\end{subfigure}\hfill
+\begin{subfigure}{.42\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/spline_extreme/plot_pred_bootstrap_spline_reg_v2_70}
+  \caption[Estimate Single Bootstrap Sample]{
+      BP value estimates (black line) based on samples of one bootstrap iteration (red dots). This would
+  lead to an extreme underestimation of the one-week mean.}
+    \label{subfig: ex-spline-failure-bootstrap}
+\end{subfigure}
+\caption[Smoothing Spline Failure]{
+    Smoothing spline giving extreme local predictions of the true BP values $f(x)$
+    for a downsampling factor of 2.
+    The huge drop produced at the end of the one week window
+    leads to huge confidence intervals}
+\label{fig:ex-spline-failure}
 \end{figure}
 
 
