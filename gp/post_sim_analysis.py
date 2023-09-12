@@ -168,7 +168,11 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
     target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
     if filter_dict:
         for k, v in filter_dict.items():
-            target_measures_df = target_measures_df[target_measures_df[k] == v]
+            if callable(v):
+                mask = v(target_measures_df[k])
+            else:
+                mask = target_measures_df[k] == v
+            target_measures_df = target_measures_df[mask]
 
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():
@@ -189,8 +193,9 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
 
 if __name__ == "__main__":
     setup_logging()
-    experiment_name = "new_measures_normy_v1"
-    plot_all(experiment_name, annotate=None, reextract=True)
+    experiment_name = "final_experiment_hpdi"
+    plot_all(experiment_name, annotate=None, reextract=False,
+             filter_dict={"method": lambda x: x != "gp_hdi"})
 
     # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
     # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
