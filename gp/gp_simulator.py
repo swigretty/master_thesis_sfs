@@ -161,9 +161,11 @@ class GPSimulator():
         """
         y_prior_noisy = self.f_true.y + self.meas_noise
 
-        y_prior_cov_noisy = self.f_true.y_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
+        y_prior_cov_noisy = self.f_true.y_cov + np.diag(
+            np.repeat(self.meas_noise_var, len(self.x)))
 
-        return GPData(x=self.f_true.x, y=y_prior_noisy, y_cov=y_prior_cov_noisy)
+        return GPData(x=self.f_true.x, y=y_prior_noisy,
+                      y_cov=y_prior_cov_noisy)
 
     @property
     def f_true(self):
@@ -644,13 +646,13 @@ class GPSimulationEvaluator(GPSimulator):
                                                       q=1-(alpha/2)),
                                               0, target_measure_samples)
 
-            ci_hdi = np.apply_along_axis(hpd_grid, 0, target_measure_samples)
+            # ci_hdi = np.apply_along_axis(hpd_grid, 0, target_measure_samples)
             # Use the CI definition from bootstrap
             out_dict[fun_name] = {"mean": theta_hat,
                                   "ci_lb": ci_quant_lb,
                                   "ci_ub": ci_quant_ub,
-                                  "ci_lb_hdi": ci_hdi[0],
-                                  "ci_ub_hdi": ci_hdi[1],
+                                  # "ci_lb_hdi": ci_hdi[0],
+                                  # "ci_ub_hdi": ci_hdi[1],
                                   }
 
         return out_dict
@@ -868,6 +870,19 @@ class GPSimulationEvaluator(GPSimulator):
         plt.close("all")
         return eval_dict, eval_target_measure
 
+    @Plotter
+    def plot_posterior_confint(self, mean, ci_lb, ci_ub, f_true=None,
+                               x_red=None, y_red=None, ax=None):
+        x = self.x.reshape(-1)
+        ax.plot(x, mean, color="black")
+        ax.fill_between(x, ci_lb, ci_ub, alpha=0.1, color="black")
+
+        if f_true is not None:
+            ax.plot(x, f_true, linestyle="dotted", color="red")
+        if (x_red is not None) and (y_red is not None):
+            ax.scatter(x_red, y_red, color="red", zorder=2, s=5, alpha=0.5,
+                       label="Observations")
+
     def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
         gps = self
@@ -879,9 +894,15 @@ class GPSimulationEvaluator(GPSimulator):
                 gps.plot_true_with_samples()
                 gps.plot()
                 gps.plot_errors()
-                gps.predictions["spline"]["ci_fun"](
-                    output_path=gps.output_path, plot=True,
-                    theta_fun=gps.target_measures)
+                for method, pred in gps.predictions.items():
+                    conf_int = pred["ci_fun"](
+                        output_path=gps.output_path, plot=True,
+                        theta_fun=gps.target_measures)
+                    pred_raw = conf_int["raw"]
+                    gps.plot_posterior_confint(
+                        pred_raw["mean"], pred_raw["ci_lb"], pred_raw["ci_ub"],
+                        f_true=gps.f_true.y, x_red=gps.y_true_train.x,
+                        y_red=gps.y_true_train.y, figname_suffix=method)
 
             else:
                 getattr(gps, plot_method)()
