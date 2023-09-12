@@ -589,7 +589,8 @@ class GPSimulationEvaluator(GPSimulator):
         self.target_measures = target_measures
         if self.target_measures is None:
             self.target_measures = TARGET_MEASURES
-        self.target_measures = {n: partial(tm, x_pred=self.x) for n, tm in self.target_measures.items()}
+        self.target_measures = {n: partial(tm, x_pred=self.x) for n, tm in
+                                self.target_measures.items()}
 
     def _get_pred_method(self, method, **kwargs):
         assert all(self.y_true_train.x == sorted(self.y_true_train.x))
@@ -616,8 +617,10 @@ class GPSimulationEvaluator(GPSimulator):
 
     @property
     def predictions(self):
-        return {"gp": {"data": self.f_post, "ci_overall_mean": ci_overall_mean_gp(
-            self.f_post.y_mean, y_cov=self.f_post.y_cov), "ci_fun": self.target_measures_from_posterior},
+        return {"gp": {"data": self.f_post,
+                       "ci_overall_mean": ci_overall_mean_gp(
+            self.f_post.y_mean, y_cov=self.f_post.y_cov),
+                       "ci_fun": self.target_measures_from_posterior},
                 **self.pred_baseline}
 
     def target_measures_from_posterior(self, theta_fun=None, n_samples=500,
@@ -876,6 +879,10 @@ class GPSimulationEvaluator(GPSimulator):
                 gps.plot_true_with_samples()
                 gps.plot()
                 gps.plot_errors()
+                gps.predictions["spline"]["ci_fun"](
+                    output_path=gps.output_path, plot=True,
+                    theta_fun=gps.target_measures)
+
             else:
                 getattr(gps, plot_method)()
         return
