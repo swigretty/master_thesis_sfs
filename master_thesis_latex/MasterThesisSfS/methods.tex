@@ -509,23 +509,53 @@ the total number of available data points.
 
 \section{Adversarial Analysis}\label{sec:adversarial-analysis}
 
-Finally, we want to study the impact of the sampling pattern on the
+This section explores the influence of the sampling pattern on the accuracy of
 target measure estimates.
-As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series},
-the data density is expected to vary within the Aktiia population, and
-measurements might
-also not be sampled uniformly, but data density might follow the circadian cycle.
-We will refer to the latter phenomenon as seasonal sampling.
+As discussed in Section \ref{sec:characteristics-of-the-blood-pressure-time-series},
+data density was expected to vary within the Aktiia population,
+and measurements were not uniformly sampled.
+Instead, data density followed a circadian cycle, referred to as "seasonal sampling."
 
-The degrees of data density investigated were: 0.5, 1, 2, and 4
-measurements per hour.
+To create varying levels of data density, downsampling was applied to the dataset
+$X$ to obtain $X_{train}$.
+Different downsampling factors were investigated, including 20, 10, 5, and 2.5.
+A downsampling factor of 20 indicated that $X_{train}$ contained only
+5\% of the original data in $X$, which initially had 10 time points per hour.
+Consequently, a downsampling factor of 20 or a data fraction of 0.05 implied
+that measurements were, on average, taken every other hour.
 
-Seasonal sampling was achieved by extracting the true seasonal component from
-the true BP sample. The values of the seasonal components were used
-as probability weights when choosing $X_{train}$ from $X$. The decomposed
-seasonal component and the resulting seasonal sampling are illustrated
-in figure \ref{fig:seasonal-sampling}.
+Seasonal sampling was implemented by extracting the true seasonal component
+from the original BP samples. The values of these seasonal components
+served as probability weights when selecting data for $X_{train}$ from $X$.
+The decomposed seasonal component and the resulting seasonal sampling are
+illustrated in Figure \ref{fig:seasonal-sampling}.
 
+
+
+
+%Finally, we want to study the impact of the sampling pattern on the
+%target measure estimates.
+%As described in section \ref{sec:characteristics-of-the-blood-pressure-time-series},
+%the data density is expected to vary within the Aktiia population, and
+%measurements might
+%also not be sampled uniformly, but data density might follow the circadian cycle.
+%We will refer to the latter phenomenon as seasonal sampling.
+%
+%Different degree of data density was produced by downsampling
+%$X$ to obtain $X_{train}$. The different downsampling factors studied
+%are: 20, 10, 5 and 2.5.
+%A downsampling factor of 20 implies that $X_{train}$
+%contains a fraction of 0.05 of the original data $X$, which contains
+%10 time points per hour. A downsampling factor of 20 and a data fraction of
+%0.05 therefore implies that measurements have on average been
+%taken every other hour.
+%
+%Seasonal sampling was achieved by extracting the true seasonal component from
+%the true BP sample. The values of the seasonal components were used
+%as probability weights when choosing $X_{train}$ from $X$. The decomposed
+%seasonal component and the resulting seasonal sampling are illustrated
+%in figure \ref{fig:seasonal-sampling}.
+%
 
 \begin{figure}[!ht]
 \centering
