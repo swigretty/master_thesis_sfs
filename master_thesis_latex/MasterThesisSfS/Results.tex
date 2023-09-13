@@ -295,10 +295,11 @@ also when a lot of data is available.
 \end{subfigure}\hfill
 
 \caption[Impact of Downsampling Factor]{Impact of Downsampling Factor:
-    Prediction of true BP values $F_X$ (black)
-    anc CI (gray area) form measurments (red dots) produced by
-    a downsampling factor of 20 (left panels) and 2.5 (right panels).
-    The true BP values are shown by the red dotted line.}
+    The estimated BP values $\hat{f}(x)$(black)
+    and CIs (gray area) based on measurements (red dots) and using different methods.
+    Measurments have been produced using a
+    downsampling factor of 20 (left panels) and 2.5 (right panels).
+    The true BP values, $f(x)$, are shown by the red dotted line.}
 \label{fig:ex-downsampling-factor}
 \end{figure}
 
@@ -351,10 +352,11 @@ higher than the one produced by GP regression and linear regression.
 \end{subfigure}\hfill
 
 \caption[Seasonal Samping and Downsampling Factor]{Seasonal Samping and Downsampling Factor:
-    Prediction of true BP values $F_X$ (black)
-    anc CI (gray area) form measurments (red dots) produced by extreme seasonal sampling and
+    The estimated BP values $\hat{f}(x)$(black)
+    and CIs (gray area) based on measurements (red dots) and using different methods.
+    The measurements have been produced by extreme seasonal sampling and
     a downsampling factor of 20 (left panels) and 2.5 (right panels).
-    The true BP values are shown by the red dotted line.}
+    The true BP values, $f(x)$, are shown by the red dotted line.}
 \label{fig:ex-seasonal-sampling}
 \end{figure}
 
@@ -411,13 +413,14 @@ The undertainty is also very much underestimated.
   \caption{GP regression}
 \end{subfigure}\hfill
 
-\caption[Dominant Cyclic Component vs. Dominant AR Component]{Dominant Cyclic Component vs. Dominant AR Component:
-    Prediction of true BP values $F_X$ (black)
-    and CI (gray area) form measurments (red dots). Measurments
-    have been uniformly sampled with a downsampling factor of 5.
-    The true BP values are shown by the red dotted line.
-    The right  panels show the BP values produce by a process with prominent AR component
-    while the left panel the cyclic component is prominent.
+\caption[Dominant Cyclic Component vs. Dominant AR Component]{
+    Dominant Cyclic Component vs. Dominant AR Component:
+    Estimated BP values $\hat{f}(x)$(black)
+    and CIs (gray area) based on measurements (red dots) and using different methods.
+    Measurements have been uniformly sampled with a downsampling factor of 5.
+    The true BP values, $f(x)$ are shown by the red dotted line.
+    The right  panels show the BP values produced by a process with prominent
+    AR component while in the left panels the cyclic component is prominent.
  }
 \label{fig:ex-ar-cyclic}
 \end{figure}
@@ -426,9 +429,10 @@ The undertainty is also very much underestimated.
 Figure \ref{fig:ex-spline-failure} illustrates how spline regression
 produces  very
 large confidence interval for high downsampling factors.
-Boostrapping in these conditions leads to very instable BP estimates,
+Boostrapping in these conditions leads to very unstable BP estimates,
 which is shown in figure \ref{subfig: ex-spline-failure-bootstrap}.
-The estimated BP values $F_X$, from one boostrap sample, comprises very extreme BP values, which will
+The estimated BP values $\hat{f}(x)$, from one boostrap sample,
+comprises very extreme BP values, which will
 lead to underestimation of the one-week mean.
 
 
@@ -453,7 +457,7 @@ lead to underestimation of the one-week mean.
 \caption[Smoothing Spline Failure]{
     Smoothing Spline Failure:
     Smoothing spline giving extreme local predictions of the true BP values $f(x)$
-    for a downsampling factor of 2.
+    for a downsampling factor of 20.
     The huge drop produced at the end of the one week window
     leads to huge confidence intervals}
 \label{fig:ex-spline-failure}
