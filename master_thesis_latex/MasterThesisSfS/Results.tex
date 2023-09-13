@@ -209,12 +209,10 @@ Among these methods, GP Regression stands out as the only one consistently achie
 adequate CI coverage for most of the downsampling patterns.
 While smoothing spline interpolation comes close, particularly with uniform sampling and
 large downsampling factors, GP regression consistently yields narrower CIs.
-
 It is important to note that TTR does not depend on the absolute values of the blood pressure (BP)
 estimates but rather focuses on whether these estimates fall within the target range.
 As TTR is not affected by extreme estimate values occasionally produced by smoothing spline interpolation,
 this method provides reasonable TTR estimates.
-
 However, the current approach used for estimating TTR (naive\_ttr) performs poorly.
 This is because it does not estimate TTR through the estimation of $f(x)$ but directly
 operates on the noisy measurements $Y(x)$. As a result, it generally underestimates TTR.
@@ -255,7 +253,7 @@ estimate TTR based on different downsampling patterns.
 
 
 \section{Examples}
-
+This section provides some examples for the observations made in the previous section.
 
 \subsection{Impact of Downsampling Factor}
 
@@ -352,7 +350,7 @@ higher than the one produced by GP regression and linear regression.
   \caption{GP regression}
 \end{subfigure}\hfill
 
-\caption[Seasonal Samping and Downsampling Factor]{easonal Samping and Downsampling Factor:
+\caption[Seasonal Samping and Downsampling Factor]{Seasonal Samping and Downsampling Factor:
     Prediction of true BP values $F_X$ (black)
     anc CI (gray area) form measurments (red dots) produced by extreme seasonal sampling and
     a downsampling factor of 20 (left panels) and 2.5 (right panels).
