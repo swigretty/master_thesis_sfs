@@ -1,86 +1,79 @@
 \chapter{Results}\label{ch:results}
 
-The following chapter
-presents how well GP Regression estimated
-some target measures based on the simulation study performed.
-Subsequently, the estimation performance of GP Regression is compared to that of some
-baseline methods.
-The performance is reported based on different downsampling factors.
-A downsampling factor of 2 implies that the data used for estimation
-(training data) contains half of the samples from the original signal $F_X$,
-which has 10 samples per hour.
-Additionally, results will be presented for uniform as well as seasonal sampling.
-%In the latter the training data set would contain samples that where drawn
-%with probability weights following the cyclic component of $f(x)$.
-After that some of the observations are explained and looked at in more details
-based on examples.
+This chapter presents the performance of GP Regression in estimating various
+measures based on a simulation study.
+The estimation performance of GP Regression is compared with that of baseline methods.
+The performance is reported for different downsampling factors, where a downsampling
+factor of 2 implies that the training data contains half of the samples from the
+original signal $F_X$, which has 10 samples per hour.
+Additionally, results for both uniform and seasonal sampling are presented.
 
 \section{Target Measures}
 
-The following section
-presents the aptness of GP Regression ("gp") to estimate certain target measures.
-The target measures are: one-week mean, one-day mean, one-hour mean and time in target
-range.
-The estimation performance of GP Regression is compared to that of some
-baseline methods, which are: linear regression ("linear"),
-smoothing splines ("spline"), overall mean ("overall\_mean") and naive ttr ("naive\_ttr").
+In this section, we evaluate the effectiveness of GP Regression ("gp") in
+estimating specific target measures. These target measures include the one-week mean,
+one-day mean, one-hour mean, and time in the target range (TTR).
+We compare the estimation performance of GP Regression with that of several baseline methods,
+including linear regression ("linear"), smoothing splines ("spline"), overall mean
+("overall\_mean"), and naive TTR range ("naive\_ttr").
 
 \subsection{One-Week Mean}
 
-Figure \ref{fig:weekly-mean-performance} shows the performance
-of different methods to
-estimate the one-week mean based on different
-sampling patterns. 
-Subfigure \ref{fig:weekly-mean-uniform-sampling-performance} 
-and \ref{fig:weekly-mean-seasonal-sampling-performance} show
-the results for uniform and seasonal sampling, respectively.
-Each of the subfigures shows the result of decreasing downsampling
-factors from left to right panels.
-The performance is presented in the form of CI width and CI coverage.
-CI width is the width of the estimated 95\%-CI, for the
-one-week mean BP value, and it is provided in mmHg.
-The CI coverage is the number of times the true one-week BP values
-was covered by the estimated CI over 100 simulations.
+Figure \ref{fig:weekly-mean-performance} illustrates the performance of different
+methods in estimating the one-week mean under different sampling patterns.
+Subfigure \ref{fig:weekly-mean-uniform-sampling-performance} and
+\ref{fig:weekly-mean-seasonal-sampling-performance} display the results
+for uniform and seasonal sampling, respectively. Within each subfigure, the panels
+represent decreasing downsampling factors from left to right.
 
-The perfect method would reach 95\% CI coverage with very
-low CI width and would thus be in the left upper corner.
-Also reaching the 95\% coverage is deemed more important
-than having low width.
-CI are additionally provided for the CI coverage and whenever these
-span a region that goes above the 95\% Coverage, the method is deemed adequate.
+Performance is presented in terms of confidence or credible interval (CI) width and CI coverage.
+CI width represents the width of the estimated 95\% CI for the one-week mean BP value,
+measured in mmHg. CI coverage indicates the number of times the true one-week BP
+values were covered by the estimated CI over 100 simulations.
+
+Ideally, a method should achieve 95\% CI coverage with a very low CI width,
+positioning itself in the upper-left corner of the plot. Achieving 95\% coverage
+is considered more critical than having a low width.
+Based on this 100 simulation runs, the confidence intervals
+of the CI coverage values have been calculated.
+Whenever the CI of the CI coverage
+spans a region above the 95\% coverage, the method is deemed adequate.
+
+It is important to note that all plots have the same range of CI coverage values
+on the y-axis, but the x-axis range of CI width values varies. As expected,
+CI width values increase with larger downsampling factors and with seasonal sampling.
+The CI width is capped at 30 mmHg, as larger CIs would have limited practical value.
+
+For the largest downsampling factors, the smoothing spline interpolation method
+would produce confidence intervals that exceed this limit and is therefore not
+represented in the corresponding panel of subfigure
+\ref{fig:weekly-mean-uniform-sampling-performance}.
+It appears that the approach used for spline interpolation produces unstable
+estimates during bootstrapping, resulting in very large confidence intervals.
 
 
-Note, that all the plots show the same range of CI coverage values on
-the y-Axis, but the x-axis range of CI width values varies.
-As expected the CI width values increase with larger downsampling factor
-and with seasonal sampling. The CI width is hence capped at a value of 30 mmHg also since 
-larger CI would hardly be of any value.
-For the largest downsampling factors, smoothing spline interpolation would produce confidence
-intervals that exceeded this limit and is hence not represented in the corresponding
-panel of subfigure \ref{fig:weekly-mean-uniform-sampling-performance}.
-The approach used for spline interpolation seems to produce very
-unstable estimates during bootstrapping, which leads to very large confidence intervals.
+For the one-week mean the overall mean is equivalent to the naive TTR estimate.
+Therefore, naive TTR is omitted from this analysis.
+All methods perform adequately with uniform sampling.
+While linear regression seems to produce the smallest confidence intervals for
+the largest downsampling factor, estimates do not improve as notably as for
+spline interpolation and GP regression when more data becomes available.
+For downsampling factors below 5, GP regression, linear regression, and spline
+interpolation produce very similar results.
 
-The one-week mean estimated by the overall mean and naive ttr do not differ,
-naive ttr is hence omitted for this analysis.
-All methods produce adequate results in the face of uniform sampling.
-While linear regression seams to produce the smallest confidence intervals 
-for the largest downsampling factor. 
-But estimates do not improve as much as for 
-spline interpolation and GP regression when there is more data available.
-For downsampling factors below 5, GP regression, linear regression
-and spline interpolation produce very similar results.
+In the presence of seasonal sampling, the overall mean obviously does not
+provide good estimates. GP regression generally
+comes closest to the target coverage, but for high downsampling factors,
+linear regression remains competitive and provides even smaller CI widths.
+However, the more data available the more linear regression seems to
+diverge from the true BP values. This effects are more pronounced in the face
+of extreme seasonal sampling.
 
-In the face of seasonal sampling
-the overall mean obviously does not provide any good estimates anymore.
-Overall downsampling factors GP does come closest
-to the target coverage but for high downsampling factors linear regression
-does keep up and provides even smaller CI width.
 
-Overall linear and GP regression produce the best one-week mean estimates, where
-linear regression is to be favoured for very high downsampling factors and
-GP regression for downsampling factors below 5, i.e. when ther are on average
-2 or more measurements available per hour.
+In conclusion, both linear and GP regression produce the best one-week mean estimates.
+Linear regression is preferable for very high downsampling factors,
+while GP regression is recommended for downsampling factors below 5,
+corresponding to an average of 2 or more measurements per hour.
 
 \begin{figure}[!ht]
 \centering
@@ -99,6 +92,16 @@ GP regression for downsampling factors below 5, i.e. when ther are on average
     \caption{One-Week Mean - Seasonal Downsampling}
     \label{fig:weekly-mean-seasonal-sampling-performance}
 \end{subfigure}
+
+\bigskip
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/overall_mean_eval_sin_rbf_seasonal_extreme}
+    \caption{One-Week Mean - Extreme Seasonal Downsampling}
+    \label{fig:weekly-mean-extreme-seasonal-sampling-performance}
+\end{subfigure}
+
 \caption[One-Week Mean Performance]{The Performance of different methods to
 estimate the one-week mean based on different downsampling patterns. The dashed horizontal line
 indicates the target coverage of 95\% 
@@ -139,10 +142,20 @@ at this resolution.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_seasonal_default}
     \caption{One-Day Mean Performance - Seasonal Downsampling}
     \label{fig:daily-mean-seasonal-sampling-performance}
 \end{subfigure}
+
+\bigskip
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_seasonal_extreme}
+    \caption{One-Day Mean Performance - Extreme Seasonal Downsampling}
+    \label{fig:daily-mean-extreme-seasonal-sampling-performance}
+\end{subfigure}
+
 \caption[One-Day Mean Performance]{The Performance of different methods to
 estimate the one-day mean based on different downsampling patterns.
 }
@@ -169,6 +182,16 @@ estimate the one-day mean based on different downsampling patterns.
     \caption{One-Hour Mean Performance - Seasonal Downsampling}
     \label{fig:hourly-mean-seasonal-sampling-performance}
 \end{subfigure}
+
+\bigskip
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_24h_eval_sin_rbf_seasonal_extreme}
+    \caption{One-Hour Mean Performance - Extreme Seasonal Downsampling}
+    \label{fig:hourly-mean-extreme-seasonal-sampling-performance}
+\end{subfigure}
+
 \caption[One-Hour Mean Performance]{The Performance of different methods to
 estimate the one-hour mean based on different downsampling patterns.
 }
@@ -208,10 +231,20 @@ TTR.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_seasonal_default}
     \caption{TTR Performance - Seasonal Downsampling}
     \label{fig:ttr-seasonal-sampling-performance}
 \end{subfigure}
+
+\bigskip
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_seasonal_extreme}
+    \caption{TTR Performance - Extreme Seasonal Downsampling}
+    \label{fig:ttr-extreme-seasonal-sampling-performance}
+\end{subfigure}
+
 \caption[TTR Performance]{The Performance of different methods to
 estimate TTR based on different downsampling patterns.
 }
