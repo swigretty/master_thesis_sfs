@@ -1,4 +1,4 @@
-\chapter{Methods}\label{ch:methods}
+\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression to establish a mapping
 between a time point $x$ and its corresponding BP value. Since Gaussian Processes
@@ -411,10 +411,10 @@ First, $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
 "sklearn.preprocessing.SplineTransformer" class.
 Knots have been placed uniformly along the quantiles of $X_{train}$.
 Ordinary least square regression is then fit to the transformed training
-input $Xtrans_{train}$ and the response $Y_{train}$.
+input $X\text{trans}_{train}$ and the response $Y_{X_{train}}$.
 The number of knots determines the smoothness of the resulting function,
 and the optimal number has been identified through 10-fold
-cross-validation.
+cross-validation. The
 %
 The code section \ref{code:smoothing-spline} provides more implementation details,
 and figure \ref{fig:post-spline} shows an example of $\hat{F}_X$ estimated
@@ -471,20 +471,21 @@ from training data using smoothing splines.
 \begin{subfigure}{.5\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_linear}
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_linear}
     \caption{Linear Regression}
     \label{fig:post-linear}
 \end{subfigure}\hfill
 \begin{subfigure}{.5\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_posterior_spline}
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_spline}
     \caption{Smoothing Spline}
     \label{fig:post-spline}
 \end{subfigure}
 \caption{Linear Regression and Smoothing spline used
 to estimate some example of true BP values $F_X$. The estimated BP values $\hat{F}_X$ (black line), the
-        true BP values (red dashed line) and the training data (red dots).}
+        true BP values (red dashed line) and the training data (red dots). The gray area shows
+the bootstrap CI.}
 \label{fig:regression-example}
 \end{figure}
 
@@ -526,7 +527,10 @@ that measurements were, on average, taken every other hour.
 
 Seasonal sampling was implemented by extracting the true seasonal component
 from the original BP samples. The values of these seasonal components
+shifted to contain only positive values
 served as probability weights when selecting data for $X_{train}$ from $X$.
+A more extreme seasonal sampling pattern has been produced by
+using the squared values of the seasonal component as probability weights.
 The decomposed seasonal component and the resulting seasonal sampling are
 illustrated in Figure \ref{fig:seasonal-sampling}.
 
@@ -559,25 +563,32 @@ illustrated in Figure \ref{fig:seasonal-sampling}.
 
 \begin{figure}[!ht]
 \centering
-\begin{subfigure}{.45\textwidth}
+\begin{subfigure}{.3\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final/sin_rbf_seasonal_default_0.05/09_09_11_15_30/plot_true_mean_decomposed}
-    \caption{The decomposition of the true BP values $f(x)$. The periodic component used
-    as probability weights in seasonal smapling is shown in orange}
+        Pictures/plots_final4/sin_rbf_seasonal_default_0.2/09_12_13_15_56/plot_true_mean_decomposed}
+    \caption{Decomposed $f(x)$}
 %    \label{fig:post-linear}
 \end{subfigure}\hfill
-\begin{subfigure}{.45\textwidth}
+\begin{subfigure}{.3\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final/sin_rbf_seasonal_default_0.05/09_09_11_15_30/plot_true_with_samples}
-    \caption{The true BP values $f(x)$ (red dashed line) and the noisy measurments (red dots) generated
-    from seasonal sampling. \\
-    }
+        Pictures/plots_final4/sin_rbf_seasonal_default_0.2/09_12_13_15_56/plot_true_with_samples}
+    \caption{$f(x)$ and measurments from seasonal sampling.}
 %    \label{fig:post-spline}
+\end{subfigure}\hfill
+\begin{subfigure}{.3\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.2/09_13_07_48_30/plot_true_with_samples}
+    \caption{$f(x)$ and measurments from extreme seasonal sampling.}
+%    \label{fig:post-linear}
 \end{subfigure}
-\caption{Panel b shows the sample $f(x)$ drawn from the true GP with measurments generated
-by seasonal sampling. Panel a shows $f(x)$ decomposed into its components.}
+\caption{Panel (b) and (c) show the sample $f(x)$ (red dashed line) drawn from the true GP with measurments generated
+by seasonal and extreme sampling (red dots). Panel (a) shows $f(x)$ decomposed into its components.
+The values of the periodic component (orange) is shifted to contain only postivive values and
+is used as probablity weights in seasonal sampling.
+Squared values are used in the case of extreme seasonal sampling}
 \label{fig:seasonal-sampling}
 \end{figure}
 
