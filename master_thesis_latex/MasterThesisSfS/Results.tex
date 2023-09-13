@@ -113,20 +113,22 @@ indicates the target coverage of 95\%
 
 \subsection{One-Day and One-Hour Mean}
 
-Figure \ref{fig:daily-mean-performance} and figure \ref{fig:daily-mean-performance}
-show the Performance of different methods to
-estimate the one-day and one-hour mean based on different downsampling patterns.
+Figures \ref{fig:daily-mean-performance} and \ref{fig:hourly-mean-performance}
+illustrate the performance of different methods in estimating the one-day and one-hour mean,
+respectively, based on various downsampling patterns.
 
-Best estimates are produced by GP regression for both the one-hour and one-day mean,
-while the effect is more pronounced by the latter.
-When not suffering too much from the estimation
-instabiltiy described in the previous subsection,
-spline interpolation does produce decent results.
-In the face of uniform samplinng the one-day mean is aproxximated adequately also
-by the naive ttr.
-However, linear regression does not seem to be able to produce good estiamates
-at this resolution.
+GP regression consistently produces the best estimates for both the one-hour and
+one-day mean across all sampling patterns.
+Its superiority becomes more pronounced with increased data availability and
+an increasing amount of seasonal sampling.
 
+Spline interpolation, when not suffering from the estimation instability
+described in the previous subsection, also yields decent results.
+In the case of uniform sampling, the one-day mean is adequately approximated
+by the naive TTR method.
+
+However, linear regression does not appear to produce accurate estimates for
+either the one-day or one-hour mean, regardless of the sampling pattern.
 
 
 \begin{figure}[!ht]
@@ -199,23 +201,23 @@ estimate the one-hour mean based on different downsampling patterns.
 \end{figure}
 
 
-\subsection{Time in Target Range}
+\subsection{Time in Target Range}\label{subsec:time-in-target-range}
 
-Figure \ref{fig:ttr-performance} shows the performance of different methods to
-estimate time in target range (TTR) based on different downsampling patterns.
-The only methods which sometimes reach the 95\% coverage target are
-GP regression and smoothing spline interpolation, whereas GP regression produces
-consistently lower CI width and does approach the target coverage with more
-data.
-Note that TTR does not care about the absolute values of the BP estimates
-but does only check whether they are within the target range.
-Since TTR is not affected by the extreme estimate values
-occasionally produced by smoothing spline interpolation,
-spline interpolation produces reasonable TTR estimates.
-The current approach used to estimate TTR (naive\_ttr) performs very baldy.
-This is since it does not estimate TTR through estimation of $f(x)$ but directly
-works on the noisy measurements $Y(x)$. It will thus generally underestimate
-TTR.
+Figure \ref{fig:ttr-performance} displays the performance of different methods
+in estimating TTR based on various downsampling patterns.
+Among these methods, GP Regression stands out as the only one consistently achieving
+adequate CI coverage for most of the downsampling patterns.
+While smoothing spline interpolation comes close, particularly with uniform sampling and
+large downsampling factors, GP regression consistently yields narrower CIs.
+
+It is important to note that TTR does not depend on the absolute values of the blood pressure (BP)
+estimates but rather focuses on whether these estimates fall within the target range.
+As TTR is not affected by extreme estimate values occasionally produced by smoothing spline interpolation,
+this method provides reasonable TTR estimates.
+
+However, the current approach used for estimating TTR (naive\_ttr) performs poorly.
+This is because it does not estimate TTR through the estimation of $f(x)$ but directly
+operates on the noisy measurements $Y(x)$. As a result, it generally underestimates TTR.
 
 
 \begin{figure}[!ht]
@@ -252,13 +254,99 @@ estimate TTR based on different downsampling patterns.
 \end{figure}
 
 
-
-
-
 \section{Examples}
 
 
-\subsection{Pronounced Cyclic Component}
+\subsection{Impact of Downsampling Factor}
+
+Figure \ref{fig:ex-downsampling-factor} provides an example
+of how the different methods improve with more data.
+Here, linear regression
+does already produce good estimates at high downsampling
+factors but unlike GP regression does not improve a lot with more data.
+At the same time smoothing spline fails to capture the cyclic component
+due to the prominent AR component
+also when a lot of data is available.
+
+\begin{figure}
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+       Pictures/plots_final4/sin_rbf_default_0.05/09_13_11_09_16/plot_posterior_confint_spline.pdf}
+    \includegraphics[width=0.45\linewidth]{
+       Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_spline.pdf}
+  \caption{Smoothing spline}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=.45\linewidth]{
+  Pictures/plots_final4/sin_rbf_default_0.05/09_13_11_09_16/plot_posterior_confint_linear.pdf}
+    \includegraphics[width=0.45\linewidth]{
+  Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_linear.pdf}
+  \caption{Linear regression }
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+  Pictures/plots_final4/sin_rbf_default_0.05/09_13_11_09_16/plot_posterior_confint_gp.pdf}
+    \includegraphics[width=0.45\linewidth]{
+  Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_gp.pdf}
+  \caption{GP regression}
+\end{subfigure}\hfill
+
+\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black)
+    anc CI (gray area) form measurments (red dots) produced by
+    a downsampling factor of 20 (left panels) and 2.5 (right panels).
+    The true BP values are shown by the red dotted line.}
+\label{fig:ex-downsampling-factor}
+\end{figure}
+
+
+\subsection{Seasonal Samping and Downsampling Factor}
+
+Figure \ref{fig:ex-seasonal-sampling} show the impact of different
+downsampling factors when there is extreme seasonal sampling
+
+\begin{figure}
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+  \caption{Smoothing spline}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_linear.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+  \caption{Linear regression }
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_gp.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+  \caption{GP regression}
+\end{subfigure}\hfill
+
+\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black)
+    anc CI (gray area) form measurments (red dots) produced by extreme seasonal sampling and
+    a downsampling factor of 20 (left panels) and 2.5 (right panels).
+    The true BP values are shown by the red dotted line.}
+\label{fig:ex-seasonal-sampling}
+\end{figure}
+
+
+
+\subsection{Large Cyclic and AR Component}
 
 \begin{figure}[!ht]
 \centering
@@ -296,13 +384,19 @@ by the red dotted line. }
 
 
 \subsection{Pronounced AR Component}
+Figure \ref{fig:ex-large-AR-predictions} shows the preditions when there
+is uniform sampling and high data availability but the AR component of
+the true process is large and hence only GP regression can provide
+good local estimates.
+Figure \ref{fig:ex-large-AR-mean-dec} shows how the magnitude of the
+AR component of the true BP process is high.
 
 \begin{figure}[!ht]
 \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_07/plot_mean_decomposed_vertical}
+    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_mean_decomposed_vertical}
 \caption[Decomposed BP time sereis]{Left panel: Decomposition of the true BP time series $f(x)$. Right panel:
-Decomposition of $\hat{f})x$ estimated using GP regression.}
-\label{fig:ex2-gp-prediction}
+Decomposition of $\hat{f}(x)$ estimated using GP regression.}
+\label{fig:ex-large-AR-mean-dec}
 \end{figure}
 
 \begin{figure}[!ht]
@@ -310,62 +404,33 @@ Decomposition of $\hat{f})x$ estimated using GP regression.}
 
 \begin{subfigure}{.45\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior_spline}
-  \caption[Spline]{Smoothing spline prediction}
+    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_spline}
+  \caption{Smoothing spline}
   \label{fig:ex2-spline}
 \end{subfigure}\hfill
 \begin{subfigure}{.45\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior_linear}
-  \caption[Linear Regression]{Linear regression prediction}
+    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_linear}
+  \caption{Linear regression}
   \label{fig:ex2-linear}
 \end{subfigure}
-\begin{subfigure}{0.6\textwidth}
+\bigskip
+\begin{subfigure}{0.4\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior}
-  \caption[GP Prediction]{GP Regression prediciton with predictive variance (gray area)}
+    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_gp}
+  \caption{GP Regression}
   \label{fig:ex2-gp}
-\end{subfigure}
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black) form measurments (red dots). The true BP values are shown
-by the red dotted line. }
-\label{fig:ex2}
-\end{figure}
-
-
-
-\begin{figure}[!ht]
-\centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_07/plot_mean_decomposed_vertical}
-\caption[Decomposed BP time sereis]{Left panel: Decomposition of the true BP time series $f(x)$. Right panel:
-Decomposition of $\hat{f})x$ estimated using GP regression.}
-\label{fig:ex2-gp-prediction}
-\end{figure}
-
-\begin{figure}[!ht]
-\centering
-\begin{subfigure}{.45\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior_spline}
-  \caption[Spline]{Smoothing spline prediction}
-  \label{fig:ex2-spline}
 \end{subfigure}\hfill
-\begin{subfigure}{.45\textwidth}
+\begin{subfigure}{0.45\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior_linear}
-  \caption[Linear Regression]{Linear regression prediction}
-  \label{fig:ex2-linear}
-\end{subfigure}
-\begin{subfigure}{0.6\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_08_20/plot_posterior}
-  \caption[GP Prediction]{GP Regression prediciton with predictive variance (gray area)}
+    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_naive_overall_mean}
+  \caption{Overall mean}
   \label{fig:ex2-gp}
 \end{subfigure}
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black) form measurments (red dots). The true BP values are shown
-by the red dotted line. }
-\label{fig:ex2}
+\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black) form measurments (red dots)
+    with estimated CI (gray area). The true BP values are shown by the red dotted line. }
+\label{fig:ex-large-AR-predictions}
 \end{figure}
-
 
 
 \subsection{Smoothing Spline Failure}
@@ -376,6 +441,9 @@ Boostrapping in these conditions leads to very instable BP estimates,
 which is shown in figure \ref{subfig: ex-spline-failure-bootstrap}.
 The estimated BP values $F_X$, from one boostrap sample, comprises very extreme BP values, which will
 lead to underestimation of the one-week mean.
+
+
+
 
 \begin{figure}[!ht]
 \centering
