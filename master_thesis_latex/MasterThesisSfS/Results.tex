@@ -75,7 +75,7 @@ Linear regression is preferable for very high downsampling factors,
 while GP regression is recommended for downsampling factors below 5,
 corresponding to an average of 2 or more measurements per hour.
 
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{\textwidth}
     \centering
@@ -131,7 +131,7 @@ However, linear regression does not appear to produce accurate estimates for
 either the one-day or one-hour mean, regardless of the sampling pattern.
 
 
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{\textwidth}
     \centering
@@ -167,7 +167,7 @@ estimate the one-day mean based on different downsampling patterns.
 
 
 
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{\textwidth}
     \centering
@@ -220,7 +220,7 @@ This is because it does not estimate TTR through the estimation of $f(x)$ but di
 operates on the noisy measurements $Y(x)$. As a result, it generally underestimates TTR.
 
 
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{\textwidth}
     \centering
@@ -296,7 +296,8 @@ also when a lot of data is available.
   \caption{GP regression}
 \end{subfigure}\hfill
 
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black)
+\caption[Impact of Downsampling Factor]{Impact of Downsampling Factor:
+    Prediction of true BP values $F_X$ (black)
     anc CI (gray area) form measurments (red dots) produced by
     a downsampling factor of 20 (left panels) and 2.5 (right panels).
     The true BP values are shown by the red dotted line.}
@@ -307,37 +308,52 @@ also when a lot of data is available.
 \subsection{Seasonal Samping and Downsampling Factor}
 
 Figure \ref{fig:ex-seasonal-sampling} show the impact of different
-downsampling factors when there is extreme seasonal sampling
+downsampling factors when there is extreme seasonal sampling.
+While linear regression does produce already good results when there is only
+very little data available it does not improve much with more data, where
+it massively underestimates the uncertainty. Linear regession leads thus
+to a reduced CI coverage when there is more data.
+On the other hand spline regression does not provide very good
+estimates of the expected BP values but since
+the CI are huge, the CI coverage will not be too bad.
+The predictions improve with more data, especially
+at the peaks, where data density is higher than in the valeys.
+Also since smoothing spline interpolation does not have any incentive
+to fit a cyclic pattern the uncertainty estimates in the valey are much
+higher than the one produced by GP regression and linear regression.
+
+
 
 \begin{figure}
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_35_41/plot_posterior_confint_spline.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.4/09_13_12_38_32/plot_posterior_confint_spline.pdf}
   \caption{Smoothing spline}
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_linear.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_35_41/plot_posterior_confint_linear.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.4/09_13_12_38_32/plot_posterior_confint_linear.pdf}
   \caption{Linear regression }
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_gp.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_35_41/plot_posterior_confint_gp.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.05/09_13_07_38_28/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_seasonal_extreme_0.4/09_13_12_38_32/plot_posterior_confint_gp.pdf}
   \caption{GP regression}
 \end{subfigure}\hfill
 
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black)
+\caption[Seasonal Samping and Downsampling Factor]{easonal Samping and Downsampling Factor:
+    Prediction of true BP values $F_X$ (black)
     anc CI (gray area) form measurments (red dots) produced by extreme seasonal sampling and
     a downsampling factor of 20 (left panels) and 2.5 (right panels).
     The true BP values are shown by the red dotted line.}
@@ -346,92 +362,67 @@ downsampling factors when there is extreme seasonal sampling
 
 
 
-\subsection{Large Cyclic and AR Component}
+\subsection{Dominant Cyclic Component vs. Dominant AR Component}
 
-\begin{figure}[!ht]
-\centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_45/plot_mean_decomposed_vertical}
-\caption[Decomposed BP time sereis]{Left panel: Decomposition of the true BP time series $f(x)$. Right panel:
-Decomposition of $\hat{f})x$ estimated using GP regression.}
-\label{fig:ex1-gp-prediction}
-\end{figure}
+Figure \ref{fig:ex-ar-cyclic} compares
+predictions when the AR vs. when the cyclic component is dominating.
+When the cyclic component is dominating
+all methods perform well.
+However when the AR componen is strong, only the GP is able
+to povide good local BP value estimates but also
+with rather large CI.
+Linear regression is bound to predict a perfect sinosoid with a linear
+trend and hence has no chance to fit the AR component.
+The undertainty is also very much underestimated.
 
-\begin{figure}[!ht]
-\centering
 
-\begin{subfigure}{.45\textwidth}
+\begin{figure}
+\begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_45/plot_posterior_spline}
-  \caption[Spline]{Smoothing spline prediction}
-  \label{fig:ex1-spline}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_true_mean_decomposed.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_true_mean_decomposed.pdf}
+  \caption{Decompositon of $f(x)$. Cyclic Component in orange and AR component in blue.}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_spline.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_spline.pdf}
+  \caption{Smoothing Spline}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_linear.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_linear.pdf}
+  \caption{Linear regression }
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_gp.pdf}
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_gp.pdf}
+  \caption{GP regression}
 \end{subfigure}\hfill
-\begin{subfigure}{.45\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_45/plot_posterior_linear}
-  \caption[Linear Regression]{Linear regression prediction}
-  \label{fig:ex1-linear}
-\end{subfigure}
-\begin{subfigure}{0.6\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final3/sin_rbf_default_0.2/09_11_09_05_45/plot_posterior}
-  \caption[GP Prediction]{GP Regression prediciton with predictive variance (gray area)}
-  \label{fig:ex1-spline}
-\end{subfigure}
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black) form measurments (red dots). The true BP values are shown
-by the red dotted line. }
-\label{fig:ex1}
+
+\caption[Dominant Cyclic Component vs. Dominant AR Component]{Dominant Cyclic Component vs. Dominant AR Component:
+    Prediction of true BP values $F_X$ (black)
+    and CI (gray area) form measurments (red dots). Measurments
+    have been uniformly sampled with a downsampling factor of 5.
+    The true BP values are shown by the red dotted line.
+    The right  panels show the BP values produce by a process with prominent AR component
+    while the left panel the cyclic component is prominent.
+ }
+\label{fig:ex-ar-cyclic}
 \end{figure}
-
-
-\subsection{Pronounced AR Component}
-Figure \ref{fig:ex-large-AR-predictions} shows the preditions when there
-is uniform sampling and high data availability but the AR component of
-the true process is large and hence only GP regression can provide
-good local estimates.
-Figure \ref{fig:ex-large-AR-mean-dec} shows how the magnitude of the
-AR component of the true BP process is high.
-
-\begin{figure}[!ht]
-\centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_mean_decomposed_vertical}
-\caption[Decomposed BP time sereis]{Left panel: Decomposition of the true BP time series $f(x)$. Right panel:
-Decomposition of $\hat{f}(x)$ estimated using GP regression.}
-\label{fig:ex-large-AR-mean-dec}
-\end{figure}
-
-\begin{figure}[!ht]
-\centering
-
-\begin{subfigure}{.45\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_spline}
-  \caption{Smoothing spline}
-  \label{fig:ex2-spline}
-\end{subfigure}\hfill
-\begin{subfigure}{.45\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_linear}
-  \caption{Linear regression}
-  \label{fig:ex2-linear}
-\end{subfigure}
-\bigskip
-\begin{subfigure}{0.4\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_gp}
-  \caption{GP Regression}
-  \label{fig:ex2-gp}
-\end{subfigure}\hfill
-\begin{subfigure}{0.45\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/plots_final4/sin_rbf_default_0.4/09_12_13_24_50/plot_posterior_confint_naive_overall_mean}
-  \caption{Overall mean}
-  \label{fig:ex2-gp}
-\end{subfigure}
-\caption[True BP value prediction]{Prediction of true BP values $F_X$ (black) form measurments (red dots)
-    with estimated CI (gray area). The true BP values are shown by the red dotted line. }
-\label{fig:ex-large-AR-predictions}
-\end{figure}
-
 
 \subsection{Smoothing Spline Failure}
 Figure \ref{fig:ex-spline-failure} illustrates how spline regression
@@ -445,7 +436,7 @@ lead to underestimation of the one-week mean.
 
 
 
-\begin{figure}[!ht]
+\begin{figure}[!htb]
 \centering
 \begin{subfigure}{.5\textwidth}
     \centering
@@ -462,6 +453,7 @@ lead to underestimation of the one-week mean.
     \label{subfig: ex-spline-failure-bootstrap}
 \end{subfigure}
 \caption[Smoothing Spline Failure]{
+    Smoothing Spline Failure:
     Smoothing spline giving extreme local predictions of the true BP values $f(x)$
     for a downsampling factor of 2.
     The huge drop produced at the end of the one week window
@@ -476,7 +468,7 @@ lead to underestimation of the one-week mean.
 
 %\begin{example}
 %
-%\begin{figure}[!ht]
+%\begin{figure}[!htb]
 %\centering
 %\includegraphics[width=\linewidth]{Pictures/plots_final2/sin_rbf_default_0.2/09_11_07_49_51/plot_posterior}
 %\caption[GP Prediction]{Predictive mean of $F_{X}$ (blackline) with
@@ -484,7 +476,7 @@ lead to underestimation of the one-week mean.
 %\label{fig:ex1-gp-prediction}
 %\end{figure}
 %
-%\begin{figure}[!ht]
+%\begin{figure}[!htb]
 %\centering
 %\includegraphics[width=\linewidth]{Pictures/plots_final2/sin_rbf_default_0.2/09_11_07_49_51/plot_mean_decomposed}
 %\caption[Mean Decomposed Predicted vs True]{Each figure shows one sample $F_X$ drawn from the true GP (red dashed line) with noisy observations
@@ -493,7 +485,7 @@ lead to underestimation of the one-week mean.
 %\end{figure}
 %
 %
-%\begin{figure}[!ht]
+%\begin{figure}[!htb]
 %\centering
 %\begin{subfigure}{.45\textwidth}
 %    \centering
