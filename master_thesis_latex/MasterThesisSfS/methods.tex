@@ -1,4 +1,4 @@
-\usepackage{amsmath}\chapter{Methods}\label{ch:methods}
+\chapter{Methods}\label{ch:methods}
 
 The last chapter introduced Gaussian process regression to establish a mapping
 between a time point $x$ and its corresponding BP value. Since Gaussian Processes
@@ -527,7 +527,7 @@ that measurements were, on average, taken every other hour.
 
 Seasonal sampling was implemented by extracting the true seasonal component
 from the original BP samples. The values of these seasonal components
-shifted to contain only positive values
+shifted to contain only positive values and scale to sum up to one,
 served as probability weights when selecting data for $X_{train}$ from $X$.
 A more extreme seasonal sampling pattern has been produced by
 using the squared values of the seasonal component as probability weights.
@@ -586,9 +586,8 @@ illustrated in Figure \ref{fig:seasonal-sampling}.
 \end{subfigure}
 \caption{Panel (b) and (c) show the sample $f(x)$ (red dashed line) drawn from the true GP with measurments generated
 by seasonal and extreme sampling (red dots). Panel (a) shows $f(x)$ decomposed into its components.
-The values of the periodic component (orange) is shifted to contain only postivive values and
-is used as probablity weights in seasonal sampling.
-Squared values are used in the case of extreme seasonal sampling}
+The probability weights used for downsamplin $X$ are calculated
+from the values of the periodic component (orange)}
 \label{fig:seasonal-sampling}
 \end{figure}
 
