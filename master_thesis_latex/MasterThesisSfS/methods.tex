@@ -250,22 +250,37 @@ The hyperparameters, $\sigma_M^2$, $\sigma_P^2$, $\sigma_R^2$, and $l$, were fou
 maximizing the marginal likelihood, as described in subsection
 \ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x, x')$.
 
-From $\hat{k}(x, x')$, the predictive distribution over $F_X$ was calculated.
-Furthermore, the target measures, including credible intervals, were estimated by
-sampling from the predictive distribution.
-Pseudocode \ref{pc:simulation-evaluation-flow} describes the entire simulation flow
-for evaluating the performance of GP regression for a specific target measure.
+%From $\hat{k}(x, x')$, the predictive distribution over $F_X$ was calculated.
+%Additionally, the target measures, including credible intervals, were estimated by sampling from this predictive distribution.
+
+To evaluate the performance of GP regression for a specific target measure,
+the following steps were repeated $S=100$ times:
+\begin{itemize}
+    \item  Simulated data was obtained by sampling from the true GP
+    \item  $\hat{k}(x, x')$ was otained by fitting a GP regression to the simulated data
+    \item  The predictive distribution over $F_X$ was obtained from $\hat{k}(x, x')$
+    \item  Target measure estimates, along with equal-tailed credible intervals, were calculated by sampling from the predictive distribution.
+\end{itemize}
+CI coverage was computed by determining the number of times the true target measure fell within the credible interval,
+divided by the total number of simulations $S$.
+CI width was calculated by averaging the width of the CIs across all $S$ simulations.
+This process is summarized in Algorithm \ref{pc:simulation-evaluation-flow}.
 
 
-\begin{algorithm}[h!] \caption{Simulation and Evaluation Flow}
+%\begin{figure}
+\begin{algorithm}[h!]
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
- \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The regression input} \\
- \hspace*{\algorithmicindent} $K_{XX}$ \algorithmiccomment{ The true kernel function evaluated at the input $X$}\\
+ \hspace*{\algorithmicindent} $X$ \algorithmiccomment{Regression input} \\
+ \hspace*{\algorithmicindent} $K_{XX}$ \algorithmiccomment{True kernel function evaluated at the input $X$}\\
+ \hspace*{\algorithmicindent} $S$ \algorithmiccomment{Number of simulations} \\
+ \hspace*{\algorithmicindent} $K$ \algorithmiccomment{Number of draws from the predictive distribution to estimate CIs} \\
+ \hspace*{\algorithmicindent} $\alpha$ \algorithmiccomment{Significance level to calculate $1-\alpha$ CIs} \\
+ \hspace*{\algorithmicindent} $\sigma_n^2$ \algorithmiccomment{Measurement noise variance} \\
  \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
  \hspace*{\algorithmicindent} \textbf{Output:} \\
  \hspace*{\algorithmicindent} CiCoverage \algorithmiccomment{Credible interval coverage}\\
  \hspace*{\algorithmicindent} CiWidth \algorithmiccomment{Credible interval width}\\
-\begin{algorithmic}[1]
+ \begin{algorithmic}[1]
     \State \textbf{Initialize:} CiCoverageList = $\left[ \text{ } \right]$, CiWidthList = $\left[ \text{ } \right]$,
     \For {$s = 0$ \dots $S$}
         \State $F_X =$ sample from $\N(0, K_{XX})$ \algorithmiccomment{Sample from the true GP}
@@ -281,14 +296,19 @@ for evaluating the performance of GP regression for a specific target measure.
         \EndFor
     \State $m =$ TargetMeasure($F_X$) \algorithmiccomment{Extract true target measure}
     \State $\hat{m} = $mean($\hat{M}$)
-    \State $ci = (\text{quantile}_{\alpha/2}, \text{quantile}_{1-\alpha/2}$) \algorithmiccomment{Equal-tailed credible interval}
+    \State $ci = (\text{quantile}_{\alpha/2}(\hat{M}), \text{quantile}_{1-\alpha/2}(\hat{M})$) \algorithmiccomment{Equal-tailed credible interval}
     \State CiCoverageList.append($ ci\left[ 0 \right] \leq m \leq ci\left[ 1 \right]$)
     \State CiWidthList.append($ci\left[ 1 \right] - ci\left[ 0 \right] $)
     \EndFor
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
-\end{algorithm}\label{pc:simulation-evaluation-flow}
+ \caption{Simulation and Evaluation Flow}
+ \label{pc:simulation-evaluation-flow}
+
+%\end{figure}
+
+\end{algorithm}
 
 
 
@@ -354,16 +374,17 @@ The chosen baseline methods presented in this section are: linear regression,
 smoothing spline, overall mean, and naive TTR.
 All methods, but naive TTR, estimate the target measure through the estimation of $F_X$.
 The calculation of the target measure and confidence interval is described in
-Pseudocode \ref{pc:target-measure-baseline}.
+Algorithm \ref{pc:target-measure-baseline}.
 The procedure is equivalent to GP regression, except that one does not sample from
 the posterior distribution but uses bootstrap samples instead.
 
 
-\begin{algorithm}[!ht] \caption{Target Measrue Estimation with CI}
+\begin{algorithm}[!ht]
  \hspace*{\algorithmicindent} \textbf{Inputs:} \\
  \hspace*{\algorithmicindent} $X$ \algorithmiccomment{The regression input} \\
  \hspace*{\algorithmicindent} $F_X$  \algorithmiccomment{True BP values at inputs $X$} \\
  \hspace*{\algorithmicindent} $X_{train}, Y_{X_{train}}$ \algorithmiccomment{The training data} \\
+ \hspace*{\algorithmicindent} $\sigma_n^2$ \algorithmiccomment{Measurement noise variance} \\
  \hspace*{\algorithmicindent} RegressionMethod \algorithmiccomment{The baseline method} \\
  \hspace*{\algorithmicindent} TargetMeasure \algorithmiccomment{Function to extract target measure from $F_X$ or $\hat{F}_X$} \\
  \hspace*{\algorithmicindent} \textbf{Output:} \\
@@ -382,7 +403,9 @@ the posterior distribution but uses bootstrap samples instead.
     \State CiCoverage = ($ ci\left[ 0 \right] \leq m \leq ci\left[ 1 \right]$)
     \State CiWidth = ($ci\left[ 1 \right] - ci\left[ 0 \right] $)
 \end{algorithmic}
-\end{algorithm}\label{pc:target-measure-baseline}
+\caption{Target Measure Estimation with Bootstrap CI}
+ \label{pc:target-measure-baseline}
+\end{algorithm}
 
 
 
@@ -461,8 +484,9 @@ from training data using smoothing splines.
         return F_X_hat
 
 \end{minted}
-\captionof{listing}{Smooting Spline Estimation of $F_X$}
-\end{figure} \label{code:smoothing-spline}
+\caption{Smooting Spline Estimation of $F_X$}
+\label{code:smoothing-spline}
+\end{figure}
 
 
 
