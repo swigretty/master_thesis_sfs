@@ -14,7 +14,7 @@ In this section, we evaluate the effectiveness of GP Regression ("gp") in
 estimating specific target measures. These target measures include the one-week mean,
 one-day mean, one-hour mean, and time in the target range (TTR).
 We compare the estimation performance of GP Regression with that of several baseline methods,
-including linear regression ("linear"), smoothing splines ("spline"), overall mean
+including linear regression ("linear"), spline regression ("spline"), overall mean
 ("overall\_mean"), and naive TTR range ("naive\_ttr").
 
 \subsection{One-Week Mean}
@@ -44,7 +44,7 @@ on the y-axis, but the x-axis range of CI width values varies. As expected,
 CI width values increase with larger downsampling factors and with seasonal sampling.
 The CI width is capped at 30 mmHg, as larger CIs would have limited practical value.
 
-For the largest downsampling factors, the smoothing spline interpolation method
+For the largest downsampling factors, the spline regression method
 would produce confidence intervals that exceed this limit and is therefore not
 represented in the corresponding panel of subfigure
 \ref{fig:weekly-mean-uniform-sampling-performance}.
@@ -213,11 +213,11 @@ Figure \ref{fig:ttr-performance} displays the performance of different methods
 in estimating TTR based on various downsampling patterns.
 Among these methods, GP Regression stands out as the only one consistently achieving
 adequate CI coverage for most of the downsampling patterns.
-While smoothing spline interpolation comes close, particularly with uniform sampling and
+While spline regression comes close, particularly with uniform sampling and
 large downsampling factors, GP regression consistently yields narrower CIs.
 It is important to note that TTR does not depend on the absolute values of the blood pressure (BP)
 estimates but rather focuses on whether these estimates fall within the target range.
-As TTR is not affected by extreme estimate values occasionally produced by smoothing spline interpolation,
+As TTR is not affected by extreme estimate values occasionally produced by spline regression,
 this method provides reasonable TTR estimates.
 However, the current approach used for estimating TTR ("naive\_ttr") performs poorly.
 This is because it does not estimate TTR through the estimation of $f(x)$ but directly
@@ -336,7 +336,7 @@ BP values and CIs. In this context:
     adequate coverage.
     Predictions tend to improve with increased data, particularly at the peaks
     where data density is higher than in the valleys.
-    Notably, smoothing spline interpolation does not prioritize fitting a cyclic pattern,
+    Notably, spline regression does not prioritize fitting a cyclic pattern,
     resulting in higher uncertainty estimates in the valleys compared to those
     produced by GP regression and linear regression.
     \item GP regression primarily improves by narrowing the CI width as more data is added.

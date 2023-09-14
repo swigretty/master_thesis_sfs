@@ -432,9 +432,10 @@ $\hat{F}_X$.
 %using training data.
 %
 
-\subsection{Smoothing Spline}
+\subsection{Spline Regression}
+
 The scikit-learn Python package has been used to
-generate smoothing splines for predicting $F_X$.
+generate regression splines for predicting $F_X$.
 First, $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
 "sklearn.preprocessing.SplineTransformer" class.
 Knots have been placed uniformly along the quantiles of $X_{train}$.
@@ -442,11 +443,10 @@ Ordinary least square regression is then fit to the transformed training
 input $X\text{trans}_{train}$ and the response $Y_{X_{train}}$.
 The number of knots determines the smoothness of the resulting function,
 and the optimal number has been identified through 10-fold
-cross-validation. The
-%
+cross-validation.
 The code section \ref{code:smoothing-spline} provides more implementation details,
 and figure \ref{fig:post-spline} shows an example of $\hat{F}_X$ estimated
-from training data using smoothing splines.
+from training data using regression splines.
 
 %
 \begin{figure}[!htb]
@@ -457,7 +457,7 @@ from training data using smoothing splines.
     from sklearn.preprocessing import SplineTransformer
     from sklearn.linear_model import LinearRegression
 
-    def fit_and_predict_smoothing_spline(
+    def fit_and_predict_spline_regression(
                     X_train: np.ndarray,Y_X_train: np.ndarray, X: np.ndarray,
                     n_knots: int) -> np.ndarray:
         """
@@ -489,7 +489,7 @@ from training data using smoothing splines.
         return F_X_hat
 
 \end{minted}
-\caption{Smooting Spline Estimation of $F_X$}
+\caption{Spline Regression Estimation of $F_X$}
 \label{code:smoothing-spline}
 \end{figure}
 
