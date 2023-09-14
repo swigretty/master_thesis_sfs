@@ -1,19 +1,29 @@
-\chapter{Discussion}
+\chapter{Discussion and Conclusion}\label{ch:discussion-and-conclusion}
 
 
 
 
 
-\chapter{Conclusion}
 
-\section{Future Work}
+
+\section{Limitations and Future Work}
 
 
     Highest posterior density interval (HDI) (https://easystats.github.io/bayestestR/reference/hdi.html)
     Equal-tailed interval (ETI) (https://easystats.github.io/bayestestR/reference/eti.html)
 
+
+Investigate computational complexity
+
 \begin{itemize}
-    \item Use other methods than GP to simulate BP time series
+    \item Use other methods than GPs to simulate BP time series
+    \item Investigate the impact of misspecified kernel functions and the effect of adding npn-gaussian errors.
+    \item Simulate evolving seasonal component by multiply the periodic kernel with e.g. an RBF kernel
+    \item Since measurement error, the periodic and AR component are largely unknown,
+    investigate the impact of varying the relative contributions of the different kernels.
     \item Use highest posterior density credible interval (HDI) instead of the equal-tailed interval.
+    \item Define day and night BP values with the aid of the predicted cyclic component
+    \item Investigate computational complexity of GP and baseline methods
+
 \end{itemize}
 
