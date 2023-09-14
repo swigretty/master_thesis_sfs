@@ -209,8 +209,8 @@ some samples drawn from this GP are shown in Figure \ref{fig:true_gp_samples}.
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_08_59_46/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_31/plot_true_with_samples}
     \includegraphics[width=\linewidth]{Pictures/plots_final/sin_rbf_default_0.05/09_06_09_00_58/plot_true_with_samples}
-  \caption{Each figure shows one sample $F_X$ drawn from the true GP (red dashed line) with noisy observations
-      (red dots) sampled at a frequency of 0.5/hour}
+  \caption{Each figure shows one sample $F_X$ drawn from the true GP (red dashed line) with 87 irregularly spaced
+    noisy observations (red dots) }
   \label{fig:sub2}
 \end{subfigure}
 \caption{Three samples (right side) drawn from the true GP and the decomposition of theses samples (left side)}
@@ -375,7 +375,7 @@ predictive distribution obtained in every simulation iteration $s$.}
 Some other methods were fitted to $Y_{X_{train}}$ as a reference, to which
 the GP performance was compared to.
 The chosen baseline methods presented in this section are: linear regression,
-smoothing spline, overall mean, and naive TTR.
+spline regression, overall mean, and naive TTR.
 All methods, but naive TTR, estimate the target measure through the estimation of $F_X$.
 The calculation of the target measure and confidence interval is described in
 Algorithm \ref{pc:target-measure-baseline}.
@@ -500,20 +500,20 @@ from training data using regression splines.
 \begin{subfigure}{.5\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_linear}
+        Pictures/plots_final6/sin_rbf_default_0.2/09_14_12_41_27/plot_posterior_confint_linear}
     \caption{Linear Regression}
     \label{fig:post-linear}
 \end{subfigure}\hfill
 \begin{subfigure}{.5\textwidth}
     \centering
     \includegraphics[width=\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_spline}
-    \caption{Smoothing Spline}
+        Pictures/plots_final6/sin_rbf_default_0.2/09_14_12_41_27/plot_posterior_confint_spline}
+    \caption{Spline Regression}
     \label{fig:post-spline}
 \end{subfigure}
-\caption{Linear Regression and Smoothing spline used
+\caption{Linear regression and spline regression used
 to estimate some example of true BP values $F_X$. The estimated BP values $\hat{F}_X$ (black line), the
-        true BP values (red dashed line) and the training data (red dots). The gray area shows
+        true BP values (red dashed line) and the training data (purple dots). The gray area shows
 the bootstrap CI.}
 \label{fig:regression-example}
 \end{figure}
@@ -625,8 +625,8 @@ from the values of the periodic component (orange)}
 \section{Computational Frameworks}
 
 All code has been written in Python.
-For Gaussian process simulation and regression, for fitting the Smoothing Spline
-and Linear Regression, the Pyton package scikit-learn
+For Gaussian process simulation and regression, for fitting the spline regression
+and linear regression, the Pyton package scikit-learn
 has been used.
 
 %Unless otherwise stated the Pyton package scikit-learn has been used.

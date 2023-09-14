@@ -1,7 +1,27 @@
-\chapter{Discussion and Conclusion}\label{ch:discussion-and-conclusion}
+\chapter{Summary}\label{ch:discussion-and-conclusion}
 
+\subsection{Comparison of GP Regression and Baseline Methods}
 
-
+Overall downsampling patterns and target measures, GP regression performs best.
+This is especially the case for the mean calculated over small time windows, i.e. one-hour and
+one-day mean. This can be explained by the fact, that GP regression explicitly
+models the dependencies of BP values between time points.
+Hence uncertainty predictions
+are based on how much data there is at time points which highly (negatively or positively)
+correlated with the time point of prediction. Since correlation is depends on
+the proximity to the point of prediction, this leads to larger CIs in case
+of low data desity around the point of prediction.
+Linear regression does provide the narrowest CIs with adequate CI coverage for the
+one-week mean under large downsampling factors.
+However generally linear regression does not improve a lot with more data, escpecially
+in the presence of seasonal sampling.
+This can be explained by the fact, that the linear model used is very constrained and
+can only fit a linear trend with a perfect sinusoidal seasonal pattern. This
+make the method lesss data dependent.
+Smoothing spline regerssion  on the other
+hand does not produce valuable results under large downsampling factors
+except when estimating TTR, where the locally unstable BP estimates does not
+have a huge impact. This behavior of s
 
 
 
