@@ -890,22 +890,26 @@ class GPSimulationEvaluator(GPSimulator):
             if nplots > 1:
                 gps_kwargs["rng"] = np.random.default_rng(i)
                 gps = GPSimulationEvaluator(**gps_kwargs)
-            if plot_method is None:
-                gps.plot_true_with_samples()
-                gps.plot()
-                gps.plot_errors()
-                for method, pred in gps.predictions.items():
-                    conf_int = pred["ci_fun"](
-                        output_path=gps.output_path, plot=True,
-                        theta_fun=gps.target_measures)
-                    pred_raw = conf_int["raw"]
-                    gps.plot_posterior_confint(
-                        pred_raw["mean"], pred_raw["ci_lb"], pred_raw["ci_ub"],
-                        f_true=gps.f_true.y, x_red=gps.y_true_train.x,
-                        y_red=gps.y_true_train.y, figname_suffix=method)
-
-            else:
+            if plot_method:
                 getattr(gps, plot_method)()
+                break
+            gps.plot_true_with_samples()
+            gps.plot()
+            gps.plot_errors()
+            for method, pred in gps.predictions.items():
+                conf_int = pred["ci_fun"](
+                    output_path=gps.output_path, plot=True,
+                    theta_fun=gps.target_measures)
+                pred_raw = conf_int["raw"]
+                gps.plot_posterior_confint(
+                    pred_raw["mean"], pred_raw["ci_lb"], pred_raw["ci_ub"],
+                    f_true=gps.f_true.y, x_red=gps.y_true_train.x,
+                    y_red=gps.y_true_train.y, figname_suffix=method)
+            gps.evaluate()
+            gps.evaluate_target_measures(ci_fun_kwargs=dict(
+                output_path=gps.output_path, plot=True,
+                theta_fun=gps.target_measures))
+
         return
 
 
