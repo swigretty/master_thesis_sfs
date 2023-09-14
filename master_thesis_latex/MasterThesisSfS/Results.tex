@@ -391,12 +391,14 @@ the AR component dominates versus when the cyclic component takes precedence.
 In this context:
 
 \begin{itemize}
-    \item When the cyclic component dominates, all methods perform well and provide accurate predictions.
-    \item However when the AR component is dominant, all baseline methods produce very poor local BP
-    estimates, as only GP regression is capable of capturing the AR component explicitly.
-    In this scenario GP regression produces estimates with relatively
+    \item When the cyclic component dominates, all methods perform well and
+    provide accurate predictions also for a large downsampling factor of 10.
+    \item However, when the AR component is strong:
+    \begin{itemize}
+        \item Only GP regression is capable of offering reliable local BP value estimates.
+    GP regression, in this scenario, produces estimates with relatively
     large CIs, signifying its recognition of the uncertainty associated with the strong AR component.
-    However, GP regression overestimates the contribution from the AR component
+    However, when less data is available, GP regression overestimates the contribution from the AR component
     while underestimating the contribution
     from the cyclic component.
     This is shown in sub-figure \ref{subfig:mean-decomposed-ar}.
@@ -404,8 +406,11 @@ In this context:
     model what was originally contributed by another kernel.
     \item Linear regression, on the other hand, is constrained
     to predict a perfect sinusoid with a linear trend.
-    Consequently, it struggles to fit the AR component effectively, leading to inaccurate predictions.
+    Consequently, it struggles to fit the AR component effectively,
+    even when data availability is high (downsampling factor of 2.5), which leads to inaccurate predictions.
     Additionally, it underestimates uncertainty in such cases.
+    \end{itemize}
+
 \end{itemize}
 
 
@@ -413,47 +418,46 @@ In this context:
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_true_mean_decomposed.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_true_mean_decomposed.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_true_mean_decomposed.pdf}
+     Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_true_mean_decomposed.pdf}
   \caption{Decompositon of $f(x)$: The cyclic component is shown in orange, the AR component in blue.}
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_posterior_confint_spline.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_spline.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_posterior_confint_spline.pdf}
   \caption{Smoothing Spline}
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_linear.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_posterior_confint_linear.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_linear.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_posterior_confint_linear.pdf}
   \caption{Linear regression }
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_posterior_confint_gp.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_posterior_confint_gp.pdf}
     \includegraphics[width=0.45\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_gp.pdf}
+        Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_posterior_confint_gp.pdf}
   \caption{GP regression}
 \end{subfigure}\hfill
-
 \caption[Dominant Cyclic Component vs. Dominant AR Component]{
 Dominant Cyclic Component vs. Dominant AR Component:
     Estimated BP values $\hat{f}(x)$ (black) and corresponding confidence intervals (gray area)
     based on measurements (red dots) using various methods.
     The measurements were uniformly sampled with a downsampling factor of 5.
     The true BP values, $f(x)$, are depicted by the red dotted line.
-    The right panels show BP value predictions under a prominent AR component,
-    while the left panels display predictions under a prominent cyclic component.
+    The right panels show BP value predictions under a prominent AR component and with a dwonsampling factor of 2.5,
+    while the left panels display predictions under a prominent cyclic component and with a downsampling factor of 10.
  }
 \label{fig:ex-ar-cyclic}
 \end{figure}
@@ -464,25 +468,44 @@ Dominant Cyclic Component vs. Dominant AR Component:
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{
-        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_mean_decomposed_vertical}
-  \caption{Dominant Cyclic Component}
+    \includegraphics[width=0.66\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_mean_decomposed_vertical}
+    \includegraphics[width=0.33\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.1/09_12_12_47_10/plot_posterior_confint_gp}
+  \caption{Dominant Cyclic Component - Downsampling Factor of 10}
 \end{subfigure}
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{
+    \includegraphics[width=0.66\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_mean_decomposed_vertical}
+    \includegraphics[width=0.33\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.4/09_13_12_25_43/plot_posterior_confint_gp}
+  \caption{Dominant AR Component - Downsampling Factor of 2.5}
+    \label{subfig:mean-decomposed-ar-low-downsampling}
+\end{subfigure}\hfill
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.66\linewidth]{
         Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_mean_decomposed_vertical}
-  \caption{Dominant AR Component}
+    \includegraphics[width=0.33\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_posterior_confint_gp}
+  \caption{Dominant AR Component - Downsampling Factor of 5}
     \label{subfig:mean-decomposed-ar}
 \end{subfigure}\hfill
 \label{fig:mean-decomposed-ar-cyclic}
 \caption[Dominant Cyclic Component vs. Dominant AR Component - Decompostion of $f(x)$]{
-    The decomposition of the true BP values $f(x)$ (left panels)  and the decomposition
-    of the estimated BP values $\hat{f}(x)$. The cyclic component is shown in orange,
-    tha AR component in blue and the long term trend in green. In the dominant AR
-component case variance from the AR component is overestimated while the
-variance from the cyclic component is underestimated.
+    The left panels show the decomposition of the true BP values $f(x)$.
+    The middle panels show the decomposition of the estimated BP values $\hat{f}(x)$.
+    The cyclic component is shown in orange,
+    tha AR component in blue and the long term trend in green.
+    When the cyclic component precedes fewer data is needed to obtain adequate BP estimates,
+    than when the AR component precedes.
+    In the dominant AR component case GP regression underestimates
+    the contribution from the cyclic component.
+    With a downsampling factor of 5, GP regression additionally overestimates the
+    variance from the AR component.
 }
 \end{figure}
 
