@@ -1,4 +1,4 @@
-\chapter{Results}\label{ch:results}
+\chapter{Results and Analysis}\label{ch:results}
 
 This chapter presents the performance of GP Regression in estimating various
 measures based on a simulation study.
@@ -278,7 +278,7 @@ methods perform as more data is incorporated. In this context:
     increasing amount of data.
     \item Smoothing spline, on the other hand, struggles to capture the cyclic
     component due to the prominent presence of an AR component, even when a
-    \item substantial amount of data is available.
+    substantial amount of data is available.
 \end{itemize}
 
 \begin{figure}
@@ -392,9 +392,16 @@ In this context:
 
 \begin{itemize}
     \item When the cyclic component dominates, all methods perform well and provide accurate predictions.
-    \item However, when the AR component is strong, only GP regression is capable of offering reliable
-    local BP value estimates. GP regression, in this scenario, produces estimates with relatively
-    large confidence intervals (CIs), signifying its recognition of the uncertainty associated with the strong AR component.
+    \item However when the AR component is dominant, all baseline methods produce very poor local BP
+    estimates, as only GP regression is capable of capturing the AR component explicitly.
+    In this scenario GP regression produces estimates with relatively
+    large CIs, signifying its recognition of the uncertainty associated with the strong AR component.
+    However, GP regression overestimates the contribution from the AR component
+    while underestimating the contribution
+    from the cyclic component.
+    This is shown in sub-figure \ref{subfig:mean-decomposed-ar}.
+    Since these kernels are very flexible on their own already, they will sometimes
+    model what was originally contributed by another kernel.
     \item Linear regression, on the other hand, is constrained
     to predict a perfect sinusoid with a linear trend.
     Consequently, it struggles to fit the AR component effectively, leading to inaccurate predictions.
@@ -449,6 +456,34 @@ Dominant Cyclic Component vs. Dominant AR Component:
     while the left panels display predictions under a prominent cyclic component.
  }
 \label{fig:ex-ar-cyclic}
+\end{figure}
+
+
+
+\begin{figure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_05_43/plot_mean_decomposed_vertical}
+  \caption{Dominant Cyclic Component}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{
+        Pictures/plots_final4/sin_rbf_default_0.2/09_12_13_08_34/plot_mean_decomposed_vertical}
+  \caption{Dominant AR Component}
+    \label{subfig:mean-decomposed-ar}
+\end{subfigure}\hfill
+\label{fig:mean-decomposed-ar-cyclic}
+\caption[Dominant Cyclic Component vs. Dominant AR Component - Decompostion of $f(x)$]{
+    The decomposition of the true BP values $f(x)$ (left panels)  and the decomposition
+    of the estimated BP values $\hat{f}(x)$. The cyclic component is shown in orange,
+    tha AR component in blue and the long term trend in green. In the dominant AR
+component case variance from the AR component is overestimated while the
+variance from the cyclic component is underestimated.
+}
 \end{figure}
 
 \subsection{Smoothing Spline Failure}
