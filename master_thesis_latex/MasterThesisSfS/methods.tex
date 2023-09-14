@@ -303,7 +303,11 @@ This process is summarized in Algorithm \ref{pc:simulation-evaluation-flow}.
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
- \caption{Simulation and Evaluation Flow}
+ \caption{Simulation and Evaluation Flow \\
+ Caluclate avergage CiCoverage and CiWdith over $S$ simulations by
+repeated generation of syntetic data and fitting of a GP regression.
+Target measure extimates and equal-tailed credible intervals were extracted from the
+predictive distribution obtained in every simulation iteration $s$.}
  \label{pc:simulation-evaluation-flow}
 
 %\end{figure}
@@ -403,7 +407,8 @@ the posterior distribution but uses bootstrap samples instead.
     \State CiCoverage = ($ ci\left[ 0 \right] \leq m \leq ci\left[ 1 \right]$)
     \State CiWidth = ($ci\left[ 1 \right] - ci\left[ 0 \right] $)
 \end{algorithmic}
-\caption{Target Measure Estimation with Bootstrap CI}
+\caption{Target Measure Estimation with Bootstrap CI
+}
  \label{pc:target-measure-baseline}
 \end{algorithm}
 
