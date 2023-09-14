@@ -48,7 +48,7 @@ For the largest downsampling factors, the spline regression method
 would produce confidence intervals that exceed this limit and is therefore not
 represented in the corresponding panel of subfigure
 \ref{fig:weekly-mean-uniform-sampling-performance}.
-It appears that the approach used for spline interpolation produces unstable
+It appears that the approach used for spline regression produces unstable
 estimates during bootstrapping, resulting in very large confidence intervals.
 
 
@@ -57,9 +57,9 @@ Therefore, naive TTR is omitted from this analysis.
 All methods perform adequately with uniform sampling.
 While linear regression seems to produce the smallest confidence intervals for
 the largest downsampling factor, estimates do not improve as notably as for
-spline interpolation and GP regression when more data becomes available.
+spline regression and GP regression when more data becomes available.
 For downsampling factors below 5, GP regression, linear regression, and spline
-interpolation produce very similar results.
+regression produce very similar results.
 
 In the presence of seasonal sampling, the overall mean obviously does not
 provide good estimates. GP regression generally
@@ -123,7 +123,7 @@ one-day mean across all sampling patterns.
 Its superiority becomes more pronounced with increased data availability and
 an increasing amount of seasonal sampling.
 
-Spline interpolation, when not suffering from the estimation instability
+Spline regression, when not suffering from the estimation instability
 described in the previous subsection, also yields decent results.
 In the case of uniform sampling, the one-day mean is adequately approximated
 by the naive TTR method.
@@ -511,8 +511,8 @@ Dominant Cyclic Component vs. Dominant AR Component:
 
 \subsection{Smoothing Spline Failure}
 
-Figure \ref{fig:ex-spline-failure} provides a visualization of how smoothing
-spline interpolation generates exceptionally large CIs when
+Figure \ref{fig:ex-spline-failure} provides a visualization of how
+spline regression generates exceptionally large CIs when
 applied under high downsampling factors.
 In such scenarios, bootstrapping produces highly unstable BP estimates.
 This phenomenon becomes evident when observing the results of a single bootstrap
