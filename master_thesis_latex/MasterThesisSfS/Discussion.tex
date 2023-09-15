@@ -39,55 +39,59 @@ whereas for GP regression, CI coverage would increase,
 and for spline regression, it would remain at the same level.
 
 
-
 \section{Limitations and Future Work}
 
-In the current study, GP regression is employed to estimate values generated
-from a GP itself. This way GP regression might have an advantage over the baseline methods and
-comparing their performance might to be fair.
-Furthermore, the same combination of kernel types
-- namely, RBF, Matérn, and Periodic kernels - has been utilized for both
-simulation and estimation.
-Hence, when fitting a GP regression, only the kernel hyperparameters had to be found.
-Although this seemed to be dificult enough, it is worthwhile to explore the
-implications of employing a mispecified kernel during estimation.
-Additionally,the influece of non-Gaussian measurement errors  could be investigated.
-Furthermore, it might be beneficial to explore entirely different methods for
-simulating BP values, ideally also offering greater control over the simulated samples.
-Currently, when drawing random samples from a GP,
-the only means of controlling the shape of the produced functions
-lies in the choice of the kernel function.
+In the current study, GP regression is employed to estimate values generated from a GP itself.
+This unique approach provides GP regression with a potential advantage over baseline methods.
+To ensure a fairer comparison, we suggest the following:
 
-While some assumptions about the BP time series could be made based
-on real-world BP data, the contributions of the measurement
-error and the AR components to the real-world data remain largely uncertain.
-Expanding the scope of adversarial analysis involves exploring the impact of
-varying the relative contributions of different kernels and measurement noise
-on prediction performance. It has been demonstrated that a larger AR
-component in the signal makes predictions harder, and the same would hold true
-if the simulated measurement noise were increased.
-Therefore, by varying the contributions of these different components,
-we can better delineate the limits of the regression methods.
-
-GP regression credible interval estimates were calculated
-based on the equal-tailed credible interval (ETI).
-Another commonly used credible interval is the highest posterior density interval (HDI),
-which yields different intervals, particularly when dealing with asymmetric distributions
-- a scenario that might be expected for TTR.
-Therefore, for the next simulation study, it is advisable to extract both HDI and ETI to
-discern which one is better suited to the specific problem at hand.
-
-The company's particular interests for further exploration encompass the following:
 \begin{itemize}
-    \item Simulating a seasonal component that evolves over time.
-    Achieving this could be as straightforward as multiplying the Periodic kernel,
-    used thus far for simulation, with another kernel that models this temporal evolution,
-    such as an RBF kernel.
-    \item Calculating day and night BP values.
-    This presupposes the establishment of a definition of day and night,
-    which could be facilitated by incorporating the predicted cyclic component.
-    \item Assessing the computational complexity of the various regression methods.
+    \item Investigate entirely different methods for simulating BP values.
+    Ideally, this method would also offer greater control over the simulated samples.
+    Currently, when generating random samples from a GP, our ability to control the shape of the produced
+    functions is limited to the choice of the kernel function.
+
+    \item Investigate the implications of employing a misspecified kernel during estimation.
+    We have consistently used the same combination of kernel types - specifically, RBF, Matérn, and Periodic kernels -
+    for both simulation and estimation, with only kernel hyperparameters adjusted.
+    It would be intriguing to understand how sensitive predictive performance is to the mismatches in
+    the kernel function.
+
+    \item Investigate the influence
+    of non-Gaussian measurement errors on predictive performance.
 \end{itemize}
+
+Additionally, expanding the scope of adversarial analysis to examine different
+kernel and measurement noise combinations would provide valuable insights.
+While some assumptions about the BP time series were based on real-world BP data,
+the contributions of measurement errors and the autoregressive (AR) components
+to real-world data remain largely uncertain.
+It has been demonstrated that a larger AR component in the signal makes predictions
+more challenging, and the same would apply if the simulated measurement noise were increased.
+Thus, by varying the contributions of these different components,
+we can gain a deeper understanding of the limits of the regression methods.
+
+GP regression credible interval estimates were calculated based on the equal-tailed
+credible interval (ETI). Another commonly used credible interval is
+the highest posterior density interval (HDI), which yields different intervals,
+particularly when dealing with asymmetric distributions - a scenario that might be expected for TTR.
+Therefore, for the next simulation study, it is advisable to calculate both HDI and ETI
+to determine which one is better suited to the specific problem at hand.
+
+The company's specific areas of interest for further exploration include:
+
+\begin{itemize}
+    \item Simulation of a seasonal component that evolves over time.
+    This can be achieved by multiplying the Periodic kernel, used so far for simulation,
+    with another kernel that models this temporal evolution, such as an RBF kernel.
+
+    \item Calculate day and night BP values. This task requires defining "day" and "night," a task that could be
+    facilitated by incorporating the predicted cyclic component.
+
+    \item Assess the computational complexity of the used regression methods
+
+\end{itemize}
+
 
 
 
