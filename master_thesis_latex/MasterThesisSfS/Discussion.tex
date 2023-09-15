@@ -42,61 +42,61 @@ and for spline regression, it would remain at the same level.
 
 \section{Limitations and Future Work}
 
-In the current study GP regression is used to estimate values that
-where generated from a GP itself. Not only that but also the same
-combination of kernel types, i.e. RBF, Matérn and Periodic kernel,
-have been used for simulation and estimation.
-When fitting a GP, only the kernl hyperparameters had to be found.
-Although this seemed to be already an adequate challenge, it
-would be interesting to investigate the impact of using a misspecified
-kernel on estimation time.
-In addition to that it would be interesting to see how the predictions
-would be affected by non Gaussianities added to the simulated values.
-This could be achieved by simply adding non Gaussian noise to the
-true BP values.
-Apart from that one should probably also try to come up with
-a completely different way of simulating BP values, ideally also
-providing more control over the simulated samples. Since when drawing from
-a GP at random, the only control over the shape of functions produced is
-through the chosen kernel function.
+In the current study, GP regression is employed to estimate values generated
+from a GP itself. This way GP regression might have an advantage over the baseline methods and
+comparing their performance might to be fair.
+Furthermore, the same combination of kernel types
+- namely, RBF, Matérn, and Periodic kernels - has been utilized for both
+simulation and estimation.
+Hence, when fitting a GP regression, only the kernel hyperparameters had to be found.
+Although this seemed to be dificult enough, it is worthwhile to explore the
+implications of employing a mispecified kernel during estimation.
+Additionally,the influece of non-Gaussian measurement errors  could be investigated.
+Furthermore, it might be beneficial to explore entirely different methods for
+simulating BP values, ideally also offering greater control over the simulated samples.
+Currently, when drawing random samples from a GP,
+the only means of controlling the shape of the produced functions
+lies in the choice of the kernel function.
 
-Although the characteristics of the simulated BP values have been compared
-to those that are observed in real world, the level of measurement error,
-of the periodic and AR component remain still largely
-unknown. Adversarial analysis could further be expanded by investigating
-the effect of varying relative contributions of the different kernels and the measurement noise
-on the prediction performance.
-It has been shown that a larger periodic component in the singal,
-makes predictions easier while for obvious reasons that would also be the case
-if the simulated measurement noise was reduced. Hence by varying the contribution
-of the different components the limits of the regression methods should be
-identified.
+While some assumptions about the BP time series could be made based
+on real-world BP data, the contributions of the measurement
+error and the AR components to the real-world data remain largely uncertain.
+Expanding the scope of adversarial analysis involves exploring the impact of
+varying the relative contributions of different kernels and measurement noise
+on prediction performance. It has been demonstrated that a larger AR
+component in the signal makes predictions harder, and the same would hold true
+if the simulated measurement noise were increased.
+Therefore, by varying the contributions of these different components,
+we can better delineate the limits of the regression methods.
 
-GP regression credible interval estimtes have been calculated based on the
-equal-tailed credible interval (ETI). Another common credible interval is the
-Highest posterior density interval (HDI), which leads to different intervals
-mainly in the face of asymmetric distributions, which might be epxected
-for TTR. So for the nest simulation study, one should extract both HDI and ETI
-to understand which one is more suitable for the problem at hand.
+GP regression credible interval estimates were calculated
+based on the equal-tailed credible interval (ETI).
+Another commonly used credible interval is the highest posterior density interval (HDI),
+which yields different intervals, particularly when dealing with asymmetric distributions
+- a scenario that might be expected for TTR.
+Therefore, for the next simulation study, it is advisable to extract both HDI and ETI to
+discern which one is better suited to the specific problem at hand.
 
-
-Of particular interest to the company are further:
+The company's particular interests for further exploration encompass the following:
 \begin{itemize}
-    \item Simulation of a seasonal component that would evolve over time. This
-    could be simply achieved by multiplying the Periodic kernel, that was
-    so far used for simulation, with another kernel that models this evolution, e.g. an RBF kernel.
-    \item Calculation of day and night BP. This presumes a certain definition of day and night
-    which could be obtained with the aid of the predicted cyclic component.
-    \item The computational complexity of the different regression methods.
+    \item Simulating a seasonal component that evolves over time.
+    Achieving this could be as straightforward as multiplying the Periodic kernel,
+    used thus far for simulation, with another kernel that models this temporal evolution,
+    such as an RBF kernel.
+    \item Calculating day and night BP values.
+    This presupposes the establishment of a definition of day and night,
+    which could be facilitated by incorporating the predicted cyclic component.
+    \item Assessing the computational complexity of the various regression methods.
 \end{itemize}
 
 
 
 
 
-
-
-
+%    In the current configuration, spline regression consumes the most computational time.
+%    This is because spline regession nees to be employed several time in order to identify
+%    the degree of smoothing through cross validation and also estimating confidence itervals through
+%    bootstrapping.
 
 %The method used for spline regression should be fine-tuned.
 %One could use ridge regression on the
