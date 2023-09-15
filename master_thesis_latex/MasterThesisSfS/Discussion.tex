@@ -1,5 +1,27 @@
 \chapter{Discussion and Conclusion}\label{ch:discussion-and-conclusion}
 
+The objective of this thesis was to demonstrate why conventional
+time series methods fail to deal with irregularly sampled data.
+Additionally, it should be elucidated whether Gaussian
+processes are a suitable approach for modeling time series with irregularly
+spaced observations, using the BP time series example.
+
+In the theoretical part of this thesis we have shoved
+that linear regression methods for correlated errors exist but that
+”ready to use” implementations only exist for the equispaced
+case.
+Thus, GP regression has been introduced as a method that allows for
+modelling time series in continuous time.
+
+A simulation study has further been conducted to investigate the
+suitablity of GP regression for modelling the BP time series feauturing
+irregularly space observations.
+The performance of GP regression in estimating
+certain target measures has been assessed and compared to those of
+some baseline methods. And the main resutls are
+summarized in the next subsection.
+
+
 \subsection{Comparison of GP Regression and Baseline Methods}
 
 Overall, when considering different downsampling patterns and target measures,
