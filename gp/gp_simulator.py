@@ -880,8 +880,10 @@ class GPSimulationEvaluator(GPSimulator):
         if f_true is not None:
             ax.plot(x, f_true, linestyle="dotted", color="red")
         if (x_red is not None) and (y_red is not None):
-            ax.scatter(x_red, y_red, color="red", zorder=2, s=5, alpha=0.5,
+            ax.scatter(x_red, y_red, color="purple", zorder=2, s=5, alpha=0.5,
                        label="Observations")
+        ax.set_xlabel("time [h]")
+        ax.set_ylabel("BP [mmHg]")
 
     def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
