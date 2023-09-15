@@ -1,49 +1,126 @@
-\chapter{Summary}\label{ch:discussion-and-conclusion}
+\chapter{Discussion and Conclusion}\label{ch:discussion-and-conclusion}
 
 \subsection{Comparison of GP Regression and Baseline Methods}
 
-Overall downsampling patterns and target measures, GP regression performs best.
-This is especially the case for the mean calculated over small time windows, i.e. one-hour and
-one-day mean. This can be explained by the fact, that GP regression explicitly
-models the dependencies of BP values between time points.
-Hence uncertainty predictions
-are based on how much data there is at time points which highly (negatively or positively)
-correlated with the time point of prediction. Since correlation is depends on
-the proximity to the point of prediction, this leads to larger CIs in case
-of low data desity around the point of prediction.
-Linear regression does provide the narrowest CIs with adequate CI coverage for the
-one-week mean under large downsampling factors.
-However generally linear regression does not improve a lot with more data, escpecially
-in the presence of seasonal sampling.
-This can be explained by the fact, that the linear model used is very constrained and
-can only fit a linear trend with a perfect sinusoidal seasonal pattern. This
-make the method lesss data dependent.
-Smoothing spline regerssion  on the other
-hand does not produce valuable results under large downsampling factors
-except when estimating TTR, where the locally unstable BP estimates does not
-have a huge impact. This behavior of s
+Overall, when considering different downsampling patterns and target measures,
+GP regression outperforms the baseline methods. This superiority is particularly
+evident when calculating the mean over small time windows, such as one-hour and one-day means.
+This performance can be attributed to the fact that GP regression explicitly models
+the dependencies among BP values across different time points. Consequently,
+the uncertainty predictions are based on the amount of data available at time
+points that are highly correlated, either positively or negatively, with the time
+point of prediction.
+Since the degree of correlation depends on the proximity to the prediction point,
+this results in larger CI when data density is low around the prediction point.
 
+Linear regression, on the other hand, provides the narrowest CIs and maintains adequate
+CI coverage for the one-week mean under large downsampling factors. However,
+linear regression does not exhibit significant improvement with an increase in data.
+This can be attributed to the inherent
+limitations of the linear model, which can only capture a linear trend with a perfect sinusoidal
+seasonal pattern. This characteristic makes the method less reliant on the amount of data available.
+
+In contrast, spline regression is a non-parametric method and is thus more data-dependent.
+Spline regression does not yield meaningful results under large downsampling factors,
+except when estimating TTR, where the locally unstable BP estimates have a relatively smaller impact.
+For the same reason, spline regression does not attempt to fit a cyclic pattern and therefore struggles with seasonal sampling.
+
+Although GPs fall under the category of non-parametric methods, they offer the option to express
+prior beliefs about the function of interest through the choice of kernel.
+In our case, a function with a cyclic pattern with a periodicity of 24 hours, an AR component, and a long-term trend are favored.
+This choice does not impose as many constraints on the predictions as linear regression does.
+These properties make GP regression the ideal candidate for analyzing BP time series based on irregularly spaced samples.
+
+
+Seasonal sampling leads, in all cases, to reduced performance.
+Interestingly, in the face of seasonal sampling, more data generally leads to
+a reduction in Ci coverage and width for linear regression,
+whereas for GP regression, CI coverage would increase,
+and for spline regression, it would remain at the same level.
 
 
 
 \section{Limitations and Future Work}
 
+In the current study GP regression is used to estimate values that
+where generated from a GP itself. Not only that but also the same
+combination of kernel types, i.e. RBF, Matérn and Periodic kernel,
+have been used for simulation and estimation.
+When fitting a GP, only the kernl hyperparameters had to be found.
+Although this seemed to be already an adequate challenge, it
+would be interesting to investigate the impact of using a misspecified
+kernel on estimation time.
+In addition to that it would be interesting to see how the predictions
+would be affected by non Gaussianities added to the simulated values.
+This could be achieved by simply adding non Gaussian noise to the
+true BP values.
+Apart from that one should probably also try to come up with
+a completely different way of simulating BP values, ideally also
+providing more control over the simulated samples. Since when drawing from
+a GP at random, the only control over the shape of functions produced is
+through the chosen kernel function.
 
-    Highest posterior density interval (HDI) (https://easystats.github.io/bayestestR/reference/hdi.html)
-    Equal-tailed interval (ETI) (https://easystats.github.io/bayestestR/reference/eti.html)
+Although the characteristics of the simulated BP values have been compared
+to those that are observed in real world, the level of measurement error,
+of the periodic and AR component remain still largely
+unknown. Adversarial analysis could further be expanded by investigating
+the effect of varying relative contributions of the different kernels and the measurement noise
+on the prediction performance.
+It has been shown that a larger periodic component in the singal,
+makes predictions easier while for obvious reasons that would also be the case
+if the simulated measurement noise was reduced. Hence by varying the contribution
+of the different components the limits of the regression methods should be
+identified.
+
+GP regression credible interval estimtes have been calculated based on the
+equal-tailed credible interval (ETI). Another common credible interval is the
+Highest posterior density interval (HDI), which leads to different intervals
+mainly in the face of asymmetric distributions, which might be epxected
+for TTR. So for the nest simulation study, one should extract both HDI and ETI
+to understand which one is more suitable for the problem at hand.
 
 
-Investigate computational complexity
-
+Of particular interest to the company are further:
 \begin{itemize}
-    \item Use other methods than GPs to simulate BP time series
-    \item Investigate the impact of misspecified kernel functions and the effect of adding npn-gaussian errors.
-    \item Simulate evolving seasonal component by multiply the periodic kernel with e.g. an RBF kernel
-    \item Since measurement error, the periodic and AR component are largely unknown,
-    investigate the impact of varying the relative contributions of the different kernels.
-    \item Use highest posterior density credible interval (HDI) instead of the equal-tailed interval.
-    \item Define day and night BP values with the aid of the predicted cyclic component
-    \item Investigate computational complexity of GP and baseline methods
-
+    \item Simulation of a seasonal component that would evolve over time. This
+    could be simply achieved by multiplying the Periodic kernel, that was
+    so far used for simulation, with another kernel that models this evolution, e.g. an RBF kernel.
+    \item Calculation of day and night BP. This presumes a certain definition of day and night
+    which could be obtained with the aid of the predicted cyclic component.
+    \item The computational complexity of the different regression methods.
 \end{itemize}
+
+
+
+
+
+
+
+
+
+%The method used for spline regression should be fine-tuned.
+%One could use ridge regression on the
+%generated B-spline basis functions instead of OLS regression. In this case
+%one would identify the penalty parameter $\lambda$ through cross validation and
+%choose a fixed high enough number of knots.
+%Instead of
+%using OLS regression on the B-spline bases generated form the input times,
+%choosing the number of knots of the splines through cross validation
+%it is probably more common to generate B-spline bases and
+%
+%
+%
+%\begin{itemize}
+%    \item Use other methods than GPs to simulate BP time series
+%    \item Investigate the impact of misspecified kernel functions and the effect of adding npn-gaussian errors.
+%    \item Simulate evolving seasonal component by multiply the periodic kernel with e.g. an RBF kernel
+%    \item Since measurement error, the periodic and AR component are largely unknown,
+%    investigate the impact of varying the relative contributions of the different kernels.
+%    \item Use highest posterior density credible interval (HDI) instead of the equal-tailed interval.
+%    \item Define day and night BP values with the aid of the predicted cyclic component
+%    \item Investigate computational complexity of GP and baseline methods
+%    \item Highest posterior density interval (HDI) (https://easystats.github.io/bayestestR/reference/hdi.html)
+%    Equal-tailed interval (ETI) (https://easystats.github.io/bayestestR/reference/eti.html)
+%
+%\end{itemize}
 
