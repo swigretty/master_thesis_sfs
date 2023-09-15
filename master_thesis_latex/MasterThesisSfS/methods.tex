@@ -249,6 +249,9 @@ but with variable hyperparameters:
 The hyperparameters, $\sigma_M^2$, $\sigma_P^2$, $\sigma_R^2$, and $l$, were found by
 maximizing the marginal likelihood, as described in subsection
 \ref{subsec:marginal-likelihood}, yielding the optimal kernel $\hat{k}(x, x')$.
+Optimization has been performed using the "L-BFGS-B" algorithm from Python's
+"scipy.optimize.minimize" module, which belongs
+to the family of quasi-Newton methods.
 
 %From $\hat{k}(x, x')$, the predictive distribution over $F_X$ was calculated.
 %Additionally, the target measures, including credible intervals, were estimated by sampling from this predictive distribution.
