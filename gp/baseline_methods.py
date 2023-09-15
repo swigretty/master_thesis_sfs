@@ -118,9 +118,10 @@ def get_rep_count_cluster(x_train):
     return rep_count
 
 
-def get_spline_basis(x_pred, x_train):
+def get_spline_basis(x_pred, x_train, n_knots=None):
 
-    n_knots = len(np.unique(x_train))
+    if n_knots is None:
+        n_knots = len(np.unique(x_train))
     spline = SplineTransformer(degree=3, n_knots=n_knots,
                                extrapolation="constant",
                                knots="quantile")
@@ -134,9 +135,13 @@ def get_spline_basis(x_pred, x_train):
 
 
 def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
-                  lamds=None, train_idx=None, test_idx=None, **kwargs):
+                  lamds=None, n_knots=None, train_idx=None, test_idx=None,
+                  **kwargs):
     if lamds is None:
-        lamds = np.logspace(-1, 4, 10)
+        lamds = np.logspace(-1, 2, 10)
+
+    if n_knots is None:
+        n_knots = len(np.unique(x_train))
 
     if lamd is None:
         cv_perf = []
@@ -154,7 +159,8 @@ def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
         x_train_trans = x_train
         x_pred_trans = x_pred
     else:
-        x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train)
+        x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train,
+                                                       n_knots=n_knots)
 
     glm = Ridge(alpha=lamd).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
