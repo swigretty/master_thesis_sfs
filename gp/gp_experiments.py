@@ -160,18 +160,18 @@ if __name__ == "__main__":
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "plots_final5"
+    experiment_name = "final_experiments_spline_ridge"
 
-    for datafrac in [0.05, 0.1, 0.2, 0.4]: #
-        for mode in modes:
-            mode_config = mode()
-            mode_config.session_name = f"{mode_config.session_name}_{datafrac}"
-            rng = np.random.default_rng(18)
-            plot_sample(normalize_kernel=False, rng=rng,
-                        experiment_name=experiment_name, nplots=10,
-                        config=mode_config,
-                        data_fraction=datafrac,
-                        normalize_y=True)
+    # for datafrac in [0.05, 0.1, 0.2, 0.4]: #
+    #     for mode in modes:
+    #         mode_config = mode()
+    #         mode_config.session_name = f"{mode_config.session_name}_{datafrac}"
+    #         rng = np.random.default_rng(18)
+    #         plot_sample(normalize_kernel=False, rng=rng,
+    #                     experiment_name=experiment_name, nplots=10,
+    #                     config=mode_config,
+    #                     data_fraction=datafrac,
+    #                     normalize_y=True)
 
     # evaluate_data_fraction(GPSimulatorConfig(
     #     kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
@@ -179,9 +179,9 @@ if __name__ == "__main__":
     #     experiment_name=experiment_name, n_samples=100, data_fraction=(0.05, ),
     #     normalize_kernel=False, normalize_y=True, only_var=True)
 
-    # evaluate_data_fraction_modes(modes,
-    #                              n_samples=100,
-    #                              experiment_name=experiment_name,
-    #                              normalize_y=True,
-    #                              normalize_kernel=False)
+    evaluate_data_fraction_modes(modes,
+                                 n_samples=100,
+                                 experiment_name=experiment_name,
+                                 normalize_y=True,
+                                 normalize_kernel=False, data_fraction=(0.05, ))
 

@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 from functools import partial
 from gp.gp_data import GPData
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 import statsmodels.api as sm
 from target_measures import overall_mean, ttr, TARGET_MEASURES
 from gp.evalutation_utils import calculate_ci
@@ -118,32 +118,11 @@ def get_rep_count_cluster(x_train):
     return rep_count
 
 
-def get_spline_basis(x_pred, x_train, df):
-    x_pred_in_range = x_pred[(x_pred >= np.min(x_train)) & (x_pred <= np.max(x_train))]
+def get_spline_basis(x_pred, x_train):
 
-    if x_pred.ndim == 1:
-        x_pred = x_pred.reshape(-1, 1)
-
-    if x_train.ndim == 1:
-        x_train = x_train.reshape(-1, 1)
-
-    if x_pred_in_range.ndim == 1:
-        x_pred_in_range = x_pred_in_range.reshape(-1, 1)
-    # lower_bound = min(np.min(x_pred), np.min(x_train))
-    # upper_bound = max(np.max(x_pred), np.max(x_train))
-
-
-    # lower_bound = np.min(x_train)
-    # upper_bound = np.max(x_train)
-
-    # x_train_trans = patsy.dmatrix(f"bs(train, degree=3, df={df}, include_intercept=False)", {"train": x_train},
-    #                         return_type='matrix')
-    # x_pred_trans = dmatrix(f"bs(test, degree=3, df={df}, include_intercept=False)", {"test": x_pred},
-    #                        return_type='matrix')
-    # x_train_trans = patsy.cr(x_train, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
-    # x_pred_trans = patsy.cr(x_pred, df=df, lower_bound=lower_bound, upper_bound=upper_bound)
-
-    spline = SplineTransformer(degree=3, n_knots=df, extrapolation="constant",
+    n_knots = len(np.unique(x_train))
+    spline = SplineTransformer(degree=3, n_knots=n_knots,
+                               extrapolation="constant",
                                knots="quantile")
 
     spline.fit(x_train)
@@ -151,38 +130,35 @@ def get_spline_basis(x_pred, x_train, df):
     x_train_trans = spline.transform(x_train)
     x_pred_trans = spline.transform(x_pred)
 
-    # x_train_trans = np.hstack((np.ones((x_train_trans.shape[0], 1)), x_train_trans))
-    # x_pred_trans = np.hstack((np.ones((x_pred_trans.shape[0], 1)), x_pred_trans))
     return x_pred_trans, x_train_trans
 
 
-def spline_reg_v2(x_pred, x_train, y_train, df=None, transformed=False,
-                  dfs=None, train_idx=None, test_idx=None, **kwargs):
-    if dfs is None:
-        dfs = np.linspace(15, int(len(x_train)*0.8), 10)
-    dfs = dfs.astype(int)
+def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
+                  lamds=None, train_idx=None, test_idx=None, **kwargs):
+    if lamds is None:
+        lamds = np.logspace(-1, 4, 10)
 
-    if df is None:
+    if lamd is None:
         cv_perf = []
-        for _df in dfs:
+        for _lamd in lamds:
             # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
-            fit_pred_fun = partial(spline_reg_v2, df=_df)
+            fit_pred_fun = partial(spline_reg_v2, lamd=_lamd)
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train,
                                            fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
 
-        df = dfs[np.where(cv_perf == np.min(cv_perf))][0]
-        # logger.info(f"Best smoothing parameter for spline {df=}")
+        lamd = lamds[np.where(cv_perf == np.min(cv_perf))][0]
+        logger.info(f"Best smoothing parameter for spline {lamd=}")
 
     if transformed:
         x_train_trans = x_train
         x_pred_trans = x_pred
     else:
-        x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train, df)
+        x_pred_trans, x_train_trans = get_spline_basis(x_pred, x_train)
 
-    glm = LinearRegression(fit_intercept=False).fit(x_train_trans, y_train)
+    glm = Ridge(alpha=lamd).fit(x_train_trans, y_train)
     y_pred = glm.predict(x_pred_trans)
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, df=df),
+    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg_v2, lamd=lamd),
                      x_pred=x_pred, x_train=x_train, y_train=y_train)
 
     if transformed:
