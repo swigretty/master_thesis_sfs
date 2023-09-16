@@ -1,33 +1,38 @@
 \chapter*{Notation}
 \label{c:Notation}
 
+\section*{General Statements}
 
-\section{General Statements}
-Prediction: Estimation of the expected time series value at some time
-$x^{\ast}$, with $x^{\ast}$ being within the time range of available observations.
-\\
-Forcasting: Estimation of the expected time series value at some time
-$x^{\ast}$, with $x^{\ast}$ being after the last available observations \\
-Vectors are column vectors unless stated otherwise. \\
+\begin{itemize}[label={},leftmargin=*]
+  \item Prediction refers to estimation of the expected time series value at some time
+  $x^{\ast}$, with $x^{\ast}$ being within the time range of available observations.
+  \item Forcasting refers to estimation of the expected time series value at some time
+  $x^{\ast}$, with $x^{\ast}$ being after the last available observations.
+  \item Vectors are column vectors unless stated otherwise.
+  \item Blood Pressure or BP always refers to the systolic blood pressure.
+\end{itemize}
 
-Blood Pressure or BP always refers to the systolic blood pressure \\
 
+\section*{Abbreviation}\label{sec:abbreviation}
+\begin{itemize}[label={},leftmargin=*]
+  \item GP: Gaussian process.
+  \item BP: (Systolic) Blood pressure.
+  \item TTR: Time in target range
+  \item CI: Refers to both confidence and credible interval
+  \item OLS: Ordinary Least Squares.
+  \item iid: Independent and identically distributed.
 
-\section{Abbreviation}\label{sec:abbreviation}
-GP: Gaussian process. \\
-BP: (Systolic) Blood pressure. \\
-TTR: Time in target range \\
-CI: Refers to both confidence and credible interval\\
-OLS: Ordinary Least Squares. \\
-iid: Independent and identically distributed.
+\end{itemize}
 
-\section{Symbols}\label{sec:symbols}
-$\mathcal{N}(\mu,\,\sigma^{2})$ : Normal distribution with mean $\mu$ and standard deviation $\sigma$ \\
-$X_1 \dots X_n \iidsim F$ : $X_1 \dots X_n$ are iid with distribution $F$ \\
-$|M|$: determinant of matrix $M$ \\
-$\ERW{X}$: Expectation of X \\
-$\COV{X,Y}$: Covariance between $X$ and $Y$ \\
-$\VAR{X}$: Variance of X
+\section*{Symbols}\label{sec:symbols}
+\begin{itemize}[label={},leftmargin=*]
+  \item $\mathcal{N}(\mu,\,\sigma^{2})$ : Normal distribution with mean $\mu$ and standard deviation $\sigma$
+  \item $X_1 \dots X_n \iidsim F$ : $X_1 \dots X_n$ are iid with distribution $F$
+  \item $|M|$: determinant of matrix $M$
+  \item $\ERW{X}$: Expectation of X
+  \item $\COV{X,Y}$: Covariance between $X$ and $Y$
+  \item $\VAR{X}$: Variance of X
+\end{itemize}
 
 
 %%% Local Variables: 

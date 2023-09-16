@@ -63,7 +63,9 @@ The shown property distributions should match those from Section \ref{sec:charac
     \centering
     \includegraphics[width=0.6\linewidth]{
         Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_y_true_train_summary.pdf}
-    \caption{The one-week sample variance should span from from 16 to 144 mmHg², with an average of 49 mmHg²}
+    \caption[Distribution of One-Week BP Variance from Simulated Measurements]{
+        Distribution of One-Week BP Variance from Simulated Measurements:
+    The one-week variance should span from from 16 to 144 mmHg², with an average of 49 mmHg²}
     \label{fig:variance}
 \end{figure}
 
@@ -71,8 +73,10 @@ The shown property distributions should match those from Section \ref{sec:charac
     \centering
     \includegraphics[width=0.6\linewidth]{
        Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_dip_ampl_summary}
-    \caption{Half of the difference between average daytime and nighttime BP measurements. Should fall
-    within the range of 0 to 10 mmHg}
+    \caption[Distribution of the Night Dip Magnitude from Simulated Measurements]{
+        Distribution of the Night Dip Magnitude from Simulated Measurements:
+    Here the night dip magintude is defined as half of the difference between average daytime and nighttime BP measurements.
+        Should fall within the range of 0 to 10 mmHg}
     \label{fig:dip_ampl}
 \end{figure}
 
@@ -82,7 +86,9 @@ The shown property distributions should match those from Section \ref{sec:charac
     \centering
     \includegraphics[width=0.6\linewidth]{
        Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_2.24**2 * Matern(length_scale=3, nu=0.5) * 1**2_summary.pdf}
-    \caption{The variance of the AR(1) component. There exists no target values for this.}
+    \caption[Distribution of the AR Component Variance from Simulated Measurements]{
+    Distribution of the AR Component Variance from Simulated Measurements:
+    There exists no target values for the variance of the AR component.}
     \label{fig:var_matern}
 \end{figure}
 
@@ -90,7 +96,9 @@ The shown property distributions should match those from Section \ref{sec:charac
     \centering
     \includegraphics[width=0.6\linewidth]{
        Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_2.24**2 * RBF(length_scale=50) * 1**2_summary.pdf}
-    \caption{The variance of the RBF component. There exists no target values for this.}
+    \caption[Distribution of the RBF Component Variance from Simulated Measurements]{
+        Distribution of the RBF Component Variance from Simulated Measurements:
+        There exists no target values for the variance of teh RBF components}
     \label{fig:var_rbf}
 \end{figure}
 
@@ -99,7 +107,9 @@ The shown property distributions should match those from Section \ref{sec:charac
     \centering
     \includegraphics[width=0.6\linewidth]{
        Pictures/variance_distribtution/sin_rbf_seasonal_default/09_07_07_12_53/variance_14**2 * ExpSineSquared(length_scale=3, periodicity=24) * 1**2_summary.pdf}
-    \caption{The variance of the periodic component.}
+    \caption[Distribution of the Periodic Component Variance from Simulated Measurements]{
+        Distribution of the Periodic Component Variance from Simulated Measurements:
+        The target ranges for the variance of the periodic component are provided in the form of night dip values (see Figure \ref{fig:dip_ampl})}
     \label{fig:var_periodc}
 \end{figure}
 

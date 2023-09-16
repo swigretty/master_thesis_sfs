@@ -189,7 +189,7 @@ some samples drawn from this GP are shown in Figure \ref{fig:true_gp_samples}.
 \begin{figure}[!htb]
     \centering
     \includegraphics[width=0.6\linewidth]{Pictures/plots_final/sin_rbf_default_0.2/09_06_09_09_17/plot_kernel_true}
-    \caption{The true kernel function $k(x,x')$}
+    \caption{The True Kernel Function $k(x,x')$}
     \label{fig:true_kernel}
 \end{figure}
 
@@ -213,7 +213,7 @@ some samples drawn from this GP are shown in Figure \ref{fig:true_gp_samples}.
     noisy observations (red dots) }
   \label{fig:sub2}
 \end{subfigure}
-\caption{Three samples (right side) drawn from the true GP and the decomposition of theses samples (left side)}
+\caption[Samples Drawn from the True GP]{Three samples (right side) drawn from the true GP and the decomposition of theses samples (left side)}
 \label{fig:true_gp_samples}
 \end{figure}
 
@@ -306,7 +306,7 @@ This process is summarized in Algorithm \ref{pc:simulation-evaluation-flow}.
     \State CiCoverage = mean(CiCoverageList)
     \State CiWidth = mean(CiWidthList)
 \end{algorithmic}
- \caption{Simulation and Evaluation Flow \\
+ \caption[Simulation and Evaluation Flow]{Simulation and Evaluation Flow \\
  Caluclate avergage CiCoverage and CiWdith over $S$ simulations by
 repeated generation of syntetic data and fitting of a GP regression.
 Target measure extimates and equal-tailed credible intervals were extracted from the
@@ -514,7 +514,7 @@ from training data using regression splines.
     \caption{Spline Regression}
     \label{fig:post-spline}
 \end{subfigure}
-\caption{Linear regression and spline regression used
+\caption[Linear Regression and Spline Regression Prediction Examples]{Linear regression and spline regression used
 to estimate some example of true BP values $F_X$. The estimated BP values $\hat{F}_X$ (black line), the
         true BP values (red dashed line) and the training data (purple dots). The gray area shows
 the bootstrap CI.}
@@ -616,7 +616,7 @@ illustrated in Figure \ref{fig:seasonal-sampling}.
     \caption{$f(x)$ and measurments from extreme seasonal sampling.}
 %    \label{fig:post-linear}
 \end{subfigure}
-\caption{Panel (b) and (c) show the sample $f(x)$ (red dashed line) drawn from the true GP with measurments generated
+\caption[Seasonal Sampling Example]{Panel (b) and (c) show the sample $f(x)$ (red dashed line) drawn from the true GP with measurments generated
 by seasonal and extreme sampling (red dots). Panel (a) shows $f(x)$ decomposed into its components.
 The probability weights used for downsamplin $X$ are calculated
 from the values of the periodic component (orange)}

@@ -81,7 +81,7 @@ pertain to systolic blood pressure.
 Based on the Aktiia user data, several properties of \textbf{the BP
 measurements, $(Y_{t_i}: i \in \{1, 2, \dots n\})$}, have been identified:
 
-\begin{enumerate}[\roman{enumi}.)]
+\begin{enumerate}
 \item The measurements are irregularly spaced, meaning that the time between
 consecutive measurements varies.
 \item Observations are not uniformly sampled across time; instead, their
@@ -145,18 +145,55 @@ forecasting future BP values but solely relies on predicting BP values within th
 one-week range of available data. Consequently, this thesis concentrates on
 reconstructing BP values between the first and last time point in the dataset.
 
+
+
+%\section{Thesis Outline}
+%
+%This thesis is structured into two main sections: a theoretical exploration and
+%an applied investigation.
+%
+%The theoretical section starts with Chapter \ref{ch:characteristics-of-time-series},
+%where key concepts and definitions pertaining to time series are introduced.
+%Subsequently, in Chapter \ref{ch:time-series-decomposition-and-regression},
+%we delve into linear regression techniques and their limitations
+%for modelling times series from unequally spaced data.
+%Chapter \ref{ch:gaussian-process-regression} then presents Gaussian process
+%regression and why it might be suited for time series regression of unequally spaced data.
+%
+%
+%The applied section of this thesis initiates with Chapter \ref{ch:methods},
+%where we detail the simulation study designed to evaluate the effectiveness
+%of GP regression in predicting BP values from irregularly sampled data.
+%
+%The outcomes of this simulation study are presented in
+%section \ref{ch:results}, and their implications are
+%summarized in Section \ref{ch:discussion-and-conclusion}.
+
+
+
+
 \section{Thesis Outline}
 
-This thesis can be divided into a theoretical and an applied part.
-The theoretical part start by introducing some key concepts and definitions around
-time series in chapter \ref{ch:characteristics-of-time-series}.
-Then linear regression (chapter \ref{ch:time-series-decomposition-and-regression})
-and Gaussian process regression (\ref{ch:gaussian-process-regression})
-are present as methods for modeling time series.
+This thesis is structured into two main sections: a theoretical exploration and
+an applied investigation.
 
-The applied part starts with chapter \ref{ch:methods} and presents
-the simulation study performed to assess the ability of GP regression
-to predict BP values, from irregularly sampled data.
+\subsection{Theoretical Section}
 
-The results of this simulation study are presented in section \ref{ch:results}
-and summarized in section \ref{ch:discussion-and-conclusion}.
+The theoretical section starts with \textbf{Chapter \ref{ch:characteristics-of-time-series}},
+where key concepts and definitions pertaining to time series are introduced.
+Subsequently, in \textbf{Chapter \ref{ch:time-series-decomposition-and-regression}},
+we delve into linear regression techniques and their limitations
+for modeling time series from unequally spaced data.
+\textbf{Chapter \ref{ch:gaussian-process-regression}} then presents Gaussian process
+regression and why it might be suited for time series regression of unequally spaced data.
+
+\subsection{Applied Section}
+
+The applied section of this thesis initiates with \textbf{Chapter \ref{ch:methods}},
+where we detail the simulation study designed to evaluate the effectiveness
+of GP regression in predicting BP values from irregularly sampled data.
+
+The outcomes of this simulation study are presented in
+\textbf{Chapter \ref{ch:results}}, and their implications are
+summarized in \textbf{Chapter \ref{ch:discussion-and-conclusion}}.
+

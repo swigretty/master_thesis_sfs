@@ -84,7 +84,7 @@ literate={<-}{{$\leftarrow$}}1 {~}{{$\sim$}}1}
 \usepackage{listings}
 \usepackage{minted}
 \setminted[python]{breaklines, framesep=4mm, fontsize=\footnotesize, numbersep=5pt}
-
+\usepackage{enumitem}
 
 \newcommand{\iidsim}{\text{ iid }{\sim} \text{ }}
 %\newcommand\iidsim{\stackrel{\mathclap{\normalfont\mbox{\tiny{idd}}}}{\sim}}
@@ -148,7 +148,7 @@ literate={<-}{{$\leftarrow$}}1 {~}{{$\sim$}}1}
 \alternatereaderprefix{Co-Advisor}
 \alternatereader{Dr. David Perruchoud}
 \submissiondate{22 September 2023}
-\title{Time Series Analysis \\ for Irregularly Sampled Data }
+\title{Time Series Analysis in the Presence of Irregular Sampling:\\ A Gaussian Process Approach}
 %\title{Gaussian Process Regression for the Analysis \\ of Irregularly Sampled Time Series }
 
 \maketitle%- Titelseite wird abgeschlossen
@@ -253,18 +253,18 @@ literate={<-}{{$\leftarrow$}}1 {~}{{$\sim$}}1}
 \addtocontents{toc}{\vspace{.5\baselineskip}}
 \appendix
 \include{Appendix1}
-\include{Appendix2}
-\include{Appendix_more_R}
+%\include{Appendix2}
+%\include{Appendix_more_R}
 
 
-%% Epilogue (optional)
-\addtocontents{toc}{\vspace{.5\baselineskip}}
-\cleardoublepage
-\phantomsection
-\addcontentsline{toc}{chapter}{\protect\numberline{}{Epilogue}}
-\markboth{Epilogue}{Epilogue}
-\include{Epilogue}
-
+%%% Epilogue (optional)
+%\addtocontents{toc}{\vspace{.5\baselineskip}}
+%\cleardoublepage
+%\phantomsection
+%\addcontentsline{toc}{chapter}{\protect\numberline{}{Epilogue}}
+%\markboth{Epilogue}{Epilogue}
+%\include{Epilogue}
+%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %%% Declaration of originality (Do not remove!)%%%
