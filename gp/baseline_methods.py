@@ -123,8 +123,7 @@ def get_spline_basis(x_pred, x_train, n_knots=None):
     if n_knots is None:
         n_knots = len(np.unique(x_train))
     spline = SplineTransformer(degree=3, n_knots=n_knots,
-                               extrapolation="constant",
-                               ) # knots="quantile"
+                               extrapolation="constant", knots="quantile")  #
 
     spline.fit(x_train)
 
@@ -141,13 +140,14 @@ def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
         lamds = np.logspace(-1, 2, 10)
 
     if n_knots is None:
-        n_knots = min(len(np.unique(x_train)), 175)
+        n_knots = len(np.unique(x_train))
+        n_knots = min(n_knots, 100) + int(n_knots**0.2)
 
     if lamd is None:
         cv_perf = []
         for _lamd in lamds:
             # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
-            fit_pred_fun = partial(spline_reg_v2, lamd=_lamd)
+            fit_pred_fun = partial(spline_reg_v2, lamd=_lamd, n_knots=n_knots)
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train,
                                            fit_pred_fun=fit_pred_fun,
                                            n_folds=10))
