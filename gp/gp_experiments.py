@@ -154,15 +154,15 @@ if __name__ == "__main__":
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
                 data_fraction_weights=lambda x: x ** 1,
                 session_name="sin_rbf_seasonal_default"),
-        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-                data_fraction_weights=lambda x: x ** 2,
-                session_name="sin_rbf_seasonal_extreme")
+        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
+        #         data_fraction_weights=lambda x: x ** 2,
+        #         session_name="sin_rbf_seasonal_extreme")
              ]
 
     rng = np.random.default_rng(18)
-    experiment_name = "final_experiments_spline_ridge_v2"
+    experiment_name = "final_experiments_spline_ridge_uniform_caped"
 
-    # for datafrac in [0.05, 0.1, 0.2, 0.4]: #
+    # for datafrac in [0.05, 0.1, 0.2, 0.4]:
     #     for mode in modes:
     #         mode_config = mode()
     #         mode_config.session_name = f"{mode_config.session_name}_{datafrac}"
@@ -183,5 +183,5 @@ if __name__ == "__main__":
                                  n_samples=100,
                                  experiment_name=experiment_name,
                                  normalize_y=True,
-                                 normalize_kernel=False)
+                                 normalize_kernel=False, data_fraction=(0.4, ))
 
