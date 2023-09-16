@@ -212,7 +212,7 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
 
 if __name__ == "__main__":
     setup_logging()
-    experiment_name = "final_experiments_spline_ridge_v2"
+    experiment_name = "final_experiments_spline_ridge_quantile_max100"
     plot_all(experiment_name, annotate=None, reextract=False,
              filter_dict={"method": lambda x: x != "gp_hdi"})
 

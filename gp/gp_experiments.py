@@ -149,11 +149,11 @@ if __name__ == "__main__":
     setup_logging()
 
     modes = [
-        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-        #         session_name="sin_rbf_default"),
-        # partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-        #         data_fraction_weights=lambda x: x ** 1,
-        #         session_name="sin_rbf_seasonal_default"),
+        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
+                session_name="sin_rbf_default"),
+        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
+                data_fraction_weights=lambda x: x ** 1,
+                session_name="sin_rbf_seasonal_default"),
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
                 data_fraction_weights=lambda x: x ** 2,
                 session_name="sin_rbf_seasonal_extreme")
@@ -184,5 +184,14 @@ if __name__ == "__main__":
                                  experiment_name=experiment_name,
                                  normalize_y=True,
                                  normalize_kernel=False,
-                                 data_fraction=(0.4, ))
+                                 data_fraction=(0.05, 0.4,))
+
+    # evaluate_data_fraction_modes(modes,
+    #                              n_samples=100,
+    #                              experiment_name=experiment_name,
+    #                              normalize_y=True,
+    #                              normalize_kernel=False,
+    #                              data_fraction=(0.1, 0.2,))
+    #
+
 
