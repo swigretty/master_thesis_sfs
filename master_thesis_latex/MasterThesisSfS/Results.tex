@@ -42,24 +42,14 @@ spans across 95\% coverage, the method is deemed adequate.
 It is important to note that all plots have the same range of CI coverage values
 on the y-axis, but the x-axis range of CI width values varies. As expected,
 CI width values increase with larger downsampling factors and with seasonal sampling.
-The CI width is capped at 30 mmHg, as larger CIs would have limited practical value.
-
-For the largest downsampling factors, the spline regression method
-would produce confidence intervals that exceed this limit and is therefore not
-represented in the corresponding panel of subfigure
-\ref{fig:weekly-mean-uniform-sampling-performance}.
-It appears that the approach used for spline regression produces unstable
-estimates during bootstrapping, resulting in very large confidence intervals.
-
 
 For the one-week mean the overall mean is equivalent to the naive TTR estimate.
 Therefore, naive TTR is omitted from this analysis.
 All methods perform adequately with uniform sampling.
-While linear regression seems to produce the smallest confidence intervals for
-the largest downsampling factor, estimates do not improve as notably as for
-spline regression and GP regression when more data becomes available.
-For downsampling factors below 5, GP regression, linear regression, and spline
-regression produce very similar results.
+While linear and spline regression seem to produce the smaller
+confidence intervals for
+the largest downsampling factor than GP regression, the three methods have
+similar width as more data gets available.
 
 In the presence of seasonal sampling, the overall mean obviously does not
 provide good estimates. GP regression generally
@@ -67,8 +57,8 @@ comes closest to the target coverage, but for high downsampling factors,
 linear regression remains competitive and provides even smaller CI widths.
 However, the more data available the more linear regression seems to
 diverge from the true BP values. This effects are more pronounced in the face
-of extreme seasonal sampling.
-
+of extreme seasonal sampling. Spline regression does not cope well with seasonal
+sampling it has very low CI coverage with smallest CIs across the board.
 
 In conclusion, both linear and GP regression produce the best one-week mean estimates.
 Linear regression is preferable for very high downsampling factors,
@@ -79,7 +69,7 @@ corresponding to an average of 2 or more measurements per hour.
 \centering
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/overall_mean_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/overall_mean_eval_sin_rbf_default}
     \caption{One-Week Mean - Uniform Downsampling}
     \label{fig:weekly-mean-uniform-sampling-performance}
 \end{subfigure}
@@ -88,7 +78,7 @@ corresponding to an average of 2 or more measurements per hour.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/overall_mean_eval_sin_rbf_seasonal_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/overall_mean_eval_sin_rbf_seasonal_default}
     \caption{One-Week Mean - Seasonal Downsampling}
     \label{fig:weekly-mean-seasonal-sampling-performance}
 \end{subfigure}
@@ -97,7 +87,7 @@ corresponding to an average of 2 or more measurements per hour.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/overall_mean_eval_sin_rbf_seasonal_extreme}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/overall_mean_eval_sin_rbf_seasonal_extreme}
     \caption{One-Week Mean - Extreme Seasonal Downsampling}
     \label{fig:weekly-mean-extreme-seasonal-sampling-performance}
 \end{subfigure}
@@ -123,20 +113,26 @@ one-day mean across all sampling patterns.
 Its superiority becomes more pronounced with increased data availability and
 an increasing amount of seasonal sampling.
 
-Spline regression, when not suffering from the estimation instability
-described in the previous subsection, also yields decent results.
+Spline regression produces close to adequate results when there is uniform sampling
+and high data availability.
+However spline regression struggle with seasonal sampling while still
+outperforming linear regression. Also, spline regression does not
+only reduce CI width with more data but also
+comes closer to the target coverage, whereas linear regression does even
+produce worse CI coverage with more data available.
+
 In the case of uniform sampling, the one-day mean is adequately approximated
 by the naive TTR method.
 
-However, linear regression does not appear to produce accurate estimates for
-either the one-day or one-hour mean, regardless of the sampling pattern.
+In conclusion, GP regression is the only method, that can produce
+adequate CIs for the expected one-day and one-hour mean BP.
 
 
 \begin{figure}[!htb]
 \centering
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_24h_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_24h_eval_sin_rbf_default}
     \caption{One-Day Mean Performance - Uniform Downsampling}
     \label{fig:daily-mean-uniform-sampling-performance}
 \end{subfigure}
@@ -145,7 +141,7 @@ either the one-day or one-hour mean, regardless of the sampling pattern.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_seasonal_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_1h_eval_sin_rbf_seasonal_default}
     \caption{One-Day Mean Performance - Seasonal Downsampling}
     \label{fig:daily-mean-seasonal-sampling-performance}
 \end{subfigure}
@@ -154,7 +150,7 @@ either the one-day or one-hour mean, regardless of the sampling pattern.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_seasonal_extreme}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_1h_eval_sin_rbf_seasonal_extreme}
     \caption{One-Day Mean Performance - Extreme Seasonal Downsampling}
     \label{fig:daily-mean-extreme-seasonal-sampling-performance}
 \end{subfigure}
@@ -175,7 +171,7 @@ The dashed horizontal line indicates the target CI coverage of 95\%.
 \centering
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_1h_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_1h_eval_sin_rbf_default}
     \caption{One-Hour Mean Performance - Uniform Downsampling}
     \label{fig:hourly-mean-uniform-sampling-performance}
 \end{subfigure}
@@ -184,7 +180,7 @@ The dashed horizontal line indicates the target CI coverage of 95\%.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_24h_eval_sin_rbf_seasonal_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_24h_eval_sin_rbf_seasonal_default}
     \caption{One-Hour Mean Performance - Seasonal Downsampling}
     \label{fig:hourly-mean-seasonal-sampling-performance}
 \end{subfigure}
@@ -193,7 +189,7 @@ The dashed horizontal line indicates the target CI coverage of 95\%.
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/mean_24h_eval_sin_rbf_seasonal_extreme}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/mean_24h_eval_sin_rbf_seasonal_extreme}
     \caption{One-Hour Mean Performance - Extreme Seasonal Downsampling}
     \label{fig:hourly-mean-extreme-seasonal-sampling-performance}
 \end{subfigure}
@@ -213,13 +209,13 @@ Figure \ref{fig:ttr-performance} displays the performance of different methods
 in estimating TTR based on various downsampling patterns.
 Among these methods, GP regression stands out as the only one consistently achieving
 adequate CI coverage for most of the downsampling patterns.
-While spline regression comes close, particularly with uniform sampling and
-large downsampling factors, GP regression consistently yields narrower CIs.
-It is important to note that TTR does not depend on the absolute values of the blood pressure (BP)
-estimates but rather focuses on whether these estimates fall within the target range.
-As TTR is not affected by extreme estimate values occasionally produced by spline regression,
-this method provides reasonable TTR estimates.
-However, the current approach used for estimating TTR ("naive\_ttr") performs poorly.
+While spline regression comes close to the CI coverage target
+under uniform sampling and large downsampling factors it struggles again
+with seasonal sampling. Linear regression on the other hand
+does achieve a Ci coverage of about 70\% regardless of the sampling pattern,
+again demonstrating how it is less data dependent.
+The approach currently used by Aktiia for estimating TTR ("naive\_ttr")
+performs poorly.
 This is because it does not estimate TTR through the estimation of $f(x)$ but directly
 operates on the noisy measurements $Y(x)$. As a result, it generally underestimates TTR.
 
@@ -228,7 +224,7 @@ operates on the noisy measurements $Y(x)$. As a result, it generally underestima
 \centering
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/ttr_eval_sin_rbf_default}
     \caption{TTR Performance - Uniform Downsampling}
     \label{fig:ttr-uniform-sampling-performance}
 \end{subfigure}
@@ -237,7 +233,7 @@ operates on the noisy measurements $Y(x)$. As a result, it generally underestima
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_seasonal_default}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/ttr_eval_sin_rbf_seasonal_default}
     \caption{TTR Performance - Seasonal Downsampling}
     \label{fig:ttr-seasonal-sampling-performance}
 \end{subfigure}
@@ -246,7 +242,7 @@ operates on the noisy measurements $Y(x)$. As a result, it generally underestima
 
 \begin{subfigure}{\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{Pictures/final_experiment_hpdi/ttr_eval_sin_rbf_seasonal_extreme}
+    \includegraphics[width=\linewidth]{Pictures/final_experiments_spline_ridge_quantile_max100/ttr_eval_sin_rbf_seasonal_extreme}
     \caption{TTR Performance - Extreme Seasonal Downsampling}
     \label{fig:ttr-extreme-seasonal-sampling-performance}
 \end{subfigure}
