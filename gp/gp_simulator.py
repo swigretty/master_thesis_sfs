@@ -884,6 +884,9 @@ class GPSimulationEvaluator(GPSimulator):
                        label="Observations")
         ax.set_xlabel("time [h]")
         ax.set_ylabel("BP [mmHg]")
+        ax.set_ylim(np.min(self.f_true.y) - 3*np.sqrt(self.meas_noise_var),
+                    np.max(self.f_true.y) + 3*np.sqrt(self.meas_noise_var))
+        # ax.set_ylim(np.min(self.y_true.y), np.max(self.y_true.y))
 
     def plot_gp_regression_sample(self, nplots=1, plot_method=None):
         gps_kwargs = self.gps_kwargs_normalized
