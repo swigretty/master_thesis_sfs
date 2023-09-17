@@ -442,9 +442,10 @@ generate regression splines for predicting $F_X$.
 First, $X_{train}$ and $X$ were transformed to cubic B-splines using the \\
 "sklearn.preprocessing.SplineTransformer" class.
 Knots have been placed uniformly along the quantiles of $X_{train}$.
-Ordinary least square regression is then fit to the transformed training
+The number of knots was chosen to be equal to the number of training
+data points but not more than a 100. Ridge regression is then fit to the transformed training
 input $X\text{trans}_{train}$ and the response $Y_{X_{train}}$.
-The number of knots determines the smoothness of the resulting function,
+The regularization parameter $\alpha$ determines the smoothness of the resulting function,
 and the optimal number has been identified through 10-fold
 cross-validation.
 The code section \ref{code:smoothing-spline} provides more implementation details,
@@ -458,23 +459,24 @@ from training data using regression splines.
 \begin{minted}[frame=single]{python}
     import numpy as np
     from sklearn.preprocessing import SplineTransformer
-    from sklearn.linear_model import LinearRegression
+    from sklearn.linear_model import Ridge
 
     def fit_and_predict_spline_regression(
                     X_train: np.ndarray,Y_X_train: np.ndarray, X: np.ndarray,
-                    n_knots: int) -> np.ndarray:
+                    alpha: float) -> np.ndarray:
         """
         Parameters
         ----------
         X_train, Y_X_train: The training data
         X: The time indexes at which to generate predictions
-        n_knots : Number of knots of the splines
+        alpha: The regularization parameter used for ridge regression
 
         Returns
         ---------
         F_X_hat: The BP value predictions at inputs X
         """
-
+        # Number of splin knots
+        n_knots = min(len(np.unique(x_train)), 100)
         spline = SplineTransformer(degree=3, n_knots=n_knots,
                                    extrapolation="constant",
                                    knots="quantile")
@@ -484,8 +486,8 @@ from training data using regression splines.
         Xtrans_train = spline.transform(X_train)
         Xtrans = spline.transform(X)
 
-        # Fit a linear regression
-        lm = LinearRegression(fit_intercept=False).fit(Xtrans_train, Y_X_train)
+        # Fit ridge regression
+        lm = Ridge(alpha=alpha).fit(Xtrans_train, Y_X_train)
 
         # Predict BP values at inputs X
         F_X_hat = lm.predict(Xtrans)
