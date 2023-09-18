@@ -115,10 +115,11 @@ an increasing amount of seasonal sampling.
 
 Spline regression produces close to adequate results when there is uniform sampling
 and high data availability.
-However spline regression struggle with seasonal sampling while still
-outperforming linear regression. Also, spline regression does not
-only reduce CI width with more data but also
-comes closer to the target coverage, whereas linear regression does even
+However, spline regression struggle with seasonal sampling especially
+as the averaging window decreases to one hour.
+However, as more data is added, spline regression does not
+only reduce CI width but also comes closer to the target coverage,
+whereas linear regression does generally
 produce worse CI coverage with more data available.
 
 In the case of uniform sampling, the one-day mean is adequately approximated
@@ -212,12 +213,13 @@ adequate CI coverage for most of the downsampling patterns.
 While spline regression comes close to the CI coverage target
 under uniform sampling and large downsampling factors it struggles again
 with seasonal sampling. Linear regression on the other hand
-does achieve a Ci coverage of about 70\% regardless of the sampling pattern,
+does achieve a CI coverage of about 70\% regardless of the sampling pattern,
 again demonstrating how it is less data dependent.
 The approach currently used by Aktiia for estimating TTR ("naive\_ttr")
 performs poorly.
 This is because it does not estimate TTR through the estimation of $f(x)$ but directly
-operates on the noisy measurements $Y(x)$. As a result, it generally underestimates TTR.
+operates on the noisy measurements $Y(x)$.
+As a result, it generally underestimates TTR.
 
 
 \begin{figure}[!htb]
@@ -253,6 +255,24 @@ The dashed horizontal line indicates the target CI coverage of 95\%.
 }
 \label{fig:ttr-performance}
 \end{figure}
+
+%\begin{table}[ht]
+%\centering
+%\caption[Test results]{\label{tab:example}Results.}
+%\begin{tabular}{| l | l |}
+%\hline
+%\textbf{Method} & \textbf{Target Measure} & \textbf{CI Coverage} & \textbf{CI Width} & \textbf{MSE}\\
+%\hline
+%gp  & ttr & \\
+%linear & $5.5$\\
+%spline  & $4.5$\\
+%overall & $5$\\
+%Overall mean  & $5$\\
+%
+%\hline
+%\end{tabular}
+%\end{table}
+
 
 
 \section{Examples}
@@ -312,14 +332,12 @@ methods perform as more data is incorporated. In this context:
     Measurments have been obtained using a
     downsampling factor of 20 (left panels) and 2.5 (right panels).
     The true BP values, $f(x)$, (red dotted line) are the same in all shown
-    scenarios however the range of values shown on the y-axis varies.
+    scenarios.
     }
 \label{fig:ex-downsampling-factor}
 \end{figure}
 
 \subsection{Seasonal Samping and Downsampling Factor}
-
-
 
 
 Figure \ref{fig:ex-seasonal-sampling} illustrates the influence of different
@@ -331,60 +349,26 @@ BP values and CIs. In this context:
     However, as more data is added, the
     BP estimates do not improve, while the CIs get narrower leading to
     worse CI coverage.
-    \item On the contrary spline and GP regression do not provide
-    very accurate estimates at high downsmapling factors. However
-    GP regression produces adequate CIs, signaling its uncertainty in
-    estimating the BP values.
-    \item Spline and GP regression performance improves as more data is added,
-    and their estimates at a downsampling factor of 2.5 look very alike.
-    However, the CI produced by the GP do much better reflect the local uncertainty
-    in the valleys of the function, where there is less data.
+    \item Spline regression, on the other hand, does not prioritize fitting
+    a cyclic pattern, leading to highly inaccurate predictions in the
+    valleys, where there is fewer data.
+    Predictions improve, albeit primarily in the peaks, as more data is added.
+    \item GP regression consistently yields accurate BP values for high and
+    low downsampling factors. With the addition of more data at the peaks,
+    it effectively reduces local uncertainty.
+    However, uncertainty remains high in the valleys where data is sparse.
 \end{itemize}
 
 
-The example in figure \ref{fig:ex-seasonal-sampling-linear} shows
-how the linear regression prediction gets worse with more data, while
-GP and spline regression learn how to better predict the peaks of the cyclic pattern.
-Notably, spline regression does not prioritize fitting a cyclic pattern,
-resulting in very inaccurate predictions in the valleys.
-
-
-\begin{figure}
-\begin{subfigure}{\textwidth}
-    \centering
-    \includegraphics[width=0.45\linewidth]{
-        Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_spline.pdf}
-    \includegraphics[width=0.45\linewidth]{
-    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_spline.pdf}
-  \caption{Spline Regression}
-\end{subfigure}
-
-\begin{subfigure}{\textwidth}
-    \centering
-    \includegraphics[width=.45\linewidth]{
-    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_linear.pdf}
-    \includegraphics[width=0.45\linewidth]{
-       Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_linear.pdf}
-  \caption{Linear regression }
-\end{subfigure}
-
-\begin{subfigure}{\textwidth}
-    \centering
-    \includegraphics[width=0.45\linewidth]{
-    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_gp.pdf}
-    \includegraphics[width=0.45\linewidth]{
-       Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_gp.pdf}
-  \caption{GP regression}
-\end{subfigure}\hfill
-
-\caption[Seasonal Samping and Downsampling Factor Example 1]{Seasonal Samping and Downsampling Factor:
-    Estimated BP values $\hat{f}(x)$ (black) and corresponding confidence intervals (gray area)
-    based on measurements (purple dots) using various methods.
-    The measurements were obtained through extreme seasonal sampling with downsampling
-    factors of 20 (left panels) and 2.5 (right panels).
-    The true BP values, $f(x)$, are represented by the red dotted line.}
-\label{fig:ex-seasonal-sampling-linear}
-\end{figure}
+The second example in Figure \ref{fig:ex-seasonal-sampling-linear} illustrates
+how linear regression predictions deteriorate with an increasing amount of data.
+Both GP and spline regression encounter difficulties in accurately estimating
+BP values in the valleys, and as more data is introduced, their improvements
+are primarily observed in the peaks.
+Notably, at a downsampling factor of 2.5,
+GP regression produces estimates that closely align with those of spline regression.
+However, the confidence intervals generated by GP regression better capture the
+local uncertainty in the valleys of the function, where data is scarce.
 
 
 \begin{figure}
@@ -415,7 +399,7 @@ resulting in very inaccurate predictions in the valleys.
   \caption{GP regression}
 \end{subfigure}\hfill
 
-\caption[Seasonal Samping and Downsampling Factor Example 2]{Seasonal Samping and Downsampling Factor:
+\caption[Seasonal Samping and Downsampling Factor Example 1]{Seasonal Samping and Downsampling Factor Example 1:
     Estimated BP values $\hat{f}(x)$ (black) and corresponding confidence intervals (gray area)
     based on measurements (purple dots) using various methods.
     The measurements were obtained through extreme seasonal sampling with downsampling
@@ -425,6 +409,42 @@ resulting in very inaccurate predictions in the valleys.
 \end{figure}
 
 
+\begin{figure}
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+        Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_spline.pdf}
+    \includegraphics[width=0.45\linewidth]{
+    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_spline.pdf}
+  \caption{Spline Regression}
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=.45\linewidth]{
+    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_linear.pdf}
+    \includegraphics[width=0.45\linewidth]{
+       Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_linear.pdf}
+  \caption{Linear regression }
+\end{subfigure}
+
+\begin{subfigure}{\textwidth}
+    \centering
+    \includegraphics[width=0.45\linewidth]{
+    Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.05/09_17_06_35_56/plot_posterior_confint_gp.pdf}
+    \includegraphics[width=0.45\linewidth]{
+       Pictures/final_plots_spline_ridge_quantile_max100_ylim2/sin_rbf_seasonal_extreme_0.4/09_17_08_48_32/plot_posterior_confint_gp.pdf}
+  \caption{GP regression}
+\end{subfigure}\hfill
+
+\caption[Seasonal Samping and Downsampling Factor Example 2]{Seasonal Samping and Downsampling Factor Example 2:
+    Estimated BP values $\hat{f}(x)$ (black) and corresponding confidence intervals (gray area)
+    based on measurements (purple dots) using various methods.
+    The measurements were obtained through extreme seasonal sampling with downsampling
+    factors of 20 (left panels) and 2.5 (right panels).
+    The true BP values, $f(x)$, are represented by the red dotted line.}
+\label{fig:ex-seasonal-sampling-linear}
+\end{figure}
 
 
 
@@ -435,24 +455,24 @@ Figure \ref{fig:ex-ar-cyclic} presents a comparison of predictions under two
 scenarios: when the AR component dominates and when the cyclic component takes precedence. In this context:
 
 \begin{itemize}
-    \item When the cyclic component dominates, all methods perform well and
+    \item When the cyclic component is predominant, all methods perform well and
     provide accurate predictions also for a large downsampling factor of 10.
-    However spline and GP regression provide larger CIs leading to a better
-    CI coverage.
+    Spline and GP regression provide larger CIs, resulting in superior CI coverage.
     \item However, when the AR component is predominant:
-
     \begin{itemize}
-        \item  Only spline and GP regression are capable of offering reliable local BP value estimates.
-        However, only if enough data is available.
-        In scenarios with limited data availability, GP regression tends to overemphasize the influence of
+        \item Only spline and GP regression are capable of providing
+        reliable local BP value estimates, provided there is a sufficient amount of data.
+        However, in situations with limited data availability,
+        GP regression tends to overemphasize the influence of
         the AR component while underestimating the contribution from the cyclic component.
         This behavior is depicted in sub-figure \ref{subfig:mean-decomposed-ar}.
-        Due to the flexibility of the kernels used, they may occasionally capture features originating from another kernel.
-        \item Linear regression, on the other hand, is constrained
-        to predict a perfect sinusoid with a linear trend.
-        Consequently, it struggles to fit the AR component effectively,
-        even when data availability is high (downsampling factor of 2.5), which leads to inaccurate predictions.
-        Additionally, it underestimates uncertainty in such cases.
+        Due to the flexibility of the kernels used, they may occasionally
+        capture features originating from another kernel.
+        \item In contrast, linear regression is constrained to predict a perfect
+        sinusoid with a linear trend. Consequently, it struggles to effectively
+        fit the AR component, even when data availability is high
+        (downsampling factor of 2.5), resulting in inaccurate predictions.
+        Furthermore, it tends to underestimate uncertainty in such cases.
     \end{itemize}
 \end{itemize}
 
