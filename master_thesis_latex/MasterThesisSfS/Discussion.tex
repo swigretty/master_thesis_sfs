@@ -36,30 +36,40 @@ point of prediction.
 Since the degree of correlation depends on the proximity to the prediction point,
 this results in larger CI when data density is low around the prediction point.
 
-Linear regression, on the other hand, provides the narrowest CIs and maintains adequate
-CI coverage for the one-week mean under large downsampling factors. However,
-linear regression does not exhibit significant improvement with an increase in data.
-This can be attributed to the inherent
-limitations of the linear model, which can only capture a linear trend with a perfect sinusoidal
-seasonal pattern. This characteristic makes the method less reliant on the amount of data available.
+In contrast, linear regression, while providing narrower CIs compared to GP regression,
+maintains adequate CI coverage for the one-week mean under large downsampling factors.
+However, linear regression does not exhibit significant improvement with an increase in data,
+and CI coverage even decreases with more data in the case of seasonal sampling.
+This limitation can be attributed to the inherent constraints of the linear model,
+which can only capture a linear trend with a perfect sinusoidal seasonal pattern.
+This characteristic makes the method less reliant on the amount of data available.
 
-In contrast, spline regression is a non-parametric method and is thus more data-dependent.
-Spline regression does not yield meaningful results under large downsampling factors,
-except when estimating TTR, where the locally unstable BP estimates have a relatively smaller impact.
-For the same reason, spline regression does not attempt to fit a cyclic pattern and therefore struggles with seasonal sampling.
+Spline regression, as a non-parametric method, is more data-dependent.
+Thus, its performance generally improves with more data but encounters
+difficulties with seasonal sampling, as it does not attempt to fit a cyclic pattern.
+At high data densities with uniform sampling, spline regression produces estimates
+of expected BP values that closely resemble those of GP regression,
+albeit with slightly inferior CI coverage.
 
 Although GPs fall under the category of non-parametric methods, they offer the option to express
 prior beliefs about the function of interest through the choice of kernel.
-In our case, a function with a cyclic pattern with a periodicity of 24 hours, an AR component, and a long-term trend are favored.
-This choice does not impose as many constraints on the predictions as linear regression does.
-These properties make GP regression the ideal candidate for analyzing BP time series based on irregularly spaced samples.
+In our case, a function with a cyclic pattern with a periodicity of 24 hours,
+an AR component, and a long-term trend are favored.
+This choice does not impose as many constraints on the predictions as linear regression does
+while simultaneously encoding more information about the function
+to be fitted compared to spline regression.
+These properties position GP regression as the ideal candidate for analyzing
+BP time series based on irregularly spaced samples.
 
-Seasonal sampling leads, in all cases, to reduced performance.
-Interestingly, in the face of seasonal sampling, more data generally leads to
-a reduction in CI coverage and width for linear regression,
-whereas for GP regression, CI coverage would increase,
-and for spline regression, it would remain at the same level.
 
+Seasonal sampling leads to reduced performance in all
+cases but most pronounced in spline regression.
+Interestingly, when confronted with seasonal sampling, more data generally
+results in a reduction in CI coverage and width for linear regression.
+Conversely, for GP and spline regression, CI coverage typically increases
+with more data.
+However, only GP regression offers adequate local CIs that expand in size
+when there is less data available.
 
 \section{Limitations and Future Work}
 
