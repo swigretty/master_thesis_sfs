@@ -1,42 +1,72 @@
 \chapter*{Abstract}
+Conventional time series analysis methods often assume evenly spaced observations,
+which may not always reflect real-world data collection constraints.
+Drawing inspiration from real-world scenarios, this study highlights Gaussian
+processes as a potent tool for analyzing irregularly sampled
+time series data.
 
-Conventional time series analysis methods typically assume observations at
-evenly spaced time intervals.
-In response to the challenges posed by irregularly sampled time series data and
-motivated by a real-world blood pressure time series example,
-this study introduces Gaussian processes as a powerful tool for analysis.
+Using a simulated blood pressure dataset designed to mimic real-world dynamics,
+including cyclic, autoregressive, and long-term trend components,
+we evaluate Gaussian process regression's performance in estimating
+blood pressure values from one week of irregularly spaced measurements.
+We assess the accuracy of credible interval estimation for clinically relevant
+target measures through 100 simulation runs, comparing it with baseline methods,
+such as spline and linear regression, accompanied by bootstrapped confidence intervals.
 
-We first highlight the limitations of conventional approaches when dealing with
-irregularly spaced data.
-Subsequently, we demonstrate how Gaussian process regression overcomes these
-limitations by enabling the modeling of time series in continuous time.
+Our investigation extends to the impact of varying data density and sampling patterns,
+specifically comparing uniform and seasonal sampling, where data density fluctuates with the circadian cycle.
+Results consistently demonstrate Gaussian process regression's superior performance across all target measures,
+data densities, and sampling patterns.
+This advantage becomes particularly pronounced with increased data density and seasonal sampling.
 
-Drawing inspiration from the real-world example, we conduct a simulation study
-to assess the suitability of Gaussian process regression for estimating blood
-pressure values from irregularly spaced simulated measurements.
-The measurements were simulated through the simulation of a blood pressure time
-series that mimics real-world dynamics by
-featuring cyclic, autoregressive, and long-term trend components.
+While linear regression, featuring a linear trend and sinusoidal component,
+serves as a viable baseline under low-data scenarios, it exhibits notable
+estimation bias due to its inherent constraints, and thus does not improve with more data.
+In contrast, spline regression offers flexibility but falters with seasonal
+sampling due to its lack of prior function knowledge.
+Gaussian process regression strikes a balance between flexibility and encoding
+prior beliefs about the true blood pressure function, yielding accurate results
+even with sparse, seasonally sampled data.
+Notably, it explicitly models the autoregressive component,
+leading to more precise credible intervals than those estimated by alternative methods.
 
-We evaluate the performance of estimating clinically relevant target measures,
-including time in the target range, one-week, one-day, and one-hour mean blood pressure.
-Performance assessment involves calculating confidence interval coverage and width
-through repeated simulations.
 
-We compare the estimation performance of Gaussian process regression with
-baseline methods, among them linear and spline regression,
-considering varying data densities and sampling patterns.
-These patterns include uniform and seasonal sampling, with the latter reflecting circadian rhythms.
-
-Results reveal that Gaussian process regression consistently outperforms baseline methods
-across all target measures, data densities, and sampling patterns.
-Its superiority becomes more evident with increased data density and seasonal sampling,
-particularly for smaller time windows like the one-hour or one-day mean blood pressure.
-
-Linear regression exhibits its strengths in estimating the one-week mean even
-under low data density conditions, but its improvement saturates with additional data.
-Spline regression performs well with abundant uniformly sampled data but struggles
-with seasonal sampling, where performance deteriorates as more data is added.
+%
+%We first highlight the limitations of conventional approaches when dealing with
+%irregularly spaced data.
+%Subsequently, we demonstrate how Gaussian process regression overcomes these
+%limitations by enabling the modeling of time series in continuous time.
+%
+%particularly for smaller time windows like the one-hour or one-day mean blood pressure.
+%
+%While linear regression is  exhibits its strengths in estimating the one-week mean even
+%under low data density conditions, but its improvement saturates with additional data.
+%Spline regression performs well with abundant uniformly sampled data but struggles
+%with seasonal sampling, since it
+%
+%
+%
+%
+%We evaluate the performance of estimating clinically relevant target measures,
+%including time in the target range, one-week, one-day, and one-hour mean blood pressure.
+%Performance assessment involves calculating confidence interval coverage and width
+%through repeated simulations.
+%
+%We compare the estimation performance of Gaussian process regression with
+%baseline methods, among them linear and spline regression,
+%considering varying data densities and sampling patterns.
+%These patterns include uniform and seasonal sampling. For the latter, data
+%density follows circadian rhythms and is higher during daytime than during nighttime.
+%
+%Results reveal that Gaussian process regression consistently outperforms baseline methods
+%across all target measures, data densities, and sampling patterns.
+%Its superiority becomes more evident with increased data density and seasonal sampling,
+%particularly for smaller time windows like the one-hour or one-day mean blood pressure.
+%
+%While linear regression is  exhibits its strengths in estimating the one-week mean even
+%under low data density conditions, but its improvement saturates with additional data.
+%Spline regression performs well with abundant uniformly sampled data but struggles
+%with seasonal sampling, since it
 
 
 %\chapter*{Abstract}
