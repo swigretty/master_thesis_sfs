@@ -173,12 +173,14 @@ def perf_plot_split(data_fraction=0.1, file_path=None):
 
 MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extreme"]
 
+RESULTS_PATH = Path(
+    "/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments")
 
-def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
-             reextract=False,  ci_coverage_col="ci_covered_prop_v2"):
-    output_path = Path(f"/home/gianna/Insync/OneDrive/master_thesis/"
-                       f"repo_output/gp_experiments/{experiment_name}")
-    target_measures_df = pd.read_csv(output_path / "target_measures_eval.csv")
+
+def read_experiment(experiment_name, filter_dict=None,
+                    table_name="target_measures_eval.csv"):
+    output_path = RESULTS_PATH / experiment_name
+    target_measures_df = pd.read_csv(output_path / table_name)
     if filter_dict:
         for k, v in filter_dict.items():
             if callable(v):
@@ -186,6 +188,14 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
             else:
                 mask = target_measures_df[k] == v
             target_measures_df = target_measures_df[mask]
+    return target_measures_df, output_path
+
+
+def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
+             reextract=False,  ci_coverage_col="ci_covered_prop_v2"):
+
+    target_measures_df, output_path = read_experiment(experiment_name,
+                                                       filter_dict=filter_dict)
 
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():
@@ -213,6 +223,25 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
 if __name__ == "__main__":
     setup_logging()
     experiment_name = "final_experiments_spline_ridge_quantile_max100"
+
+    table_name = "target_measures_eval2latex.csv"
+    df, output_path = read_experiment(
+        experiment_name, table_name="target_measures_eval2latex.csv")
+
+    mode_pattern_map = {"sin_rbf_default": "uniform",
+                        "sin_rbf_seasonal_default": "seasonal",
+                        "sin_rbf_seasonal_extreme": "seasonal_extreme"}
+
+    def get_sampling_pattern_from_output_path(str_path):
+        for mode, pattern in mode_pattern_map.items():
+            if mode in str_path:
+                return pattern
+
+
+    df["sampling_pattern"] = df["output_path"].apply(
+        lambda x: get_sampling_pattern_from_output_path(x))
+    df.to_csv(output_path / table_name)
+
     plot_all(experiment_name, annotate=None, reextract=False,
              filter_dict={"method": lambda x: x != "gp_hdi"})
 
