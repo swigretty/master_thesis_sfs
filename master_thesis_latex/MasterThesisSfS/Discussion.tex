@@ -42,7 +42,7 @@ However, linear regression does not exhibit improvement with an increase in data
 and CI coverage even decreases with more data in the case of seasonal sampling.
 On one hand, the reduced CI coverage can be explained
 by the fact, that bootstrapped CIs make wrong idd assumptions and are
-thus not accounting
+klthus not accounting
 for the AR component in the data.
 On the other hand this limitation can be attributed to the inherent constraints of the linear model,
 only capturing a linear trend with a perfect sinusoidal seasonal pattern and thus
@@ -131,6 +131,27 @@ The company's specific areas of interest for further exploration include:
 \end{itemize}
 
 
+\section{Recommendations for Gaussian Process Modelling Software}
 
+In this study, we employed Gaussian process regression using the scikit-learn
+package in Python. Scikit-learn is widely known for its user-friendly interface
+and versatility in general machine learning tasks; however,
+it primarily provides basic Gaussian process models.
 
+If you are seeking more advanced Gaussian process models or prefer working
+in the R programming language,
+the comprehensive comparison conducted by \citeauthor{erickson_comparison_2018}
+offers valuable insights into various popular Gaussian process modelling software solutions.
+The packages considered encompass R-based options such as DiceKriging, GPfit, laGP, and mlegp,
+as well as Python-based solutions like GPy and scikit-learn.
 
+These packages exhibit diverse approaches to determining optimal kernel hyperparameters.
+For instance, GPy offers sophisticated Gaussian process models but may sacrifice speed compared to scikit-learn.
+Among the R packages, GPfit distinguishes itself with its extensive parameter optimization capabilities,
+rendering it suitable for smaller datasets.
+Conversely, laGP is recommended for efficiently handling very large datasets.
+
+It's noteworthy that since the publication of the referenced paper,
+the author has published his how Gaussian process modelling R package named
+GauPro (\citeauthor{erickson_gaupro_2023}),
+adding further options to consider for your Gaussian process modelling needs.
