@@ -10,15 +10,13 @@ including cyclic, autoregressive, and long-term trend components,
 we evaluate Gaussian process regression's performance in estimating
 blood pressure values from one week of irregularly spaced measurements.
 We assess the accuracy of credible interval estimation for clinically relevant
-target measures through 100 simulation runs, comparing it with baseline methods,
+target measures through repeated simulations, comparing it with baseline methods,
 such as spline and linear regression, accompanied by bootstrapped confidence intervals.
-
 Our investigation extends to the impact of varying data density and sampling patterns,
 specifically comparing uniform and seasonal sampling, where data density fluctuates with the circadian cycle.
-Results consistently demonstrate Gaussian process regression's superior performance across all target measures,
+Results consistently demonstrate Gaussian process regression's superior
+performance across all target measures,
 data densities, and sampling patterns.
-This advantage becomes particularly pronounced with increased data density and seasonal sampling.
-
 While linear regression, featuring a linear trend and sinusoidal component,
 serves as a viable baseline under low-data scenarios, it exhibits notable
 estimation bias due to its inherent constraints, and thus does not improve with more data.
@@ -28,8 +26,11 @@ Gaussian process regression strikes a balance between flexibility and encoding
 prior beliefs about the true blood pressure function, yielding accurate results
 even with sparse, seasonally sampled data.
 Notably, it explicitly models the autoregressive component,
-leading to more precise credible intervals than those estimated by alternative methods.
-
+yielding more precise credible intervals compared to the bootstrapped
+confidence intervals of the baseline methods.
+In summary, this study shows the potential of Gaussian processes as a
+robust tool for the analysis of irregularly sampled time series data,
+exemplified through the lens of blood pressure estimation.
 
 %
 %We first highlight the limitations of conventional approaches when dealing with
