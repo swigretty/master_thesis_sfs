@@ -1,7 +1,7 @@
 \chapter*{Abstract}
 Conventional time series analysis methods often assume evenly spaced observations,
 which may not always reflect real-world data collection constraints.
-Drawing inspiration from real-world scenarios, this study highlights Gaussian
+Motivated by a real-world example, this study highlights Gaussian
 processes as a potent tool for analyzing irregularly sampled
 time series data.
 
@@ -14,6 +14,7 @@ target measures through repeated simulations, comparing it with baseline methods
 such as spline and linear regression, accompanied by bootstrapped confidence intervals.
 Our investigation extends to the impact of varying data density and sampling patterns,
 specifically comparing uniform and seasonal sampling, where data density fluctuates with the circadian cycle.
+
 Results consistently demonstrate Gaussian process regression's superior
 performance across all target measures,
 data densities, and sampling patterns.
@@ -28,9 +29,22 @@ even with sparse, seasonally sampled data.
 Notably, it explicitly models the autoregressive component,
 yielding more precise credible intervals compared to the bootstrapped
 confidence intervals of the baseline methods.
+
 In summary, this study shows the potential of Gaussian processes as a
-robust tool for the analysis of irregularly sampled time series data,
-exemplified through the lens of blood pressure estimation.
+robust tool for the analysis of irregularly sampled time series data, as
+exemplified by its application to blood pressure estimation.
+
+
+
+%Initially, we illustrate the limitations of conventional approaches when
+%dealing with irregularly spaced data. Further, we demonstrate how
+%Gaussian process regression overcomes these limitations by enabling the modeling
+%of time series data in continuous time.
+
+%To evaluate the effectiveness of Gaussian process regression, we use a
+%simulated blood pressure dataset designed to replicate the intricate dynamics
+%observed in real-world measurements, including cyclic,
+%autoregressive, and long-term trend components.
 
 %
 %We first highlight the limitations of conventional approaches when dealing with
