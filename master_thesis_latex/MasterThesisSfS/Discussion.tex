@@ -38,18 +38,24 @@ this results in larger CI when data density is low around the prediction point.
 
 In contrast, linear regression, while providing narrower CIs compared to GP regression,
 maintains adequate CI coverage for the one-week mean under large downsampling factors.
-However, linear regression does not exhibit significant improvement with an increase in data,
+However, linear regression does not exhibit improvement with an increase in data,
 and CI coverage even decreases with more data in the case of seasonal sampling.
-This limitation can be attributed to the inherent constraints of the linear model,
-which can only capture a linear trend with a perfect sinusoidal seasonal pattern.
+On one hand, the reduced CI coverage can be explained
+by the fact, that bootstrapped CIs make wrong idd assumptions and are
+thus not accounting
+for the AR component in the data.
+On the other hand this limitation can be attributed to the inherent constraints of the linear model,
+only capturing a linear trend with a perfect sinusoidal seasonal pattern and thus
+exhibiting an estimation bias.
 This characteristic makes the method less reliant on the amount of data available.
 
-Spline regression, as a non-parametric method, is more data-dependent.
+Spline regression, as a non-parametric method, is more flexible and data-dependent.
 Thus, its performance generally improves with more data but encounters
 difficulties with seasonal sampling, as it does not attempt to fit a cyclic pattern.
 At high data densities with uniform sampling, spline regression produces estimates
 of expected BP values that closely resemble those of GP regression,
-albeit with slightly inferior CI coverage.
+albeit with slightly inferior CI coverage, potentially owing again to the
+wrong iid assumptions of the bootstrap CIs.
 
 Although GPs fall under the category of non-parametric methods, they offer the option to express
 prior beliefs about the function of interest through the choice of kernel.
@@ -127,36 +133,4 @@ The company's specific areas of interest for further exploration include:
 
 
 
-
-
-%    In the current configuration, spline regression consumes the most computational time.
-%    This is because spline regession nees to be employed several time in order to identify
-%    the degree of smoothing through cross validation and also estimating confidence itervals through
-%    bootstrapping.
-
-%The method used for spline regression should be fine-tuned.
-%One could use ridge regression on the
-%generated B-spline basis functions instead of OLS regression. In this case
-%one would identify the penalty parameter $\lambda$ through cross validation and
-%choose a fixed high enough number of knots.
-%Instead of
-%using OLS regression on the B-spline bases generated form the input times,
-%choosing the number of knots of the splines through cross validation
-%it is probably more common to generate B-spline bases and
-%
-%
-%
-%\begin{itemize}
-%    \item Use other methods than GPs to simulate BP time series
-%    \item Investigate the impact of misspecified kernel functions and the effect of adding npn-gaussian errors.
-%    \item Simulate evolving seasonal component by multiply the periodic kernel with e.g. an RBF kernel
-%    \item Since measurement error, the periodic and AR component are largely unknown,
-%    investigate the impact of varying the relative contributions of the different kernels.
-%    \item Use highest posterior density credible interval (HDI) instead of the equal-tailed interval.
-%    \item Define day and night BP values with the aid of the predicted cyclic component
-%    \item Investigate computational complexity of GP and baseline methods
-%    \item Highest posterior density interval (HDI) (https://easystats.github.io/bayestestR/reference/hdi.html)
-%    Equal-tailed interval (ETI) (https://easystats.github.io/bayestestR/reference/eti.html)
-%
-%\end{itemize}
 
