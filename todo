@@ -1,5 +1,13 @@
 # figure capture [] - done
-# Proofreading Thesis Outline and Discussion - done
+# Proofreading Thesis Outline and Discussion -
 # Remove Ohrnstein-Ullenbeck Process
-# Change Spline Regression to Smoothing Spline ? Adapt code methods part to use Ridge regression
+# Change Spline Regression to Smoothing Spline ? Adapt code methods part to use Ridge regression - done
 # Abstract - half done
+# insert table of results (tables are huge)
+
+# Why not improving with more data and seasonal samplint: Bias and CI get too narrow (bootstrap iid assumptions)
+# Outlook: Block-bootstrap for irregularly spaced data
+# R package for GP
+
+
+
