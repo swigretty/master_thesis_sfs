@@ -22,48 +22,53 @@ This Code has been run with Python 3.10.13.
 Install the packages specified in the requirements.txt
 
 ## Usage
-To run the simulation experiment across different data fractions 
-(downsampling factors)and different modes (uniform, seasonal and extreme
-seasonal sampling)
+To reproduce the results, run 100 simulation experiment across different 
+data fractions (downsampling factors) and different modes 
+(uniform, seasonal and extreme seasonal sampling): 
 
     from gp.gp_experiments import evaluate_data_fraction_modes, MODES
 
     experiment_name: str = "my_experiment"
     data_fraction: tuple = (0.05, 0.1, 0.2, 0.4)
 
-    evaluate_data_fraction_modes(MODES,
-                                 n_samples=100,
-                                 experiment_name=experiment_name,
-                                 normalize_y=True,
-                                 normalize_kernel=False)
-
+    for mode in MODES:
+        evaluate_data_fraction(mode,
+                               n_samples=100,
+                               experiment_name=experiment_name,
+                               normalize_kernel=False,
+                               normalize_y=True,
+                               data_fraction=data_fraction)
 
 
 This will generate the results of the simulation experiment
 in the folder specified by "constants.constant.OUTPUT_PATH_BASE", 
 please adapt accordingly.
+
 There will be one folder created per mode and per data fraction.
+Note that every simulation run involves sampling from the true GP.
+The true GP is specified by MODES, which is a list of 
+"gp.simulate_gp_config.GPSimulatorConfig" instances.
+
+To generate the CI coverage - CI width plots run: 
+
+    from gp.post_sim_analysis import plot_all
+
+    experiment_name = "my_experiment"
+    plot_all(experiment_name, annotate=None, reextract=False)
 
 
+To draw 10 samples from the true GP, fit the regression methods and produce
+plots of the predictions run:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+    import numpy as np
+    from gp.simulate_gp_config import GPSimulatorConfig
+    
+    experiment_name = "my_plots"
+    # Use uniform sampling and the kernel specified by sin_rbf
+    mode = GPSimulatorConfig(kernel_sim_name="sin_rbf",
+                             session_name="sin_rbf_default")
+    rng = np.random.default_rng(18)
+    plot_sample(normalize_kernel=False, rng=rng,
+                experiment_name=experiment_name, nplots=10, config=mode,
+                data_fraction=0.05, normalize_y=True)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.

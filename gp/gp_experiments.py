@@ -1,7 +1,7 @@
 import copy
 
 from gp.gp_simulator import GPSimulator, GPSimulationEvaluator
-from gp.simulate_gp_config import base_config, GPSimulatorConfig
+from gp.simulate_gp_config import GPSimulatorConfig
 from logging import getLogger
 from log_setup import setup_logging
 import numpy as np
@@ -76,7 +76,8 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
         if not (target_measures_path).exists():
             measure_sum_df.to_csv(target_measures_path, index=None)
         else:
-            measure_sum_df.to_csv(target_measures_path, mode='a', header=False, index=None)
+            measure_sum_df.to_csv(target_measures_path, mode='a', header=False,
+                                  index=None)
 
         for k, v in eval_dict.items():
             df = pd.DataFrame([v])
@@ -90,43 +91,31 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
     return df
 
 
-def evaluate_data_fraction_modes(modes: list[GPSimulatorConfig],
-                                 data_fraction: tuple = (0.05, 0.1, 0.2, 0.4),
-                                 meas_noise_var: tuple = (None,),
-                                 n_samples: int = 100,
-                                 experiment_name: str = "test",
-                                 normalize_kernel=False, normalize_y=True):
-
-    for nv in meas_noise_var:
-        for mode_config in modes:
-            if nv is not None:
-                mode_config = mode_config(meas_noise_var=nv)
-            else:
-                mode_config = mode_config()
-            evaluate_data_fraction(mode_config, data_fraction=data_fraction, n_samples=n_samples,
-                                   experiment_name=experiment_name, normalize_kernel=normalize_kernel,
-                                   normalize_y=normalize_y)
-
-
-def plot_sample(normalize_kernel=False, experiment_name="test_single_sample", rng=None,
-                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2, normalize_y=True, plot_method=None):
-    output_path_gp_sim = partial(get_output_path, session_name=config.session_name, experiment_name=experiment_name)
+def plot_sample(normalize_kernel=False, experiment_name="test_single_sample",
+                rng=None,
+                nplots=1, config=GPSimulatorConfig(), data_fraction=0.2,
+                normalize_y=True, plot_method=None):
+    output_path_gp_sim = partial(get_output_path,
+                                 session_name=config.session_name,
+                                 experiment_name=experiment_name)
     simulator = GPSimulationEvaluator(
-        output_path=output_path_gp_sim, normalize_kernel=normalize_kernel, rng=rng, data_fraction=data_fraction,
+        output_path=output_path_gp_sim, normalize_kernel=normalize_kernel,
+        rng=rng, data_fraction=data_fraction,
         normalize_y=normalize_y, **config.to_dict())
     simulator.plot_gp_regression_sample(nplots=nplots, plot_method=plot_method)
 
 
 MODES = [
-        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-                session_name="sin_rbf_default"),
-        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-                data_fraction_weights=lambda x: x ** 1,
-                session_name="sin_rbf_seasonal_default"),
-        partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-                data_fraction_weights=lambda x: x ** 2,
-                session_name="sin_rbf_seasonal_extreme")
+        GPSimulatorConfig(kernel_sim_name="sin_rbf",
+                          session_name="sin_rbf_default"),
+        GPSimulatorConfig(kernel_sim_name="sin_rbf",
+                          data_fraction_weights=lambda x: x ** 1,
+                          session_name="sin_rbf_seasonal_default"),
+        GPSimulatorConfig(kernel_sim_name="sin_rbf",
+                          data_fraction_weights=lambda x: x ** 2,
+                          session_name="sin_rbf_seasonal_extreme")
              ]
+
 
 if __name__ == "__main__":
     setup_logging()
@@ -134,23 +123,23 @@ if __name__ == "__main__":
     modes = MODES
 
     rng = np.random.default_rng(18)
-    experiment_name = "default"
+    experiment_name = "my_experiment"
 
-    evaluate_data_fraction_modes(modes,
-                                 n_samples=100,
-                                 experiment_name=experiment_name,
-                                 normalize_y=True,
-                                 normalize_kernel=False)
+    for mode in modes:
+        evaluate_data_fraction(mode,
+                               n_samples=100,
+                               experiment_name=experiment_name,
+                               normalize_kernel=False,
+                               normalize_y=True)
 
-    experiment_name = "plots_default"
+    experiment_name = "my_plots"
 
     for datafrac in [0.05, 0.1, 0.2, 0.4]:
         for mode in modes:
-            mode_config = mode()
-            mode_config.session_name = f"{mode_config.session_name}_{datafrac}"
+            mode.session_name = f"{mode.session_name}_{datafrac}"
             rng = np.random.default_rng(18)
             plot_sample(normalize_kernel=False, rng=rng,
                         experiment_name=experiment_name, nplots=10,
-                        config=mode_config,
+                        config=mode,
                         data_fraction=datafrac,
                         normalize_y=True)

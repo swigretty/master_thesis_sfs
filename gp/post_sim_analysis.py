@@ -220,13 +220,9 @@ def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
             plt.close(fig)
 
 
-if __name__ == "__main__":
-    setup_logging()
-    experiment_name = "final_experiments_spline_ridge_quantile_max100"
-
-    table_name = "target_measures_eval2latex.csv"
+def recreate_table_renamed(table_name):
     df, output_path = read_experiment(
-        experiment_name, table_name="target_measures_eval2latex.csv")
+        experiment_name, table_name=table_name)
 
     mode_pattern_map = {"sin_rbf_default": "uniform",
                         "sin_rbf_seasonal_default": "seasonal",
@@ -237,15 +233,15 @@ if __name__ == "__main__":
             if mode in str_path:
                 return pattern
 
-
     df["sampling_pattern"] = df["output_path"].apply(
         lambda x: get_sampling_pattern_from_output_path(x))
     df.to_csv(output_path / table_name)
 
+
+if __name__ == "__main__":
+    setup_logging()
+    experiment_name = "my_experiment"
     plot_all(experiment_name, annotate=None, reextract=False,
              filter_dict={"method": lambda x: x != "gp_hdi"})
 
-    # output_path = Path("/home/gianna/Insync/OneDrive/master_thesis/repo_output/simulate_gp_616")
-    # perf_plot("overall", mode="ou_bounded_seasonal", file_path=output_path)
-    # perf_plot_split(file_path=output_path)
 

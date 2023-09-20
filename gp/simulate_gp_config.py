@@ -27,15 +27,17 @@ simple_kernel_config = {
     "ou": {"kernel": Matern, "params": {"length_scale": 3, "nu": 0.5},
            "bound_params": {"length_scale_bounds": (0.1, 10)},
            "var": 5, "var_bounds": (0.1, 100)},
-    "rbf_long": {"kernel": RBF, "params": {"length_scale": 50}, "bound_params": {"length_scale_bounds": (1, 200)},
+    "rbf_long": {"kernel": RBF, "params": {"length_scale": 50},
+                 "bound_params": {"length_scale_bounds": (1, 200)},
                  "var": 5, "var_bounds": (0.1, 100)},
     "rbf_short": {"kernel": RBF, "params": {"length_scale": 3}, "bound_params": {"length_scale_bounds": (0.1, 20)},
                   "var": 1, "var_bounds": (0.1, 10)},
-    "rbf_medium": {"kernel": RBF, "params": {"length_scale": 25}, "bound_params": {"length_scale_bounds": (1, 200)},
-                  "var": 1, "var_bounds": (0.1, 10)},
+    "rbf_medium": {"kernel": RBF, "params": {"length_scale": 25},
+                   "bound_params": {"length_scale_bounds": (1, 200)},
+                   "var": 1, "var_bounds": (0.1, 10)},
     "sin_day": {"kernel": ExpSineSquared, "params": {
-        "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {"periodicity_bounds": "fixed",
-                                                                        "length_scale_bounds": (0.1, 20)},
+        "length_scale": 3, "periodicity": PERIOD_DAY}, "bound_params": {
+        "periodicity_bounds": "fixed", "length_scale_bounds": (0.1, 20)},
                 "var": 14**2, "var_bounds": (10, 1000)},
     # Note sample_ampl = sqrt(2*sample_var)
     # var of 100 leads to sample_var: 4.17, sample_ampl: 2.89 (overall max-min = 5.78)
@@ -68,9 +70,10 @@ for mode in ["fixed", "bounded", "unbounded"]:
                 **{param: "fixed" for param in v["kernel"]().get_params().keys() if "bounds" in param},
                 **v["params"]) for k, v in simple_kernel_config.items()}
 
-    _combination_kernels = {"sinrbf": _simple_kernels["sin_day"] * _simple_kernels["rbf_long"],
-                            "sinrbf_rbf":  _simple_kernels["sin_day"] * _simple_kernels["rbf_medium"] +
-                                           _simple_kernels["rbf_long"],
+    _combination_kernels = {
+        "sinrbf": _simple_kernels["sin_day"] * _simple_kernels["rbf_long"],
+        "sinrbf_rbf":  _simple_kernels["sin_day"] * _simple_kernels["rbf_medium"] +
+                       _simple_kernels["rbf_long"],
                             "sin_rbf": _simple_kernels["sin_day"] + _simple_kernels["rbf_long"]
                             }
     _kernels = {**_simple_kernels, **_combination_kernels}
@@ -116,11 +119,11 @@ class GPSimulatorConfig():
     def __post_init__(self):
         for k_name in ["sin", "rbf", "ou"]:
             base_config = getattr(self, f"_{k_name}_kernel")
-            kernel = ConstantKernel(constant_value=getattr(self, f"{k_name}_var"),
-                                    constant_value_bounds=getattr(self, f"{k_name}_var_bounds")) * \
-                     base_config["kernel"](**base_config["bound_params"], **base_config["params"])
-            # kernel = ConstantKernel(constant_value=getattr(self, f"{k_name}_var")) * \
-            #          base_config["kernel"](**base_config["params"])
+            kernel = ConstantKernel(
+                constant_value=getattr(self, f"{k_name}_var"),
+                constant_value_bounds=getattr(
+                    self, f"{k_name}_var_bounds")) * base_config["kernel"](
+                **base_config["bound_params"], **base_config["params"])
 
             setattr(self, f"{k_name}_kernel", kernel)
         if self.session_name is None:
@@ -141,7 +144,8 @@ class GPSimulatorConfig():
 
     @property
     def x(self):
-        return np.linspace(0, PERIOD_DAY * self.n_days, PERIOD_DAY * self.n_days * self.samples_per_hour)
+        return np.linspace(0, PERIOD_DAY * self.n_days,
+                           PERIOD_DAY * self.n_days * self.samples_per_hour)
 
     def to_dict(self):
         kwargs = self.kwargs
@@ -156,6 +160,5 @@ base_config = GPSimulatorConfig().to_dict()
 
 if __name__ == "__main__":
     setup_logging()
-    # logger.info(base_config)
 
 
