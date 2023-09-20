@@ -19,8 +19,32 @@ intervals.
 
 ## Installation
 This Code has been run with Python 3.10.13. 
+Install the packages specified in the requirements.txt
+
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+To run the simulation experiment across different data fractions 
+(downsampling factors)and different modes (uniform, seasonal and extreme
+seasonal sampling)
+
+    from gp.gp_experiments import evaluate_data_fraction_modes, MODES
+
+    experiment_name: str = "my_experiment"
+    data_fraction: tuple = (0.05, 0.1, 0.2, 0.4)
+
+    evaluate_data_fraction_modes(MODES,
+                                 n_samples=100,
+                                 experiment_name=experiment_name,
+                                 normalize_y=True,
+                                 normalize_kernel=False)
+
+
+
+This will generate the results of the simulation experiment
+in the folder specified by "constants.constant.OUTPUT_PATH_BASE", 
+please adapt accordingly.
+There will be one folder created per mode and per data fraction.
+
+
 
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
