@@ -30,7 +30,7 @@ def get_sample_path_variance_kernel(kernel, t, nsim=1000):
 def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
                            n_samples=100, experiment_name="test",
                            normalize_kernel=False,
-                           normalize_y=True, only_var=False):
+                           normalize_y=True, only_var=False, seed=15):
     mode_config_orig = mode_config.to_dict()
     mode_config_norm = copy.copy(mode_config_orig)
 
@@ -55,7 +55,7 @@ def evaluate_data_fraction(mode_config, data_fraction=(0.05, 0.1, 0.2, 0.4),
     for frac in data_fraction:
         logger.info(f"Simulation started for {experiment_name=}, "
                     f"{session_name=} and {frac=}")
-        rng = np.random.default_rng(15)
+        rng = np.random.default_rng(seed)
         simulator = GPSimulationEvaluator(
             output_path=output_path_gp_sim, rng=rng, data_fraction=frac,
             normalize_kernel=False,
