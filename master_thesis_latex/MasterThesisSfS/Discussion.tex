@@ -23,59 +23,52 @@ The final section of this thesis presents the limitations of the
 simulation study and suggest potential directions
 for future research and improvement.
 
+
 \section{Comparison of GP Regression and Baseline Methods}
 
 Overall, when considering all downsampling patterns and target measures,
-GP regression outperforms the baseline methods. This superiority is particularly
-evident when calculating the mean over small time windows, such as one-hour and one-day means.
-This performance can be attributed to the fact that GP regression explicitly models
-the dependencies among BP values across different time points. Consequently,
-the uncertainty predictions are based on the amount of data available at time
-points that are highly correlated, either positively or negatively, with the time
-point of prediction.
-Since the degree of correlation depends on the proximity to the prediction point,
-this results in larger CI when data density is low around the prediction point.
+GP regression outperforms the baseline methods.
+This superiority is most prominent when calculating means over shorter time intervals,
+such as one-hour and one-day windows, as well as in scenarios involving seasonal sampling.
+The strength of GP regression lies in its ability to provide highly
+accurate local uncertainty estimates by explicitly modeling dependencies
+among BP values at different time points.
+Consequently, the uncertainty predictions are based on the volume of data available at time points that share
+strong correlations, whether positive or negative, with the prediction time point.
+The degree of correlation depends on the proximity to the prediction point,
+leading to wider CIs when data density is low around the prediction point.
+This feature proves particularly valuable in addressing challenges posed by seasonal
+sampling and in scenarios demanding precise local uncertainty predictions.
 
 In contrast, linear regression, while providing narrower CIs compared to GP regression,
 maintains adequate CI coverage for the one-week mean under large downsampling factors.
 However, linear regression does not exhibit improvement with an increase in data,
 and CI coverage even decreases with more data in the case of seasonal sampling.
-On one hand, the reduced CI coverage can be explained
-by the fact, that bootstrapped CIs make wrong idd assumptions and are
-klthus not accounting
-for the AR component in the data.
-On the other hand this limitation can be attributed to the inherent constraints of the linear model,
-only capturing a linear trend with a perfect sinusoidal seasonal pattern and thus
-exhibiting an estimation bias.
-This characteristic makes the method less reliant on the amount of data available.
+This reduced CI coverage can be attributed to the flawed assumption of iid observations in bootstrapped CIs.
+Furthermore, this limitation stems from the constraints of the linear model,
+which only captures linear trends while assuming a perfect sinusoidal seasonal pattern,
+resulting in estimation bias.
+These characteristics render the method less dependent on data volume.
 
 Spline regression, as a non-parametric method, is more flexible and data-dependent.
 Thus, its performance generally improves with more data but encounters
 difficulties with seasonal sampling, as it does not attempt to fit a cyclic pattern.
 At high data densities with uniform sampling, spline regression produces estimates
 of expected BP values that closely resemble those of GP regression,
-albeit with slightly inferior CI coverage, potentially owing again to the
-wrong iid assumptions of the bootstrap CIs.
+albeit with slightly inferior CI coverage, potentially also owing to the
+wrong assumptions of iid observations in bootstrapped CIs.
 
-Although GPs fall under the category of non-parametric methods, they offer the option to express
-prior beliefs about the function of interest through the choice of kernel.
-In our case, a function with a cyclic pattern with a periodicity of 24 hours,
+While GPs fall within the non-parametric methodology, they offer the flexibility
+to express prior beliefs about the function of interest through the choice of kernel.
+In our case, functions exhibiting a cyclic pattern with 24-hour periodicity,
 an AR component, and a long-term trend are favored.
-This choice does not impose as many constraints on the predictions as linear regression does
-while simultaneously encoding more information about the function
-to be fitted compared to spline regression.
-These properties position GP regression as the ideal candidate for analyzing
-BP time series based on irregularly spaced samples.
+This choice imposes fewer constraints on predictions than linear regression,
+while encoding more information about the function to be fitted compared to spline regression.
+Moreover, GP regression explicitly models the AR component, yielding more precise credible
+intervals compared to the bootstrapped confidence intervals associated with the baseline methods.
+Collectively, these properties position GP regression as the optimal choice for
+analyzing BP time series based on irregularly spaced samples.
 
-
-Seasonal sampling leads to reduced performance in all
-cases but most pronounced in spline regression.
-Interestingly, when confronted with seasonal sampling, more data generally
-results in a reduction in CI coverage and width for linear regression.
-Conversely, for GP and spline regression, CI coverage typically increases
-with more data.
-However, only GP regression offers adequate local CIs that expand in size
-when there is less data available.
 
 \section{Limitations and Future Work}
 
@@ -88,15 +81,15 @@ To ensure a fairer comparison, we suggest the following:
     Ideally, this method would also offer greater control over the simulated samples.
     Currently, when generating random samples from a GP, our ability to control the shape of the produced
     functions is limited to the choice of the kernel function.
-
-    \item Investigate the implications of employing a misspecified kernel during estimation.
+    \item Investigate the implications of employing kernel function types
+    during the estimation process that differ from those used for data generation.
     We have consistently used the same combination of kernel types - specifically, RBF, Matérn, and Periodic kernels -
-    for both simulation and estimation, with only kernel hyperparameters adjusted.
-    It would be intriguing to understand how sensitive predictive performance is to the mismatches in
+    for both simulation and estimation.
+    The focus has thus been on optimizing kernel hyperparameters during GP regression.
+    It would be interesting to understand how sensitive predictive performance is to the mismatches in
     the kernel function.
-
     \item Investigate the influence
-    of non-Gaussian measurement errors on predictive performance.
+    of non-Gaussian measurement errors on predictive performance
 \end{itemize}
 
 Additionally, expanding the scope of adversarial analysis to examine different
@@ -131,27 +124,32 @@ The company's specific areas of interest for further exploration include:
 \end{itemize}
 
 
-\section{Recommendations for Gaussian Process Modelling Software}
+\subsection{Recommendations for Gaussian Process Modelling Software}
 
-In this study, we employed Gaussian process regression using the scikit-learn
-package in Python. Scikit-learn is widely known for its user-friendly interface
-and versatility in general machine learning tasks; however,
-it primarily provides basic Gaussian process models.
+In this study, we employed Gaussian process regression using Python's scikit-learn package.
+Scikit-learn is well-known for its user-friendly interface and versatility in
+general machine learning tasks.
+However, it primarily offers basic Gaussian process models.
 
-If you are seeking more advanced Gaussian process models or prefer working
-in the R programming language,
-the comprehensive comparison conducted by \citeauthor{erickson_comparison_2018}
-offers valuable insights into various popular Gaussian process modelling software solutions.
-The packages considered encompass R-based options such as DiceKriging, GPfit, laGP, and mlegp,
+If you require more advanced Gaussian process models or prefer working in the R programming language,
+\citeauthor{erickson_comparison_2018} conducted a comprehensive comparison that provides valuable
+insights into various popular Gaussian process modelling software solutions.
+The packages considered include R-based options such as DiceKriging, GPfit, laGP, and mlegp,
 as well as Python-based solutions like GPy and scikit-learn.
+These packages employ diverse approaches to determine optimal kernel hyperparameters,
+with the comparison primarily centered on evaluating the accuracy of predictive
+mean and variance, as well as the overall versatility of each package.
 
-These packages exhibit diverse approaches to determining optimal kernel hyperparameters.
-For instance, GPy offers sophisticated Gaussian process models but may sacrifice speed compared to scikit-learn.
-Among the R packages, GPfit distinguishes itself with its extensive parameter optimization capabilities,
-rendering it suitable for smaller datasets.
-Conversely, laGP is recommended for efficiently handling very large datasets.
+For example, GPy offers advanced Gaussian process models but may trade off speed compared to scikit-learn.
+Among the R packages, GPfit stands out for its extensive parameter optimization,
+making it highly reliable but slower; thus, it is well-suited for smaller datasets.
+In contrast, laGP is recommended for efficiently handling very large datasets,
+typically containing thousands of data points.
+The R package mlegp, while not as slow as GPfit, still produces very reliable results.
+In our study, Gaussian processes were fitted to a maximum of 1100 data points,
+where mlegp is likely a suitable choice.
 
-It's noteworthy that since the publication of the referenced paper,
-the author has published his how Gaussian process modelling R package named
-GauPro (\citeauthor{erickson_gaupro_2023}),
-adding further options to consider for your Gaussian process modelling needs.
+It's worth noting that since the publication of the referenced paper, the author
+has introduced their own Gaussian process modelling R package named GauPro
+(\citeauthor{erickson_gaupro_2023}).
+This addition provides further options to consider for your Gaussian process modelling needs.
