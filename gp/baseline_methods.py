@@ -16,7 +16,6 @@ from scipy import stats
 from pathlib import Path
 from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
 from sklearn.preprocessing import SplineTransformer
-from pygam import GAM, s, te, l, LinearGAM
 
 
 logger = getLogger(__name__)
@@ -174,109 +173,6 @@ def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
 
     return {"data": GPData(x=x_pred, y_mean=y_pred, y_cov=None),
             "ci_fun": ci_fun}
-
-
-def smoothing_spline_prediction(X_train: np.ndarray, Y_X_train: np.ndarray,
-                                X: np.ndarray,
-                                n_knots: int) -> np.ndarray:
-    """
-    Parameters
-    ----------
-    X_train: The training time indexes
-    Y_X_train: The training BP values
-    X: The time indexes at which to generate predictions
-    n_knots : Number of knots of the splines
-
-    Returns
-    ---------
-    F_X_hat: The BP value predictions at inputs X
-    """
-
-    spline = SplineTransformer(degree=3, n_knots=n_knots,
-                               extrapolation="constant",
-                               knots="quantile")
-
-    spline.fit(X_train)
-
-    X_train_trans = spline.transform(X_train)
-    X_trans = spline.transform(X)
-
-    lm = LinearRegression(fit_intercept=False).fit(X_train_trans, Y_X_train)
-    F_X_hat = lm.predict(X_trans)
-    return F_X_hat
-
-
-def gam_spline(x_pred, x_train, y_train, normalize_y=True, **kwargs):
-
-    if normalize_y:
-        y_train_mean = np.mean(y_train)
-        y_train_std = np.std(y_train)
-        y_train = (y_train-y_train_mean)/y_train_std
-
-    gam = LinearGAM(s(0))
-    gam.fit(x_train, y_train)
-    y_pred = gam.predict(x_pred)
-
-    ci_fun = partial(bootstrap, pred_fun=gam_spline,
-                     x_pred=x_pred, x_train=x_train, y_train=y_train)
-
-    if normalize_y:
-        y_pred = y_pred * y_train_std + y_train_mean
-
-    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci_fun": ci_fun}
-
-
-def spline_reg(x_pred, x_train, y_train, s=None, y_std=1, normalize_y=True, lambs=None, **kwargs):
-    m = len(np.unique(x_train))
-
-    if lambs is None:
-        lambs = np.linspace(max(m - np.sqrt(2 * m) - m * 0.8, 10), m + np.sqrt(2 * m) + m * 0.3, 10)
-
-    x_train = x_train.reshape(-1)
-    assert all(sorted(x_train) == x_train)
-    y_train = y_train.reshape(-1)
-    x_pred = x_pred.reshape(-1)
-
-    if normalize_y:
-        y_train_mean = np.mean(y_train)
-        y_train_std = np.std(y_train)
-        y_train = (y_train-y_train_mean)/y_train_std
-
-    weights = np.repeat(1/y_std, len(x_train))
-
-    if s is None:
-        cv_perf = []
-        for lamb in lambs:
-            fit_pred_fun = partial(spline_reg, y_std=y_std, s=lamb, normalize_y=False)
-            cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train, fit_pred_fun=fit_pred_fun))
-        idx_numeric = np.where(~ np.isnan(cv_perf))[0]
-        s = lambs[np.where(cv_perf == np.min(np.array(cv_perf)[idx_numeric]))][0]
-        logger.info(f"Best smooting parameter for spline {s}")
-
-    if len(x_train) != m:  # If there are duplicates
-        rep_count = get_rep_count_cluster(x_train)
-        # Weight is number of repetitions of same datapoint (bootstrap)
-        weights = np.array(list(rep_count.values()))
-        unique_idx = np.array(list(rep_count.keys()))
-        x_train = x_train[unique_idx]
-        y_train = y_train[unique_idx]
-
-    # Strictly positive rank-1 array of weights the same length as x and y.
-    # The weights are used in computing the weighted least-squares spline fit.
-    # If the errors in the y values have standard-deviation given by the vector d,
-    # then w should be 1/d. Default is ones(len(x)).
-    spl = scipy.interpolate.UnivariateSpline(x_train, y_train, s=s, w=weights, ext=1)
-    # ext=1, extrapolate with 0, ext=3: extrapolate with boundary value
-    y_pred = spl(x_pred)
-
-    if normalize_y:
-        y_pred = y_pred * y_train_std + y_train_mean
-
-    ci_fun = partial(bootstrap, pred_fun=partial(spline_reg, y_std=y_std, lambs=np.linspace(s, s+s*0.3, 3)),
-                     x_pred=x_pred, x_train=x_train, y_train=y_train)
-
-    return {"data": GPData(x=x_pred.reshape(-1, 1), y_mean=y_pred, y_cov=None), "ci_fun": ci_fun,
-            "fun": partial(spline_reg, y_std=y_std, s=s)}
 
 
 def loo_cross_val_score(train_x, train_y, fit_pred_fun, cost_function=mse):

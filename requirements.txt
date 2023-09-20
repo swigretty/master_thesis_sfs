@@ -1,0 +1,6 @@
+scipy
+matplotlib
+pandas
+statsmodels
+tqdm
+colorlog
