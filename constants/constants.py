@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime
 import __main__
-# REPO_PATH = Path.home() / "repositories/master_thesis_sfs"
 
 OUTPUT_PATH_BASE = Path.home() / "Insync/OneDrive/master_thesis/repo_output"
 

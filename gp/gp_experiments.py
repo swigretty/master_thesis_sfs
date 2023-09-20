@@ -9,21 +9,7 @@ import pandas as pd
 from constants.constants import get_output_path
 from functools import partial
 
-
 logger = getLogger(__name__)
-
-# MODES = {
-#     "ou_bounded_sin_rbf": partial(GPSimulatorConfig, kernel_sim_name="sin_rbf"),
-#     "ou_bounded_seasonal": partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
-#                                    data_fraction_weights=lambda x: x ** 1),
-#     # "ou_bounded_seasonal_extreme": {"kernels": OU_KERNELS["bounded"],
-#     #                         "config": {"normalize_y": False, "data_fraction_weights": lambda x: x**2,
-#     #                                    **base_config}},
-#     # "ou_bounded_seasonal_mild": {"kernels": OU_KERNELS["bounded"],
-#     #                                 "config": {"normalize_y": False, "data_fraction_weights": lambda x: x**0.5,
-#     #                                            **base_config}},
-#
-# }
 
 
 def get_info(sample):
@@ -110,7 +96,6 @@ def evaluate_data_fraction_modes(modes: list[GPSimulatorConfig],
                                  n_samples: int = 100,
                                  experiment_name: str = "test",
                                  normalize_kernel=False, normalize_y=True):
-    experiment_output_path = get_output_path(experiment_name=experiment_name)
 
     for nv in meas_noise_var:
         for mode_config in modes:
@@ -122,19 +107,6 @@ def evaluate_data_fraction_modes(modes: list[GPSimulatorConfig],
                                    experiment_name=experiment_name, normalize_kernel=normalize_kernel,
                                    normalize_y=normalize_y)
 
-    # for split in ["overall", "train", "test"]:
-    #     perf_plot(split=split, file_path=experiment_output_path)
-
-
-# def get_limited_modes(kernels_limited=None, modes_limited=None):
-#     modes = copy.deepcopy(MODES)
-#     if modes_limited:
-#         modes = {k: v for k, v in modes.items() if k in modes_limited}
-#     if kernels_limited:
-#         for m_k, m_v in modes.items():
-#             m_v["kernels"] = {k_k: k_v for k_k, k_v in m_v["kernels"].items() if k_k in kernels_limited}
-#     return modes
-
 
 def plot_sample(normalize_kernel=False, experiment_name="test_single_sample", rng=None,
                 nplots=1, config=GPSimulatorConfig(), data_fraction=0.2, normalize_y=True, plot_method=None):
@@ -145,10 +117,7 @@ def plot_sample(normalize_kernel=False, experiment_name="test_single_sample", rn
     simulator.plot_gp_regression_sample(nplots=nplots, plot_method=plot_method)
 
 
-if __name__ == "__main__":
-    setup_logging()
-
-    modes = [
+MODES = [
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
                 session_name="sin_rbf_default"),
         partial(GPSimulatorConfig, kernel_sim_name="sin_rbf",
@@ -159,31 +128,21 @@ if __name__ == "__main__":
                 session_name="sin_rbf_seasonal_extreme")
              ]
 
+if __name__ == "__main__":
+    setup_logging()
+
+    modes = MODES
+
     rng = np.random.default_rng(18)
-    experiment_name = "final_experiments_spline_ridge_quantile_max100"
+    experiment_name = "default"
 
+    evaluate_data_fraction_modes(modes,
+                                 n_samples=100,
+                                 experiment_name=experiment_name,
+                                 normalize_y=True,
+                                 normalize_kernel=False)
 
-    # evaluate_data_fraction(GPSimulatorConfig(
-    #     kernel_sim_name="sin_rbf", data_fraction_weights=lambda x: x ** 1,
-    #     session_name="sin_rbf_seasonal_default"),
-    #     experiment_name=experiment_name, n_samples=100, data_fraction=(0.05, ),
-    #     normalize_kernel=False, normalize_y=True, only_var=True)
-
-    # evaluate_data_fraction_modes(modes[1:],
-    #                              n_samples=100,
-    #                              experiment_name=experiment_name,
-    #                              normalize_y=True,
-    #                              normalize_kernel=False,
-    #                              data_fraction=(0.05, 0.4,))
-    #
-    # evaluate_data_fraction_modes(modes,
-    #                              n_samples=100,
-    #                              experiment_name=experiment_name,
-    #                              normalize_y=True,
-    #                              normalize_kernel=False,
-    #                              data_fraction=(0.1, 0.2,))
-
-    experiment_name = "final_plots_spline_ridge_quantile_max100_ylim2"
+    experiment_name = "plots_default"
 
     for datafrac in [0.05, 0.1, 0.2, 0.4]:
         for mode in modes:
