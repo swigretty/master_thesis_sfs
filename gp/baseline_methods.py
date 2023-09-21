@@ -1,17 +1,21 @@
+"""
+This module contains all the baseline methods used for predicting BP
+values and the function used to generate bootstrapped confidence intervals
+associated with them
+"""
 import numpy as np
 from functools import partial
-from gp.gp_data import GPData
-from sklearn.linear_model import LinearRegression, Ridge
-from target_measures import overall_mean, ttr, TARGET_MEASURES
 from logging import getLogger
 import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
-import statsmodels.api as sm
-from scipy import stats
 from pathlib import Path
-from gp.gp_plotting_utils import plot_posterior
-from sklearn.preprocessing import SplineTransformer
 
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.preprocessing import SplineTransformer
+from sklearn.model_selection import KFold
+
+from gp.gp_data import GPData
+from gp.gp_plotting_utils import plot_posterior
+from target_measures import overall_mean, ttr, TARGET_MEASURES
 
 logger = getLogger(__name__)
 
