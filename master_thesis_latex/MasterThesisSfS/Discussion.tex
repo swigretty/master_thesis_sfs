@@ -109,6 +109,17 @@ particularly when dealing with asymmetric distributions - a scenario that might 
 Therefore, for the next simulation study, it is advisable to calculate both HDI and ETI
 to determine which one is better suited to the specific problem at hand.
 
+The bootstrapped CIs computed for the baseline methods in this study rely on
+the assumption of iid observations.
+To address the specific challenges
+posed by time series data, the block bootstrap method has been developed.
+The wild dependent
+bootstrap has additionally been introduced by \citeauthor{shao_dependent_2010},
+to handle irregularly spaced observations and could potentially offer
+more accurate CIs for the baseline methods.
+However, its applicability in the context of seasonal sampling needs
+further investigation.
+
 The company's specific areas of interest for further exploration include:
 
 \begin{itemize}
