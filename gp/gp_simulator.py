@@ -81,7 +81,8 @@ class GPSimulator():
         self.normalize_y = normalize_y
         # Choose alpha=0 (zero measurement noise variance) for fitting the
         # gpm_sim and getting true decomposed
-        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
+        self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False,
+                           optimizer=None, rng=rng,
                            alpha=0)
         # Noise free BP values, if None, samples from self.gpm_sim
         self.f_true: GPData = f_true
@@ -167,7 +168,8 @@ class GPSimulator():
     def meas_noise(self, data=None):
         self._meas_noise = data
         if data is None:
-            self._meas_noise = np.sqrt(self.meas_noise_var) * self.rng.standard_normal(len(self.x))
+            self._meas_noise = (np.sqrt(self.meas_noise_var) *
+                                self.rng.standard_normal(len(self.x)))
 
     @property
     def y_true(self):
@@ -561,11 +563,13 @@ class GPSimulator():
 
     @property
     def current_init_kwargs(self):
-        return {k: v for k, v in vars(self).items() if k in inspect.signature(GPSimulator.__init__).parameters.keys()}
+        return {k: v for k, v in vars(self).items() if k in inspect.signature(
+            GPSimulator.__init__).parameters.keys()}
 
     @property
     def current_config(self):
-        base = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
+        base = {k: v for k, v in self.current_init_kwargs.items() if not
+        isinstance(v, np.ndarray)}
         base["y_train_std"] = self._y_train_std
         return base
 
@@ -586,17 +590,21 @@ class GPSimulator():
 
 class GPSimulationEvaluator(GPSimulator):
 
-    def __init__(self,  kernel_sim=None, baseline_methods: dict = None, normalize_kernel=True, meas_noise_var=0,
+    def __init__(self,  kernel_sim=None, baseline_methods: dict = None,
+                 normalize_kernel=True, meas_noise_var=0,
                  target_measures: dict = None, **gps_kwargs):
 
         self.kernel_sim_orig = kernel_sim
         self.meas_noise_var_orig = meas_noise_var
-        self.gps_kwargs_orig = {"kernel_sim": self.kernel_sim_orig, "meas_noise_var": self.meas_noise_var_orig,
-                                "normalize_kernel": normalize_kernel, **gps_kwargs}
+        self.gps_kwargs_orig = {"kernel_sim": self.kernel_sim_orig,
+                                "meas_noise_var": self.meas_noise_var_orig,
+                                "normalize_kernel": normalize_kernel,
+                                **gps_kwargs}
 
         super().__init__(**self.gps_kwargs_orig)
 
-        self.gps_kwargs_normalized = {"kernel_sim": self.kernel_sim, "meas_noise_var": self.meas_noise_var,
+        self.gps_kwargs_normalized = {"kernel_sim": self.kernel_sim,
+                                      "meas_noise_var": self.meas_noise_var,
                                       "normalize_kernel": False, **gps_kwargs}
 
         if baseline_methods is None:
@@ -611,7 +619,8 @@ class GPSimulationEvaluator(GPSimulator):
 
     def _get_pred_method(self, method, **kwargs):
         assert all(self.y_true_train.x == sorted(self.y_true_train.x))
-        return method(self.x, self.y_true_train.x, self.y_true_train.y, **kwargs)
+        return method(self.x, self.y_true_train.x, self.y_true_train.y,
+                      **kwargs)
 
     def _get_pred_baseline(self, **kwargs):
         """
@@ -621,7 +630,8 @@ class GPSimulationEvaluator(GPSimulator):
         for eval_name, eval_fun in self.baseline_methods.items():
             pred_baseline[eval_name] = self._get_pred_method(eval_fun, **kwargs)
             if fun_new := pred_baseline[eval_name].get("fun"):
-                # overwrite self.baseline_method e.g. for spline smoothing parameter has been found using cv
+                # overwrite self.baseline_method e.g. for spline smoothing
+                # parameter has been found using cv
                 self.baseline_methods[eval_name] = fun_new
 
         return pred_baseline
@@ -646,7 +656,8 @@ class GPSimulationEvaluator(GPSimulator):
             theta_fun = self.target_measures
         if not isinstance(theta_fun, dict):
             theta_fun = {theta_fun.__name__: theta_fun}
-        # posterior_samples, y_mean, y_cov = self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
+        # posterior_samples, y_mean, y_cov =
+        # self.gpm_fit.sample_from_posterior(self.x, n_samples=n_samples)
         out_dict = {}
         posterior_samples = self.rng.multivariate_normal(
             self.f_post.y_mean, self.f_post.y_cov, n_samples).T
@@ -781,9 +792,11 @@ class GPSimulationEvaluator(GPSimulator):
             n = len(df)
             n_success = np.sum(df["ci_covered"])
             ci_covered_prop_v2 = np.mean(df["ci_covered_prop"])
+            # For the one-hour and one-week means we have one ci_covered
+            # value per cycle and thus we randomly select a cycle every
+            # for every simulation iteration
             if hasattr(df["ci_covered"].values[0], "__len__"):
                 n_val = len(df["ci_covered"].values[0])
-                # TODO is this correct ?
                 n_success = np.sum([v[np.random.randint(
                     0, n_val)] for v in df["ci_covered"].values])
                 ci_covered_prop_v2 = n_success/n
@@ -798,7 +811,6 @@ class GPSimulationEvaluator(GPSimulator):
 
         eval_target_measure = pd.merge(mean_df, ci_covered_confint_df,
                                        on=group_by_cols)
-
         return eval_target_measure
 
     @staticmethod
@@ -847,14 +859,18 @@ class GPSimulationEvaluator(GPSimulator):
 
         previousloglevel = logger.getEffectiveLevel()
         logger.setLevel(logging.WARNING)
+
+        # Run n_samples Simulations
         for i in tqdm(range(n_samples)):
             gps = GPSimulationEvaluator(**current_config)
 
             if not only_var:
                 gps.fit()
+                # General evaluation of the GP Regression Predictions
                 eval_sample = gps.evaluate()
                 eval_dict = {k: [v] + eval_dict.get(k, []) for k, v in
                              eval_sample.items()}
+                # Evaluation of the target measure estimation performance
                 eval_target_measure.extend(gps.evaluate_target_measures(
                     ci_fun_kwargs={"logger": logger}))
             variances.append(gps.get_decomposed_variance())
