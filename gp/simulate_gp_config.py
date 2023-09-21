@@ -1,8 +1,13 @@
-from sklearn.gaussian_process.kernels import (
-    RBF, WhiteKernel, ExpSineSquared, Matern, ConstantKernel, DotProduct)
+"""
+GPSimulatorConfig class to construct configurations to be used for
+gp.gp_simulator.GPSimulationEvaluator
+"""
 from dataclasses import dataclass
 from logging import getLogger
 import numpy as np
+from sklearn.gaussian_process.kernels import (
+    RBF, WhiteKernel, ExpSineSquared, Matern, ConstantKernel, DotProduct)
+
 from log_setup import setup_logging
 
 logger = getLogger(__name__)
@@ -47,7 +52,8 @@ simple_kernel_config = {
     # sample_ampl: 2.89 (overall max-min = 5.78)
     # var of 198 (=14.1**2) leads to sample_var: 13.28,
     # sample_ampl: 5.15 (overall max-min = 5.78)
-    "dot": {"kernel": DotProduct, "params": {"sigma_0": 0.001}, "bound_params": {"sigma_0_bounds": (0.0001, 0.01)},
+    "dot": {"kernel": DotProduct, "params": {"sigma_0": 0.001},
+            "bound_params": {"sigma_0_bounds": (0.0001, 0.01)},
             "var": 0.01, "var_bounds": (0.001, 1)}
            }
 
