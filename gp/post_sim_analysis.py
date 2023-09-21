@@ -1,6 +1,6 @@
 from pathlib import Path
 import numpy as np
-from constants.constants import get_output_path
+from constants.constants import RESULTS_PATH
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -8,8 +8,10 @@ from logging import getLogger
 from log_setup import setup_logging
 from gp.gp_simulator import GPSimulationEvaluator
 from gp.gp_plotting_utils import CB_color_cycle
+from gp.gp_experiments import MODES
 
 logger = getLogger(__name__)
+plt.style.use('tableau-colorblind10')
 
 
 split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun",
@@ -20,7 +22,13 @@ split_dict = {"overall": ["overall_mean_covered", "covered_fraction_fun",
          "test": ["covered_fraction_fun", "pred_logprob", "data_fraction",
                   "meas_noise_var"]}
 
-plt.style.use('tableau-colorblind10')
+MODE_NAMES = [mode.session_name for mode in MODES]
+
+col_of_int = ["method", "data_fraction", "ci_width", "ci_covered_prop",
+              "ci_covered_lb", "ci_covered_ub"]
+
+
+rename_method_map = {"naive_overall_mean": "overall_mean"}
 
 
 def get_offset_annotate(ii, x_range, y_range=1.2):
@@ -35,13 +43,6 @@ def get_offset_annotate(ii, x_range, y_range=1.2):
     if ii == 4:
         y_offset = - 0.05 * y_range
     return x_offset, y_offset
-
-
-col_of_int = ["method", "data_fraction", "ci_width", "ci_covered_prop",
-              "ci_covered_lb", "ci_covered_ub"]
-
-
-rename_method_map = {"naive_overall_mean": "overall_mean"}
 
 
 def target_measure_perf_plot(target_measures_df, annotate="mse",
@@ -121,62 +122,6 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
     return fig
 
 
-def perf_plot(split="overall", mode=None, file_path=None):
-    def is_numeric(col):
-        try:
-            pd.to_numeric(col)
-            return True
-        except Exception:
-            return False
-
-    if file_path is None:
-        file_path = get_output_path()
-    # col_of_int = split_dict[split]
-
-    test_perf = pd.read_csv(file_path / f"{split}_perf.csv", index_col=False)
-    if mode is not None:
-        test_perf = test_perf[test_perf["mode"] == mode]
-    col_of_int = [col for col in test_perf.columns if is_numeric(test_perf[col])]
-
-    fig, ax = plt.subplots(ncols=len(col_of_int), nrows=len(col_of_int), figsize=(20, 20))
-    pd.plotting.scatter_matrix(test_perf[col_of_int], alpha=0.8, ax=ax)
-    fig.savefig(file_path / f"{split}_perf_scatter_matrix.pdf")
-
-
-def perf_plot_split(data_fraction=0.1, file_path=None):
-
-    if file_path is None:
-        file_path = get_output_path()
-
-    col_of_int = next(iter(split_dict.values()))
-    for v in split_dict.values():
-        col_of_int = np.intersect1d(col_of_int, v)
-
-    dfs = {split: pd.read_csv(file_path / f"{split}_perf.csv")[col_of_int] for split in split_dict.keys()}
-    for split, df in dfs.items():
-        if split == "overall":
-            sn = 1
-        elif split == "train":
-            sn = 0
-        elif split == "test":
-            sn = 2
-        df["split"] = sn
-
-    df_all = pd.concat(dfs.values())
-    df_all = df_all[df_all["data_fraction"] == data_fraction]
-    df_all.pop("data_fraction")
-
-    fig, ax = plt.subplots(ncols=len(df_all.columns), nrows=len(df_all.columns), figsize=(10, 10))
-    pd.plotting.scatter_matrix(df_all, alpha=0.8, ax=ax)
-    fig.savefig(OUTPUT_PATH / f"split_perf_scatter_matrix_{data_fraction}.pdf")
-
-
-MODES = ["sin_rbf_default", "sin_rbf_seasonal_default", "sin_rbf_seasonal_extreme"]
-
-RESULTS_PATH = Path(
-    "/home/gianna/Insync/OneDrive/master_thesis/repo_output/gp_experiments")
-
-
 def read_experiment(experiment_name, filter_dict=None,
                     table_name="target_measures_eval.csv"):
     output_path = RESULTS_PATH / experiment_name
@@ -191,11 +136,12 @@ def read_experiment(experiment_name, filter_dict=None,
     return target_measures_df, output_path
 
 
-def plot_all(experiment_name, modes=MODES, annotate="mse", filter_dict=None,
-             reextract=False,  ci_coverage_col="ci_covered_prop_v2"):
+def plot_all(experiment_name, modes=MODE_NAMES, annotate="mse",
+             filter_dict=None, reextract=False,
+             ci_coverage_col="ci_covered_prop_v2"):
 
     target_measures_df, output_path = read_experiment(experiment_name,
-                                                       filter_dict=filter_dict)
+                                                      filter_dict=filter_dict)
 
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():

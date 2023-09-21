@@ -4,6 +4,10 @@ import __main__
 
 OUTPUT_PATH_BASE = Path.home() / "Insync/OneDrive/master_thesis/repo_output"
 
+# Assumes "gp_experiments.py" is the file you used to produce the main
+# results with
+RESULTS_PATH = OUTPUT_PATH_BASE / "gp_experiments"
+
 now = datetime.utcnow()
 
 OUTPUT_FOLDER = f"{Path(__main__.__file__).stem}_{now.strftime('%m_%d_%I_%M_%S')}"
