@@ -1,72 +1,39 @@
 import numpy as np
-import scipy
 from functools import partial
 from gp.gp_data import GPData
 from sklearn.linear_model import LinearRegression, Ridge
-import statsmodels.api as sm
 from target_measures import overall_mean, ttr, TARGET_MEASURES
-from gp.evalutation_utils import calculate_ci
-from sklearn.model_selection import LeaveOneOut
 from logging import getLogger
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
-import patsy
 from scipy import stats
 from pathlib import Path
-from gp.gp_plotting_utils import plot_kernel_function, plot_posterior, plot_gpr_samples, Plotter
+from gp.gp_plotting_utils import plot_posterior
 from sklearn.preprocessing import SplineTransformer
 
 
 logger = getLogger(__name__)
 
 
-def conf_int_linear_regression(x_train, y_train, model, x_pred, alpha=0.05):
-    # degrees of freedom
-    dof = -np.diff(x.shape)[0]
-    # Student's t-distribution table lookup
-    t_val = stats.t.isf(alpha / 2, dof)
-    residuals = y_train - model.predict(x_train)
-    rss = residuals.T @ residuals
-    sigma_squared_hat = rss / (x_train.shape[0] - x_train.shape[1])
-    xtxinv = np.linalg.inv(x_train.T @ x_train)
-    var_y_pred = sigma_squared_hat * np.diag((x_pred @ xtxinv @ x_pred.T))
-
-    # # rss = np.sum((Y_train - lin_model.predict(X_train)) ** 2) / dof
-    # # inverse of the variance of the parameters
-    # var_params = np.diag(np.linalg.inv(X_aux.T.dot(X_aux)))
-    # # distance between lower and upper bound of CI
-    # gap = t_val * np.sqrt(rss * var_params)
-    #
-    # ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-np.quantile(v, 1-(alpha/2)),
-    #       "ci_ub": 2*theta_hat[k]-np.quantile(v, (alpha/2))} for k, v in thetas.items()}
-    #
-    # return ci
-
-
 def pred_ttr_naive(x_pred, x_train, y_train, **kwargs):
-    ci = None
-
     x_train_unique, unique_idx = np.unique(x_train, return_index=True)
     y_pred = np.repeat(np.nan, len(x_pred))
     y_pred[np.in1d(x_pred, x_train_unique)] = y_train[unique_idx]
-    ci_fun = partial(bootstrap, pred_fun=pred_ttr_naive, x_pred=x_pred, x_train=x_train, y_train=y_train)
+    ci_fun = partial(bootstrap, pred_fun=pred_ttr_naive, x_pred=x_pred,
+                     x_train=x_train, y_train=y_train)
     return {"data": GPData(x=x_pred, y_mean=y_pred), "ci_fun": ci_fun}
 
 
 def pred_empirical_mean(x_pred, x_train, y_train, **kwargs):
     """
     Using the overall mean as prediction.
-    cov is calculated assuming iid data.
     """
     n = len(y_train)
     y = np.repeat(np.mean(y_train), len(x_pred))
 
-    ci_fun = partial(bootstrap, pred_fun=pred_empirical_mean, x_pred=x_pred, x_train=x_train, y_train=y_train)
-        # sem = np.std(y_train) / np.sqrt(len(y_train))
-        # cis = {f"ci_{overall_mean.__name__}": calculate_ci(sem, overall_mean(y), dist=scipy.stats.distributions.t(
-        #     df=n-1))}
-
+    ci_fun = partial(bootstrap, pred_fun=pred_empirical_mean, x_pred=x_pred,
+                     x_train=x_train, y_train=y_train)
     return {"data": GPData(x=x_pred, y_mean=y, y_cov=None), "ci_fun": ci_fun}
 
 
@@ -77,44 +44,22 @@ def linear_regression(x_pred, x_train, y_train, **kwargs):
     t_freq_train = x_train * 2*np.pi * 1/24
     t_freq_pred = x_pred * 2*np.pi * 1/24
 
-    X = np.hstack((np.ones(x_train.shape), x_train, np.sin(t_freq_train), np.cos(t_freq_train)))
+    X = np.hstack((np.ones(x_train.shape), x_train, np.sin(t_freq_train),
+                   np.cos(t_freq_train)))
     reg = LinearRegression(fit_intercept=False).fit(X, y_train)
 
-    X_pred = np.hstack((np.ones(x_pred.shape), x_pred, np.sin(t_freq_pred), np.cos(t_freq_pred)))
+    X_pred = np.hstack((np.ones(x_pred.shape), x_pred, np.sin(t_freq_pred),
+                        np.cos(t_freq_pred)))
     y = reg.predict(X_pred)
 
-    ci_fun = partial(bootstrap, pred_fun=linear_regression, x_pred=x_pred, x_train=x_train, y_train=y_train)
-
+    ci_fun = partial(bootstrap, pred_fun=linear_regression, x_pred=x_pred,
+                     x_train=x_train, y_train=y_train)
 
     return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "ci_fun": ci_fun}
 
 
-def linear_regression_statsmodel():
-    ols = sm.OLS(y.values, X_with_intercept)
-    ols_result = ols.fit()
-    print(ols_result.summary())
-    return
-
-
 def mse(true, pred):
     return np.mean((pred - true) ** 2)
-
-
-def get_rep_count_cluster(x_train):
-    """
-    returns {start_idx_cluster: number_of_duplicates}
-    """
-    diffs = np.diff(x_train)
-    rep_count = {}
-    current_cluster = 0
-    rep_count[current_cluster] = 1
-    for i, diff in enumerate(diffs):
-        if diff == 0:
-            rep_count[current_cluster] += 1
-        else:
-            current_cluster = i+1
-            rep_count[current_cluster] = 1
-    return rep_count
 
 
 def get_spline_basis(x_pred, x_train, n_knots=None):
@@ -133,8 +78,7 @@ def get_spline_basis(x_pred, x_train, n_knots=None):
 
 
 def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
-                  lamds=None, n_knots=None, train_idx=None, test_idx=None,
-                  **kwargs):
+                  lamds=None, n_knots=None, **kwargs):
     if lamds is None:
         lamds = np.logspace(-1, 2, 10)
 
@@ -145,7 +89,6 @@ def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
     if lamd is None:
         cv_perf = []
         for _lamd in lamds:
-            # _, x_train_trans = get_spline_basis(x_pred, x_train, _df)
             fit_pred_fun = partial(spline_reg_v2, lamd=_lamd, n_knots=n_knots)
             cv_perf.append(cross_val_score(train_x=x_train, train_y=y_train,
                                            fit_pred_fun=fit_pred_fun,
@@ -176,16 +119,17 @@ def spline_reg_v2(x_pred, x_train, y_train, lamd=None, transformed=False,
 
 
 def loo_cross_val_score(train_x, train_y, fit_pred_fun, cost_function=mse):
-    return cross_val_score(train_x, train_y, fit_pred_fun, n_folds=len(train_y), cost_function=cost_function)
+    return cross_val_score(train_x, train_y, fit_pred_fun,
+                           n_folds=len(train_y), cost_function=cost_function)
 
 
-def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10, cost_function=mse):
+def cross_val_score(train_x, train_y, fit_pred_fun, n_folds=10,
+                    cost_function=mse):
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=1)
     scores = []
-    # if train_x.ndim == 1:
-    #     train_x = train_x.reshape(-1, 1)
     for fi, (train_idx, test_idx) in enumerate(kf.split(train_x)):
-        pred = fit_pred_fun(train_x[test_idx], train_x[train_idx], train_y[train_idx], train_idx=train_idx,
+        pred = fit_pred_fun(train_x[test_idx], train_x[train_idx],
+                            train_y[train_idx], train_idx=train_idx,
                             test_idx=test_idx)
         scores.append(cost_function(train_y[test_idx], pred["data"].y_mean))
     return np.mean(scores)
@@ -206,9 +150,20 @@ def plot_bootstrap(pred_fun, x_pred, pred, x_sub, y_sub, output_path, i):
     plt.close(fig=fig)
 
 
-def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES,
-              n_samples=100, alpha=0.05,
-              rng=None, logger=logger, output_path=Path("."), plot=False):
+def bootstrap(pred_fun: callable, x_pred: np.ndarray, x_train: np.ndarray,
+              y_train: np.ndarray, theta_fun: list[callable] = TARGET_MEASURES,
+              n_samples: int = 100, alpha: float = 0.05,
+              rng: np.random.Generator = None, output_path: Path = Path(""),
+              plot: bool = False, **kwargs) -> dict:
+    """
+    General function used to create bootstrap confidence intervals
+    Returns a dict of the following form:
+
+    ci = {"theta_fun_name": {"mean": theta_hat, "ci_lb": theta_lower_bound,
+          "ci_ub": "theta_upper_bound"}
+
+
+    """
 
     if rng is None:
         rng = np.random.default_rng()
@@ -231,10 +186,13 @@ def bootstrap(pred_fun, x_pred, x_train, y_train, theta_fun=TARGET_MEASURES,
             thetas[fn].append(theta_f(pred["data"].y_mean))
 
     thetas = {k: np.array(v) for k, v in thetas.items()}
-    theta_hat = {k: np.apply_along_axis(np.mean, 0, v) for k, v in thetas.items()}
-    ci_quant_ub = {k: np.apply_along_axis(partial(np.quantile, q=(alpha/2)), 0, v)
+    theta_hat = {k: np.apply_along_axis(np.mean, 0, v) for k, v in
+                 thetas.items()}
+    ci_quant_ub = {k: np.apply_along_axis(partial(np.quantile, q=(alpha/2)),
+                                          0, v)
                    for k, v in thetas.items()}
-    ci_quant_lb = {k: np.apply_along_axis(partial(np.quantile, q=1-(alpha/2)), 0, v)
+    ci_quant_lb = {k: np.apply_along_axis(partial(np.quantile, q=1-(alpha/2)),
+                                          0, v)
                    for k, v in thetas.items()}
     ci = {k: {"mean": theta_hat[k], "ci_lb": 2*theta_hat[k]-ci_quant_lb[k],
           "ci_ub": 2*theta_hat[k]-ci_quant_ub[k]} for k, v in thetas.items()}
@@ -246,20 +204,14 @@ BASELINE_METHODS = {
     f"naive_{ttr.__name__}": pred_ttr_naive,
     "linear": linear_regression,
     "spline": spline_reg_v2,
-    # "gam_spline": gam_spline
 }
 
 
 if __name__ == "__main__":
-
-    # x = np.arange(100)
-    # y = np.sin(x)
     x = np.linspace(0, 20, 100)
     y = np.sin(x) + np.random.normal() + 120
-    train_idx = np.sort(np.random.choice(np.arange(len(x)), size=int(len(x) * 0.5), replace=False))
-    # test_idx = np.setdiff1d(x, train_idx)
-
-    # pred = spline_reg(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
+    train_idx = np.sort(np.random.choice(
+        np.arange(len(x)), size=int(len(x) * 0.5), replace=False))
     pred = spline_reg_v2(x_pred=x, x_train=x[train_idx], y_train=y[train_idx])
 
     fig, ax = plt.subplots()
@@ -268,5 +220,4 @@ if __name__ == "__main__":
     ax.scatter(x[train_idx], y[train_idx])
     plt.show()
 
-    print()
 
