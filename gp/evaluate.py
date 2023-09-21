@@ -1,7 +1,10 @@
-import pandas as pd
+"""
+This module contains some classes used to produce evaluation results,
+whereas SimpleEvaluator is the one used to evaluate the target measures and
+of main interest
+"""
 import scipy
 import numpy as np
-from copy import copy
 from dataclasses import dataclass, asdict
 from scipy.stats import norm, multivariate_normal
 from gp.evalutation_utils import calculate_ci, se_overall_mean_from_cov
@@ -16,6 +19,10 @@ logger = getLogger(__name__)
 
 @dataclass
 class SimpleEvaluator:
+    """
+    This is used to evaluate the estimation of the Target measures
+    including CIs
+    """
 
     f_true: np.ndarray | float
     f_pred: np.ndarray | float
