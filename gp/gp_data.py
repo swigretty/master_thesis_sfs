@@ -24,28 +24,22 @@ class GPData():
 
 
     At the very least you need to provide either y or y_mean.
-    In most cases you will skip y, which is just a realization (sample) of the GP described by y_mean and y_cov.
+    In most cases you will skip y, which is just a realization (sample) of
+    the GP described by y_mean and y_cov.
 
     """
-    y: np.array = None  # A sample from the GP. # TODO rename to sample, mean, cov (since y is confusing)
-    x: np.array = None  # design matrix (or independent, explanatory variables). (time)
+    # TODO rename to sample,mean,cov (since y, y_mean and, y_cov is confusing)
+    # A sample from the GP
+    y: np.array = None
+    # design matrix (or independent, explanatory variables). (time)
+    x: np.array = None
     y_mean: np.array = None  # The mean function of the GP evaluated at input x
     y_cov: np.array = None  # The cov function values evaluated at the input x
 
     def __post_init__(self):
-        # signal = self.y
-
         if self.y is None:
             if self.y_mean is None:
                 raise ValueError("Either y_mean or y need to be specified")
-            # signal = self.y_mean
-            # self.y = np.full((len(signal)), np.nan)
-        # if self.x is None:
-        #     self.x = np.arange(len(signal))
-        # if self.y_mean is None:
-        #     self.y_mean = np.full((len(signal)), np.nan)
-        # if self.y_cov is None:
-        #     self.y_cov = np.full((len(signal), len(signal)), np.nan)
 
         self.index = 0
         self.check_dimensions()
@@ -60,7 +54,8 @@ class GPData():
 
         arrays = [self.x, self.y, self.y_mean]
         arrays = [arr for arr in arrays if arr is not None]
-        assert all([arrays[i].shape[0] == arrays[i+1].shape[0] for i in range(len(arrays)-1)])
+        assert all([arrays[i].shape[0] == arrays[i+1].shape[0] for i in range(
+            len(arrays)-1)])
         if self.y_cov is not None:
             assert self.y_cov.shape == (len(self.x), len(self.x))
 
@@ -92,7 +87,8 @@ class GPData():
         return value[idx]
 
     def __getitem__(self, idx):
-        return self.__class__(**{k: self.get_field_item(k, idx) for k in asdict(self).keys()})
+        return self.__class__(**{k: self.get_field_item(k, idx) for k in
+                                 asdict(self).keys()})
 
     def __iter__(self):
         return self
@@ -105,15 +101,18 @@ class GPData():
         return self[self.index - 1]
 
     def __add__(self, value):
-        new_fields = {k: (v + value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
+        new_fields = {k: (v + value if k in ["y_mean", "y"] and v is not None
+                          else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
     def __sub__(self, value):
-        new_fields = {k: (v - value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
+        new_fields = {k: (v - value if k in ["y_mean", "y"] and v is not None
+                          else v) for k, v in asdict(self).items()}
         return self.__class__(**new_fields)
 
     def __mul__(self, value):
-        new_fields = {k: (v * value if k in ["y_mean", "y"] and v is not None else v) for k, v in asdict(self).items()}
+        new_fields = {k: (v * value if k in ["y_mean", "y"] and v is not None
+                          else v) for k, v in asdict(self).items()}
         new_fields["y_cov"] *= value**2
         return self.__class__(**new_fields)
 
@@ -135,7 +134,8 @@ class GPData():
     @cached_property
     def ci(self):
         df = self.to_df()
-        ci = pd.DataFrame(df.apply(lambda row: self.calculate_ci_row(row), axis=1).to_list())
+        ci = pd.DataFrame(df.apply(lambda row: self.calculate_ci_row(row),
+                                   axis=1).to_list())
         return ci
 
     def get_samples(self, n_samples=10, rng=None) -> list:
