@@ -2,10 +2,12 @@ from pathlib import Path
 from datetime import datetime
 import __main__
 
+# Please adapt
 OUTPUT_PATH_BASE = Path.home() / "Insync/OneDrive/master_thesis/repo_output"
 
 # Assumes "gp_experiments.py" is the file you used to produce the main
-# results with
+# results with please adapt accordingly if you used a different file to
+# run the main experiments with
 RESULTS_PATH = OUTPUT_PATH_BASE / "gp_experiments"
 
 now = datetime.utcnow()
