@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from logging import getLogger
 import logging
+from typing import Union
 import json
 from pathlib import Path
 from tqdm import tqdm
@@ -43,7 +44,7 @@ class GPSimulator():
                  meas_noise_var: int = 0,
                  kernel_fit: Kernel = None,
                  normalize_y: bool = False,
-                 output_path: callable | None | Path = get_output_path,
+                 output_path: Union[callable, None, Path] = get_output_path,
                  data_fraction_weights: callable = None,
                  data_fraction: float = 0.3,
                  f_true: GPData = None,

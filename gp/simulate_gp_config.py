@@ -94,7 +94,7 @@ class GPSimulatorConfig():
 
     kwargs: dict = None
 
-    simulation_config_keys = ["mean_f", "x", "meas_noise_var", "kernel_sim",
+    simulation_config_keys = ["x", "meas_noise_var", "kernel_sim",
                               "data_fraction_weights"]
 
     def __post_init__(self):
