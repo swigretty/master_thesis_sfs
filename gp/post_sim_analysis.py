@@ -1,3 +1,7 @@
+"""
+This modules produces the CI coverage CI width plots from the
+simulation experiment results produced by gp_experiments.py
+"""
 from pathlib import Path
 import numpy as np
 from constants.constants import RESULTS_PATH

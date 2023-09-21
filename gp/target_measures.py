@@ -1,3 +1,6 @@
+"""
+This module stores the definition of all target measures.
+"""
 import numpy as np
 from scipy.stats.distributions import norm, t
 from gp.evalutation_utils import calculate_ci, se_overall_mean_from_cov
@@ -56,6 +59,9 @@ def mean_1h(y_pred, x_pred,  x_unit="hour"):
 
 
 def raw(y_pred, x_pred=None):
+    """
+    Raw is just the BP values evaluated at all inputs x_pred.
+    """
     return y_pred
 
 
