@@ -1,7 +1,7 @@
 """
-This modules stores functionality to run the main experiments
-to assess performance of GP regression and some baseline methods
-in estimating simulated BP values.
+This module stores functionality to run the main experiments
+to assess BP value estimation performance of GP regression and
+some baseline methods.
 """
 import copy
 from gp.gp_simulator import GPSimulator, GPSimulationEvaluator

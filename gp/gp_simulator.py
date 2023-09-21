@@ -11,7 +11,7 @@ import logging
 import json
 from pathlib import Path
 from tqdm import tqdm
-from sklearn.gaussian_process.kernels import Matern, ConstantKernel
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel, Kernel
 from statsmodels.stats.proportion import proportion_confint
 from gp.gp_regressor import GPR
 from gp.gp_plotting_utils import (plot_kernel_function, plot_posterior,
@@ -38,10 +38,19 @@ def weights_func_value(y):
 
 class GPSimulator():
 
-    def __init__(self, x=np.linspace(0, 40, 200), kernel_sim=1 * Matern(nu=0.5, length_scale=1), mean_f=lambda x: 120,
-                 meas_noise_var=0, kernel_fit=None, normalize_y=False, output_path=get_output_path,
-                 data_fraction_weights=None, data_fraction=0.3, f_true=None, meas_noise=None, rng=None,
-                 normalize_kernel=False, scale=1):
+    def __init__(self, x: np.ndarray = np.linspace(0, 40, 200),
+                 kernel_sim: Kernel = 1 * Matern(nu=0.5, length_scale=1),
+                 meas_noise_var: int = 0,
+                 kernel_fit: Kernel = None,
+                 normalize_y: bool = False,
+                 output_path: callable | None | Path = get_output_path,
+                 data_fraction_weights: callable = None,
+                 data_fraction: float = 0.3,
+                 f_true: GPData = None,
+                 meas_noise: np.ndarray = None,
+                 rng: np.random.Generator = None,
+                 normalize_kernel: bool = False,
+                 scale: float = 1):
 
         self.sim_time = datetime.datetime.utcnow()
 
@@ -53,9 +62,7 @@ class GPSimulator():
         if self.rng is None:
             self.rng = np.random.default_rng()
 
-        self.mean_f = mean_f
         self.meas_noise_var = meas_noise_var
-        self.offset = np.mean([mean_f(xi) for xi in self.x])
         self.scale = scale
 
         self.data_fraction_weights = data_fraction_weights
@@ -64,24 +71,28 @@ class GPSimulator():
         self.kernel_sim = kernel_sim
         self.normalize_kernel = normalize_kernel
         if normalize_kernel:
-            self.kernel_sim, self.meas_noise_var, self.scale = self.get_normalized_kernel(kernel_sim,
-                                                                                     meas_noise_var=self.meas_noise_var)
-
+            self.kernel_sim, self.meas_noise_var, self.scale = (
+                self.get_normalized_kernel(kernel_sim,
+                                           meas_noise_var=self.meas_noise_var))
         if kernel_fit is None:
             kernel_fit = self.kernel_sim
 
         self.kernel_fit = kernel_fit
         self.normalize_y = normalize_y
+        # Choose alpha=0 (zero measurement noise variance) for fitting the
+        # gpm_sim and getting true decomposed
         self.gpm_sim = GPR(kernel=self.kernel_sim, normalize_y=False, optimizer=None, rng=rng,
-                           alpha=0)  # No Variance for fitting the gpm_sim and getting true decomposed
-
-        self.f_true = f_true  # Noise free BP values, if None, samples from self.gpm_sim
+                           alpha=0)
+        # Noise free BP values, if None, samples from self.gpm_sim
+        self.f_true: GPData = f_true
         # Vector of measurement noise values for every input in x.
-        # If None, draws iid samples from normal dist with var=self.meas_noise_var
+        # If None, draws iid samples from normal dist with
+        # var=self.meas_noise_var
         self.meas_noise = meas_noise
         # Fit the true GP once. This is needed for the true mean decomposition
         self.gpm_sim.fit(self.y_true.x, self.f_true.y)
 
+        # Initialize GPR for fitting
         self.meas_noise_var_fit = self.meas_noise_var
         self._y_train_std = np.std(self.y_true_train.y)
         if self.normalize_y:
@@ -91,6 +102,7 @@ class GPSimulator():
                            normalize_y=self.normalize_y,
                            alpha=self.meas_noise_var_fit, rng=rng)
 
+        # All results will be stored in self.output_path
         self.output_path = output_path
         if self.output_path is not None:
             if callable(self.output_path):
@@ -100,29 +112,42 @@ class GPSimulator():
                 f.write(json.dumps(self.current_config, default=str))
             self.df.to_csv(self.output_path / f"data.csv")
 
-        init_kwargs = {k: v for k, v in self.current_init_kwargs.items() if not isinstance(v, np.ndarray)}
-        logger.info(f"Initialized {self.__class__.__name__} with: \n {init_kwargs=}")
+        init_kwargs = {k: v for k, v in self.current_init_kwargs.items() if
+                       not isinstance(v, np.ndarray)}
+        logger.info(f"Initialized {self.__class__.__name__} with:"
+                    f" \n {init_kwargs=}")
 
     @property
     def df(self):
+        """
+        Creates a dataframe of the data used for the experiment
+        """
         is_training_data = [idx in self.train_idx for idx in range(len(self.x))]
-        return pd.DataFrame({"x": self.x.reshape(-1), "f_true": self.f_true.y, "meas_noise": self.meas_noise,
+        return pd.DataFrame({"x": self.x.reshape(-1), "f_true": self.f_true.y,
+                             "meas_noise": self.meas_noise,
                              "training_data": is_training_data})
 
-    def sim_gp(self, n_samples=5, predict_y=False):
-
-        # Predict noise free in any case, since gpm_sim will be initialized with alpha=0 and
-        # measurment noise later if predict_y=True
-        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(self.x, n_samples=n_samples,
-                                                                            predict_y=False)
+    def sim_gp(self, n_samples=5, predict_y=False) -> list[GPData]:
+        """
+        Simulate ture BP time series from self.gpm_sim (the true GP).
+        If predict_y is True, noisy observations of the time series
+        are returned.
+        """
+        # Get  noise free BP samples
+        y_prior, y_prior_mean, y_prior_cov = self.gpm_sim.sample_from_prior(
+            self.x, n_samples=n_samples, predict_y=False)
         if predict_y:
             # samples with noise
-            y_prior_noisy = y_prior + np.sqrt(self.meas_noise_var) * self.rng.standard_normal((y_prior.shape))
-            y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(self.meas_noise_var, len(self.x)))
-            data = [GPData(x=self.x, y=y_prior_noisy[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov_noisy) for idx in
-                    range(n_samples)]
+            y_prior_noisy = (y_prior + np.sqrt(self.meas_noise_var) *
+                             self.rng.standard_normal((y_prior.shape)))
+            y_prior_cov_noisy = y_prior_cov + np.diag(np.repeat(
+                self.meas_noise_var, len(self.x)))
+            data = [GPData(x=self.x, y=y_prior_noisy[:, idx],
+                           y_mean=y_prior_mean, y_cov=y_prior_cov_noisy)
+                    for idx in range(n_samples)]
         else:
-            data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean, y_cov=y_prior_cov) for idx in
+            data = [GPData(x=self.x, y=y_prior[:, idx], y_mean=y_prior_mean,
+                           y_cov=y_prior_cov) for idx in
                     range(n_samples)]
 
         return data
@@ -133,16 +158,6 @@ class GPSimulator():
         assert len(fun) == 1, "cannot extract seasonal pattern"
         weights = fun[0] - min(fun[0])
         return weights
-
-    # @cached_property
-    # def f_true_post(self):
-    #     """
-    #     this is simply f_true with Cov = 0 everywhere
-    #     """
-    #     self.gpm_sim.fit(self.f_true.x, self.f_true.y)
-    #     f_post_mean, f_post_cov = self.gpm_sim.predict(self.y_true.x, return_cov=True)
-    #     assert np.mean((self.f_true.y - f_post_mean) ** 2) < 10 ** (-4)
-    #     return GPData(x=self.f_true.x, y_mean=f_post_mean, y_cov=f_post_cov)
 
     @property
     def meas_noise(self):
