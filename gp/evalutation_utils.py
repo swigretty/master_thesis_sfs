@@ -2,6 +2,10 @@ from scipy.stats import norm
 import numpy as np
 
 
+def mse(true, pred):
+    return np.mean((pred - true) ** 2)
+
+
 def calculate_ci(se, mean, alpha=0.05, dist=norm):
     """
     General method to calculate the confidence/credible intervals from the mean and standard error (se).

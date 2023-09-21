@@ -16,6 +16,7 @@ from sklearn.model_selection import KFold
 from gp.gp_data import GPData
 from gp.gp_plotting_utils import plot_posterior
 from target_measures import overall_mean, ttr, TARGET_MEASURES
+from gp.evalutation_utils import mse
 
 logger = getLogger(__name__)
 
@@ -61,9 +62,6 @@ def linear_regression(x_pred, x_train, y_train, **kwargs):
 
     return {"data": GPData(x=x_pred, y_mean=y, y_cov=y_cov), "ci_fun": ci_fun}
 
-
-def mse(true, pred):
-    return np.mean((pred - true) ** 2)
 
 
 def get_spline_basis(x_pred, x_train, n_knots=None):
