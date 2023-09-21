@@ -21,7 +21,7 @@ from gp.baseline_methods import BASELINE_METHODS
 from gp.target_measures import TARGET_MEASURES, ci_overall_mean_gp
 from constants.constants import get_output_path
 from exploration.explore import get_red_idx
-from gp.simulate_gp_config import base_config, OU_KERNELS, PARAM_NAMES
+from gp.simulate_gp_config import PARAM_NAMES
 from gp.evaluate import GPEvaluator, SimpleEvaluator
 from hpd import hpd_grid
 from log_setup import setup_logging
@@ -916,11 +916,6 @@ class GPSimulationEvaluator(GPSimulator):
                 theta_fun=gps.target_measures))
 
         return
-
-
-def plot_mean_decompose(kernel="sin_rbf"):
-    gpm = GPSimulator(kernel_sim=OU_KERNELS["fixed"][kernel], **base_config)
-    gpm.mean_decomposition_plot(figname=kernel)
 
 
 if __name__ == "__main__":
