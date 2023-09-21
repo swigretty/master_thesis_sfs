@@ -123,8 +123,9 @@ def target_measure_perf_plot(target_measures_df, annotate="mse",
 
 
 def read_experiment(experiment_name, filter_dict=None,
-                    table_name="target_measures_eval.csv"):
-    output_path = RESULTS_PATH / experiment_name
+                    table_name="target_measures_eval.csv",
+                    results_path=RESULTS_PATH):
+    output_path = results_path / experiment_name
     target_measures_df = pd.read_csv(output_path / table_name)
     if filter_dict:
         for k, v in filter_dict.items():
@@ -138,10 +139,10 @@ def read_experiment(experiment_name, filter_dict=None,
 
 def plot_all(experiment_name, modes=MODE_NAMES, annotate="mse",
              filter_dict=None, reextract=False,
-             ci_coverage_col="ci_covered_prop_v2"):
+             ci_coverage_col="ci_covered_prop_v2", results_path=RESULTS_PATH):
 
-    target_measures_df, output_path = read_experiment(experiment_name,
-                                                      filter_dict=filter_dict)
+    target_measures_df, output_path = read_experiment(
+        experiment_name, filter_dict=filter_dict, results_path=results_path)
 
     for mode in modes:
         for target_measure in target_measures_df["target_measure"].unique():
@@ -189,5 +190,3 @@ if __name__ == "__main__":
     experiment_name = "my_experiment"
     plot_all(experiment_name, annotate=None, reextract=False,
              filter_dict={"method": lambda x: x != "gp_hdi"})
-
-

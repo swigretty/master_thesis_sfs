@@ -22,9 +22,13 @@ This Code has been run with Python 3.10.13.
 Install the packages specified in the requirements.txt
 
 ## Usage
-To reproduce the results, run 100 simulation experiment across different 
-data fractions (downsampling factors) and different modes 
-(uniform, seasonal and extreme seasonal sampling): 
+
+### Run Simulation Experiment
+To reproduce the simulation results, run 100 simulation experiment 
+across different data fractions (downsampling factors) and different modes 
+(uniform, seasonal and extreme seasonal sampling) just run
+"gp/gp_experiments.py".
+Or run the following:
 
     from gp.gp_experiments import evaluate_data_fraction_modes, MODES
 
@@ -41,21 +45,42 @@ data fractions (downsampling factors) and different modes
 
 
 This will generate the results of the simulation experiment
-in the folder specified by "constants.constant.OUTPUT_PATH_BASE", 
-please adapt accordingly.
+and store this under experiment_path:
+
+    from constants.constants import OUTPUT_PATH_BASE
+    experiment_path = OUTPUT_PATH_BASE / f"{Path(__main__.__file__).stem}" / experiment_name
+
+Please adapt OUTPUT_PATH_BASE in "constants/constants.py" accordingly.
+If you used "gp/gp_experiments.py" to run this the experiment_path evaluates
+to:
+
+    experiment_path = OUTPUT_PATH_BASE / "gp_experiments" / experiment_name
+
+The main output produced is "target_measures_eval.csv"
+which stores the performance of the different regression methods
+across different data densities and sampling patterns.
 
 There will be one folder created per mode and per data fraction.
 Note that every simulation run involves sampling from the true GP.
 The true GP is specified by MODES, which is a list of 
 "gp.simulate_gp_config.GPSimulatorConfig" instances.
 
-To generate the CI coverage - CI width plots run: 
+
+###  Generate CI Coverage - CI Width Plots
+
+To generate the CI coverage - CI width plots run "gp/post_sim_analysis.py"
+or run: 
 
     from gp.post_sim_analysis import plot_all
 
     experiment_name = "my_experiment"
     plot_all(experiment_name, annotate=None, reextract=False)
 
+This will read the "target_measures_eval.csv" created before and store
+one plot per sampling pattern in the experiment_path.
+
+
+###  Plot Regression Methods Prediction Examples
 
 To draw 10 samples from the true GP, fit the regression methods and produce
 plots of the predictions run:
@@ -64,9 +89,9 @@ plots of the predictions run:
     from gp.simulate_gp_config import GPSimulatorConfig
     
     experiment_name = "my_plots"
-    # Use uniform sampling and the kernel specified by sin_rbf
-    mode = GPSimulatorConfig(kernel_sim_name="sin_rbf",
-                             session_name="sin_rbf_default")
+    # Use uniform sampling and call the session "sin_rbf_default"
+    mode = GPSimulatorConfig(session_name="sin_rbf_default")
+    # Set the seed of the rng for reproducibility
     rng = np.random.default_rng(18)
     plot_sample(normalize_kernel=False, rng=rng,
                 experiment_name=experiment_name, nplots=10, config=mode,

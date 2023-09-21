@@ -120,6 +120,7 @@ class GPSimulatorConfig():
         if self.kernel_sim_name == "sin_rbf":
             return self.ou_kernel + self.sin_kernel + self.rbf_kernel
 
+        # If you want to simulate with an evolving seasonal pattern
         elif self.kernel_sim_name == "sinrbf_rbf":
             return (self.ou_kernel + self.sin_kernel * self.rbf_kernel +
                     self.rbf_kernel)

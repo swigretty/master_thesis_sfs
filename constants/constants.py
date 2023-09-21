@@ -10,7 +10,8 @@ RESULTS_PATH = OUTPUT_PATH_BASE / "gp_experiments"
 
 now = datetime.utcnow()
 
-OUTPUT_FOLDER = f"{Path(__main__.__file__).stem}_{now.strftime('%m_%d_%I_%M_%S')}"
+OUTPUT_FOLDER = (f"{Path(__main__.__file__).stem}_"
+                 f"{now.strftime('%m_%d_%I_%M_%S')}")
 
 OUTPUT_PATH = OUTPUT_PATH_BASE / OUTPUT_FOLDER
 
